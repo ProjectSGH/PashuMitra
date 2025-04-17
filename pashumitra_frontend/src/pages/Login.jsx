@@ -1,4 +1,5 @@
 import React from "react";
+import { ArrowLeftCircle } from "lucide-react";
 
 const LoginPage = () => {
   return (
@@ -14,12 +15,25 @@ const LoginPage = () => {
         </div>
 
         <button className="text-blue-600 text-sm mb-4 hover:underline">
-          ← Back to Home
+          <a
+            href="/Login"
+            className="text-decoration-none flex items-center justify-center"
+          >
+            <ArrowLeftCircle className="inline mr-1" />
+            Back to Home
+          </a>
         </button>
 
         <form className="space-y-4">
-          <Input label="Email or Mobile Number" placeholder="you@example.com / 9876543210" />
-          <Input label="Password" placeholder="Enter your password" type="password" />
+          <Input
+            label="Email or Mobile Number"
+            placeholder="you@example.com / 9876543210"
+          />
+          <Input
+            label="Password"
+            placeholder="Enter your password"
+            type="password"
+          />
 
           <button
             type="submit"
