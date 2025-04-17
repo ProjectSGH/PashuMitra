@@ -14,7 +14,7 @@ const LoginPage = () => {
           </p>
         </div>
 
-        <button className="text-blue-600 text-sm mb-4 hover:underline">
+        <button className="text-blue-600 text-sm mb-4">
           <a
             href="/Login"
             className="text-decoration-none flex items-center justify-center"
