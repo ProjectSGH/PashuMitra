@@ -1,7 +1,19 @@
-import React from 'react'
+import Navbar from "../../components/Farmer/Navbar_Farmer"
+import Hero from "../../components/Farmer/Home/Hero_Farmer"
+import Features from "../../components/Farmer/Home/Features_Farmer"
+import Roles from "../../components/Roles"
+import Footer from "../../components/Footer"
 
-export default function Dashboard_Farmer() {
+const FarmerDashboard = () => {
   return (
-    <div>Dashboard_Farmer</div>
+    <div className="w-full bg-gray-50">
+      <Navbar />
+      <Hero />
+      <Features />
+      <Roles />
+      <Footer />
+    </div>
   )
 }
+
+export default FarmerDashboard
