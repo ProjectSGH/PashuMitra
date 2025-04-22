@@ -1,20 +1,27 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import SignupForm from './pages/Signup';
-import LoginForm from './pages/Login';
-import FarmerDashboard from './pages/Farmer/Dashboard_Farmer';
-import './App.css';
-// Simulated current user
-const currentUser = {
-  name: "Dhruv",
-  role: "farmer", // change this manually to "medical" or "doctor" to test
-};
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import SignupForm from "./pages/Signup";
+import LoginForm from "./pages/Login";
+import FarmerDashboard from "./pages/Farmer/Dashboard_Farmer";
+import FarmerLayout from "./pages/Farmer/FarmerLayout"; // ⬅️ new layout
 
 const ProtectedRoute = ({ role, children }) => {
-  if (currentUser.role !== role) {
-    return <Navigate to="/" />;
+  const user = JSON.parse(localStorage.getItem("user"));
+  const allowedRoles = ["Farmer", "Doctor", "Medical"]; // List of valid roles
+  
+  // Check if the user is not logged in or does not have one of the allowed roles
+  if (!user || !allowedRoles.includes(user.role)) {
+    console.log("Redirecting to login because of invalid role");
+    return <Navigate to="/login" />;
   }
+
   return children;
 };
+
 
 function App() {
   return (
@@ -24,32 +31,20 @@ function App() {
         <Route path="/" element={<SignupForm />} />
         <Route path="/login" element={<LoginForm />} />
 
-        {/* Farmer Dashboard */}
-        <Route path="/farmer/*" element={
-          <ProtectedRoute role="farmer">
-              <Routes>
-                <Route path="dashboard" element={<FarmerDashboard />} />
-              </Routes>
-          </ProtectedRoute>
-        } />
-
-        {/* Medical Store Dashboard */}
-        <Route path="/medical/*" element={
-          <ProtectedRoute role="medical">
-              <Routes>
-                {/* <Route path="dashboard" element={<MedicalDashboard />} /> */}
-              </Routes>
-          </ProtectedRoute>
-        } />
-
-        {/* Doctor Dashboard */}
-        <Route path="/doctor/*" element={
-          <ProtectedRoute role="doctor">
-              <Routes>
-                {/* <Route path="dashboard" element={<DoctorDashboard />} /> */}
-              </Routes>
-          </ProtectedRoute>
-        } />
+        {/* Farmer Routes */}
+        <Route
+          path="/farmer"
+          element={
+            <ProtectedRoute role="farmer">
+              <FarmerLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Set the "dashboard" as the index route */}
+          <Route index element={<FarmerDashboard />} />{" "}
+          {/* This will be the default for /farmer */}
+          <Route path="dashboard" element={<FarmerDashboard />} />
+        </Route>
       </Routes>
     </Router>
   );
