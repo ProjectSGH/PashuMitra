@@ -13,23 +13,16 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-br rounded-2xl from-blue-50 to-blue-100 flex items-center justify-center">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8">
+    <div className="w-full h-full rounded-2xl flex items-center justify-center">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl p-8">
         <div className="mb-6 text-left">
-          <h2 className="text-3xl font-bold text-gray-800">
+          <h2 className="text-3xl text-center font-bold text-gray-800">
             Create your <span className="text-blue-600">PashuMitra </span> account
           </h2>
           <p className="text-gray-500 mt-1 text-center">
             Join our platform to access animal healthcare services
           </p>
         </div>
-
-        <button className="text-blue-600 text-sm mb-4 ">
-          <a href="/Login" className="text-decoration-none flex items-center justify-center">
-            <ArrowLeftCircle className="inline mr-1" />
-           Back to Home
-          </a>
-        </button>
 
         <div className="mb-4 m-auto text-center">
           <span className="inline-block bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-medium">
