@@ -71,6 +71,13 @@ const SignupPage = () => {
           </p>
         </div>
 
+        <button className="text-blue-600 text-sm mb-4">
+          <a href="/" className="flex items-center justify-center">
+            <ArrowLeftCircle className="inline mr-1" />
+            Back to Home
+          </a>
+        </button>
+
         <div className="mb-4 m-auto text-center">
           <span className="inline-block bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-medium">
             Signing up as: {selectedRole}
@@ -143,7 +150,7 @@ const SignupPage = () => {
                     onClick={() => {
                       setSelectedRole(role);
                       setDropdownOpen(false); // close on select
-                    }}                    
+                    }}
                     className={`px-4 py-2 hover:bg-blue-100 cursor-pointer text-left ${
                       selectedRole === role ? "bg-blue-100 font-semibold" : ""
                     }`}

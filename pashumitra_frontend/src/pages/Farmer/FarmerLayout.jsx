@@ -1,10 +1,10 @@
 import { Outlet } from "react-router-dom";
 import FarmerNavbar from "../../components/Farmer/Navbar_Farmer";
-import FarmerDashboard from "./Dashboard_Farmer";
+// import FarmerDashboard from "../Home";
 const FarmerLayout = () => {
   return (
     <>
-      <FarmerNavbar />
+      {/* <FarmerNavbar /> */}
       <Outlet />
 
     </>

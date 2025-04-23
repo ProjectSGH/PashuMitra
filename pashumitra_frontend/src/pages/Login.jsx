@@ -49,12 +49,7 @@ const LoginPage = () => {
           </p>
         </div>
 
-        <button className="text-blue-600 text-sm mb-4">
-          <a href="/" className="flex items-center justify-center">
-            <ArrowLeftCircle className="inline mr-1" />
-            Back to Home
-          </a>
-        </button>
+       c
 
         {message && (
           <div

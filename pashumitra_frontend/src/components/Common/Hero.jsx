@@ -16,12 +16,12 @@ const Hero = () => {
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
           <a
-            href="#"
+            href="/signup"
             className="bg-blue-600 text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition-colors"
           >
             Get Started
           </a>
-          <a href="#" className="text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors">
+          <a href="/login" className="text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors">
             Browse Medicines
           </a>
         </div>

@@ -1,125 +1,138 @@
-import React, { useState } from "react";
-import { Home, Package, LayoutDashboard, Menu, X } from 'lucide-react';
+"use client"
 
-const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+import { ChevronDown, Bell, LogOut } from "lucide-react"
+import ServicesDropdown from "./Home/Service_Dropdown_Farmer"
+import { useState } from "react"
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+export default function FarmerNavbar() {
+  const [showServices, setShowServices] = useState(false)
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+    <header className="bg-white shadow-sm">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-lg">PM</span>
+            <div className="flex-shrink-0">
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                  M
+                </div>
+                <span className="ml-2 text-lg font-semibold">
+                  Meditech <span className="text-gray-600 font-normal">Farmer</span>
+                </span>
               </div>
-              <span className="ml-2 text-lg font-semibold text-gray-900">PashuMitra</span>
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-6">
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-              >
-                <Home size={18} className="mr-1" />
-                Home
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-              >
-                <Package size={18} className="mr-1" />
-                Inventory
-              </a>
-              <a
-                href="#"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
-              >
-                <LayoutDashboard size={18} className="mr-1" />
-                Dashboard
-              </a>
-            </div>
-            <div className="flex items-center space-x-2">
-              <a
-                href="#"
-                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Login
-              </a>
-              <a
-                href="#"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
-              >
-                Get Started
-              </a>
+          {/* Navigation */}
+          <div className="hidden md:block">
+            <div className="flex items-center space-x-4">
+              <NavItem icon="grid" text="Dashboard" active={false} />
+              <NavItem icon="message-square" text="Chat" active={false} />
+              <NavItem icon="help-circle" text="Help" active={false} />
+              <NavItem icon="bell" text="Notifications" active={false} />
             </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden items-center">
-            <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-gray-100 focus:outline-none"
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {/* Right side menu */}
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <button
+                className="flex items-center text-sm px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100"
+                onClick={() => setShowServices(!showServices)}
+              >
+                Services
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+
+              {showServices && <ServicesDropdown />}
+            </div>
+
+            <button className="flex items-center text-sm px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">
+              <a href="/profile">Profile</a>
+            </button>
+
+            <button className="flex items-center text-sm px-3 py-2 rounded-md text-red-600 hover:bg-gray-100">
+              <LogOut className="mr-1 h-4 w-4" />
+              Logout
             </button>
           </div>
         </div>
       </div>
+    </header>
+  )
+}
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium flex items-center"
-            >
-              <Home size={18} className="mr-2" />
-              Home
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium flex items-center"
-            >
-              <Package size={18} className="mr-2" />
-              Inventory
-            </a>
-            <a
-              href="#"
-              className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium flex items-center"
-            >
-              <LayoutDashboard size={18} className="mr-2" />
-              Dashboard
-            </a>
-          </div>
-          <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center px-5 space-x-2">
-              <a
-                href="#"
-                className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
-              >
-                Login
-              </a>
-              <a
-                href="#"
-                className="bg-blue-600 text-white block px-4 py-2 rounded-md text-base font-medium hover:bg-blue-700"
-              >
-                Get Started
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-};
+function NavItem({ icon, text, active }) {
+  const getIcon = (iconName) => {
+    switch (iconName) {
+      case "grid":
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        )
+      case "message-square":
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        )
+      case "help-circle":
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        )
+      case "bell":
+        return <Bell className="h-5 w-5" />
+      default:
+        return null
+    }
+  }
 
-export default Navbar;
+  return (
+    <a
+      href="#"
+      className={`flex items-center px-3 py-2 text-sm font-medium ${
+        active ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
+      }`}
+    >
+      {getIcon(icon)}
+      <span className="ml-2">{text}</span>
+    </a>
+  )
+}
