@@ -9,6 +9,7 @@ import LoginForm from "./pages/Login";
 import FarmerDashboard from "./pages/Farmer/Dashboard_Farmer";
 import Profile from "./pages/userprofile";
 import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
+import Transport from "./pages/MedicalStoreOwner/transport-requests";
 import FarmerLayout from "./pages/Farmer/FarmerLayout"; // ⬅️ new layout
 import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
 
@@ -44,9 +45,12 @@ function App() {
         >
           <Route index element={<HomeMedical />} />
           <Route path="dashboard" element={<HomeMedical />} />
-          <Route path="profile" element={<Profile />} />{" "}
+          <Route path="profile" element={<Profile />} />
+          <Route path="transport" element={<Transport />} />
+          {" "}
           {/* ✅ This profile inherits MedicalLayout */}
         </Route>
+        
 
         <Route
           path="/farmer"
