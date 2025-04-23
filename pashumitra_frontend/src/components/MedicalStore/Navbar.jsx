@@ -1,5 +1,5 @@
 import { Home, Package, Truck, Pill, Building2, Clock, User, Bell, HelpCircle, LogOut } from "lucide-react"
-
+import { Link } from "react-router-dom";
 const Navbar = () => {
   return (
     <header className="bg-white shadow-sm">
@@ -41,19 +41,27 @@ const Navbar = () => {
     </header>
   )
 }
-
 const NavItem = ({ icon, text, isLogout = false }) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = user?.role?.toLowerCase(); // e.g., "farmer", "medicalstore"
+
+  const routes = {
+    Home: `/${role}/dashboard`,
+    Profile: `/${role}/profile`, // ✅ role-based path
+    Logout: "/login",
+  };
+
   return (
-    <a
-      href="#"
+    <Link
+      to={routes[text] || "#"}
       className={`flex items-center px-2 py-1 text-sm font-medium rounded-md ${
         isLogout ? "text-red-600 hover:text-red-800" : "text-gray-600 hover:text-gray-900"
       } hover:bg-gray-100`}
     >
       {icon}
       <span className="ml-1">{text}</span>
-    </a>
-  )
-}
+    </Link>
+  );
+};
 
 export default Navbar

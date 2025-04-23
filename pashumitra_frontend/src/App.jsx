@@ -7,6 +7,7 @@ import {
 import SignupForm from "./pages/Signup";
 import LoginForm from "./pages/Login";
 import FarmerDashboard from "./pages/Farmer/Dashboard_Farmer";
+import Profile from "./pages/userprofile";
 import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
 import FarmerLayout from "./pages/Farmer/FarmerLayout"; // ⬅️ new layout
 import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
@@ -14,7 +15,7 @@ import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ n
 const ProtectedRoute = ({ role, children }) => {
   const user = JSON.parse(localStorage.getItem("user"));
   const allowedRoles = ["Farmer", "Doctor", "MedicalStore"]; // List of valid roles
-  
+
   // Check if the user is not logged in or does not have one of the allowed roles
   if (!user || !allowedRoles.includes(user.role)) {
     console.log("Redirecting to login because of invalid role");
@@ -23,7 +24,6 @@ const ProtectedRoute = ({ role, children }) => {
 
   return children;
 };
-
 
 function App() {
   return (
@@ -35,31 +35,31 @@ function App() {
 
         {/* Farmer Routes */}
         <Route
-          path="/farmer"
-          element={
-            <ProtectedRoute role="farmer">
-              <FarmerLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Set the "dashboard" as the index route */}
-          <Route index element={<FarmerDashboard />} />{" "}
-          {/* This will be the default for /farmer */}
-          <Route path="dashboard" element={<FarmerDashboard />} />
-        </Route>
-
-        <Route
           path="/medicalstore"
           element={
-            <ProtectedRoute role="Medical">
+            <ProtectedRoute role="MedicalStore">
               <MedicalLayout />
             </ProtectedRoute>
           }
         >
-          {/* Set the "dashboard" as the index route */}
-          <Route index element={<HomeMedical />} />{" "}
-          {/* This will be the default for /farmer */}
+          <Route index element={<HomeMedical />} />
           <Route path="dashboard" element={<HomeMedical />} />
+          <Route path="profile" element={<Profile />} />{" "}
+          {/* ✅ This profile inherits MedicalLayout */}
+        </Route>
+
+        <Route
+          path="/farmer"
+          element={
+            <ProtectedRoute role="Farmer">
+              <FarmerLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<FarmerDashboard />} />
+          <Route path="dashboard" element={<FarmerDashboard />} />
+          <Route path="profile" element={<Profile />} />{" "}
+          {/* ✅ This profile inherits FarmerLayout */}
         </Route>
       </Routes>
     </Router>
