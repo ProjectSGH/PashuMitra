@@ -49,6 +49,7 @@ const NavItem = ({ icon, text, isLogout = false }) => {
     Home: `/${role}/dashboard`,
     Profile: `/${role}/profile`, // ✅ role-based path
     "Transport Requests": `/${role}/transport`,
+    "Request Medicines": `/${role}/request-medicines`,
     Logout: "/login",
   };
 
