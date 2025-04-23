@@ -26,8 +26,8 @@ const LoginPage = () => {
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data.user));
         const role = data.user.role.toLowerCase();
-        console.log("Redirecting to: ", `/${role}/dashboard`); // Log the redirection path
-        navigate(`/${role}/dashboard`);  // Redirect after login
+        console.log("Redirecting to: ", `/${role}/home`); // Log the redirection path
+        navigate(`/${role}/home`);  // Redirect after login
       } else {
         setMessage(data.message || "Invalid credentials");
       }
@@ -48,9 +48,7 @@ const LoginPage = () => {
             Log in to access your animal healthcare dashboard
           </p>
         </div>
-
-       c
-
+        
         {message && (
           <div
             className={`text-sm mb-3 px-4 py-2 rounded ${

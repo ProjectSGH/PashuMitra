@@ -4,14 +4,17 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import SignupForm from "./pages/Signup";
 import LoginForm from "./pages/Login";
-import FarmerDashboard from "./pages/Farmer/Dashboard_Farmer";
+import FarmerHome from "./pages/Farmer/FarmerHome";
 import Profile from "./pages/userprofile";
+import Home from "./pages/Home";
 import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
+import FarmerLayout from "./pages/Farmer/FarmerLayout"; 
+import FarmerMedicineBank from "./pages/Farmer/FarmerMedicineBank"
 import Transport from "./pages/MedicalStoreOwner/transportRequests";
 import RequestMedicines from "./pages/MedicalStoreOwner/requestMedicines";
-import FarmerLayout from "./pages/Farmer/FarmerLayout"; // ⬅️ new layout
 import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
 
 const ProtectedRoute = ({ role, children }) => {
@@ -29,46 +32,49 @@ const ProtectedRoute = ({ role, children }) => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<SignupForm />} />
-        <Route path="/login" element={<LoginForm />} />
+    <>
+      <Toaster position="bottom-right" />
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/signup" element={<SignupForm />} />
 
-        {/* Farmer Routes */}
-        <Route
-          path="/medicalstore"
-          element={
-            <ProtectedRoute role="MedicalStore">
-              <MedicalLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<HomeMedical />} />
-          <Route path="dashboard" element={<HomeMedical />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="transport" element={<Transport />} />
-          <Route path="request-medicines" element={<RequestMedicines />} />
-          {" "}
-          {/* ✅ This profile inherits MedicalLayout */}
-        </Route>
-        
+          {/* Farmer Routes */}
+          <Route
+            path="/medicalstore"
+            element={
+              <ProtectedRoute role="MedicalStore">
+                <MedicalLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<HomeMedical />} />
+            <Route path="home" element={<HomeMedical />} />
+            <Route path="profile" element={<Profile />} />{" "}
+            <Route path="transport" element={<Transport />} />
+            <Route path="request-medicines" element={<RequestMedicines />} />
+            {/* ✅ This profile inherits MedicalLayout */}
+          </Route>
 
-        <Route
-          path="/farmer"
-          element={
-            <ProtectedRoute role="Farmer">
-              <FarmerLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<FarmerDashboard />} />
-          <Route path="dashboard" element={<FarmerDashboard />} />
-          <Route path="profile" element={<Profile />} />{" "}
-          {/* ✅ This profile inherits FarmerLayout */}
-        </Route>
-      </Routes>
-    </Router>
+          <Route
+            path="/farmer"
+            element={
+              <ProtectedRoute role="Farmer">
+                <FarmerLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<FarmerHome />} />
+            <Route path="home" element={<FarmerHome />} />
+            <Route path="profile" element={<Profile />} />{" "}
+            <Route path="medicinebank" element={<FarmerMedicineBank />} />{" "}
+            {/* ✅ This profile inherits FarmerLayout */}
+          </Route>
+        </Routes>
+      </Router>
+    </>
   );
 }
 

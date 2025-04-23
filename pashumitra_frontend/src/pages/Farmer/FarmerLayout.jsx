@@ -1,12 +1,12 @@
 import { Outlet } from "react-router-dom";
 import FarmerNavbar from "../../components/Farmer/Navbar_Farmer";
-// import FarmerDashboard from "../Home";
+import Footer from "../../components/Footer";
 const FarmerLayout = () => {
   return (
     <>
-      {/* <FarmerNavbar /> */}
+      <FarmerNavbar />
       <Outlet />
-
+      <Footer />
     </>
   );
 };

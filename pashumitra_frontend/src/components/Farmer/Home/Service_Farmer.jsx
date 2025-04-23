@@ -82,9 +82,9 @@ import {
   
   function ServiceCard({ service }) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
-        <div className="flex items-start">
-          <div className={`${service.bgColor} p-2 rounded-md mr-3`}>{service.icon}</div>
+      <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
+        <div className="flex items-start rounded-lg">
+          <div className={`${service.bgColor} p-2 rounded-lg mr-3`}>{service.icon}</div>
           <div>
             <h3 className="font-medium text-gray-900">{service.title}</h3>
             <p className="text-sm text-gray-600 mt-1">{service.description}</p>

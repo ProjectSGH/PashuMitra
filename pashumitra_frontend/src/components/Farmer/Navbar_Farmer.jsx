@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { ChevronDown, Bell, LogOut } from "lucide-react"
-import ServicesDropdown from "./Home/Service_Dropdown_Farmer"
-import { useState } from "react"
+import { ChevronDown, Bell, LogOut } from "lucide-react";
+import ServicesDropdown from "./Home/Service_Dropdown_Farmer";
+import { useState } from "react";
 
 export default function FarmerNavbar() {
-  const [showServices, setShowServices] = useState(false)
+  const [showServices, setShowServices] = useState(false);
 
   return (
     <header className="bg-white shadow-sm">
@@ -19,7 +19,8 @@ export default function FarmerNavbar() {
                   M
                 </div>
                 <span className="ml-2 text-lg font-semibold">
-                  Meditech <span className="text-gray-600 font-normal">Farmer</span>
+                  Meditech{" "}
+                  <span className="text-gray-600 font-normal">Farmer</span>
                 </span>
               </div>
             </div>
@@ -28,10 +29,30 @@ export default function FarmerNavbar() {
           {/* Navigation */}
           <div className="hidden md:block">
             <div className="flex items-center space-x-4">
-              <NavItem icon="grid" text="Dashboard" active={false} />
-              <NavItem icon="message-square" text="Chat" active={false} />
-              <NavItem icon="help-circle" text="Help" active={false} />
-              <NavItem icon="bell" text="Notifications" active={false} />
+              <NavItem
+                icon="grid"
+                text="Home"
+                link="/farmer/home"
+                active={false}
+              />
+              <NavItem
+                icon="message-square"
+                text="Chat"
+                link="/farmer/chat"
+                active={false}
+              />
+              <NavItem
+                icon="help-circle"
+                text="Help"
+                link="/farmer/help"
+                active={false}
+              />
+              <NavItem
+                icon="bell"
+                text="Notifications"
+                link="/farmer/notifications"
+                active={false}
+              />
             </div>
           </div>
 
@@ -50,21 +71,21 @@ export default function FarmerNavbar() {
             </div>
 
             <button className="flex items-center text-sm px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">
-              <a href="/profile">Profile</a>
+              <a href="/farmer/profile">Profile</a>
             </button>
 
             <button className="flex items-center text-sm px-3 py-2 rounded-md text-red-600 hover:bg-gray-100">
               <LogOut className="mr-1 h-4 w-4" />
-              Logout
+              <a href="/">Logout</a>
             </button>
           </div>
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-function NavItem({ icon, text, active }) {
+function NavItem({ icon, text, active, link }) {
   const getIcon = (iconName) => {
     switch (iconName) {
       case "grid":
@@ -84,7 +105,7 @@ function NavItem({ icon, text, active }) {
             <rect x="14" y="14" width="7" height="7"></rect>
             <rect x="3" y="14" width="7" height="7"></rect>
           </svg>
-        )
+        );
       case "message-square":
         return (
           <svg
@@ -99,7 +120,7 @@ function NavItem({ icon, text, active }) {
           >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
-        )
+        );
       case "help-circle":
         return (
           <svg
@@ -116,17 +137,17 @@ function NavItem({ icon, text, active }) {
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-        )
+        );
       case "bell":
-        return <Bell className="h-5 w-5" />
+        return <Bell className="h-5 w-5" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <a
-      href="#"
+      href={link}
       className={`flex items-center px-3 py-2 text-sm font-medium ${
         active ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
       }`}
@@ -134,5 +155,5 @@ function NavItem({ icon, text, active }) {
       {getIcon(icon)}
       <span className="ml-2">{text}</span>
     </a>
-  )
+  );
 }

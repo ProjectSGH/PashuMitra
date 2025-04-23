@@ -1,15 +1,30 @@
 import { Edit } from "lucide-react"
+import { useState } from "react";
+import EditProfileModal from "./EditProfile";
 
-const ProfileInformation = ({ userData }) => {
+const ProfileInformation = ({ userData, onUserUpdate }) => {
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Profile Information</h2>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center transition-colors">
+        <button
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center transition-colors"
+          onClick={() => setShowModal(true)}
+        >
           <Edit className="mr-2" size={16} />
           Edit Profile
         </button>
       </div>
+
+      {showModal && (
+        <EditProfileModal
+          userData={userData}
+          onClose={() => setShowModal(false)}
+          onUpdate={onUserUpdate}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <InfoField label="Full Name" value={userData.fullName} />
@@ -19,11 +34,11 @@ const ProfileInformation = ({ userData }) => {
         <InfoField label="Village" value={userData.village} />
         <InfoField label="City/District" value={userData.city} />
         <InfoField label="State" value={userData.state} />
-        <InfoField label="Pin-Code" value={userData.pinCode} />
+        <InfoField label="Pin-Code" value={userData.pincode} />
       </div>
     </div>
-  )
-}
+  );
+};
 
 const InfoField = ({ label, value }) => {
   return (

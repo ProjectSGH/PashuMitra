@@ -31,7 +31,7 @@ const ProfileCard = ({ userData }) => {
                 {userData.village}, {userData.city}
               </p>
               <p className="text-gray-700">
-                {userData.state} - {userData.pinCode}
+                {userData.state} - {userData.pincode}
               </p>
             </div>
           </div>
@@ -40,7 +40,7 @@ const ProfileCard = ({ userData }) => {
         {/* Logout button */}
         <button className="w-full mt-6 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors">
           <LogOut className="mr-2" size={18} />
-          Logout
+          <a href="/">Logout</a>
         </button>
       </div>
     </div>

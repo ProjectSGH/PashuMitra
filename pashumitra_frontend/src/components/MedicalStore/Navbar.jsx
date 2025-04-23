@@ -50,7 +50,7 @@ const NavItem = ({ icon, text, isLogout = false }) => {
     Profile: `/${role}/profile`, // ✅ role-based path
     "Transport Requests": `/${role}/transport`,
     "Request Medicines": `/${role}/request-medicines`,
-    Logout: "/login",
+    Logout: "/",
   };
 
   return (
