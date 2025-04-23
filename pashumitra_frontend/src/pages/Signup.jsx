@@ -141,9 +141,9 @@ const SignupPage = () => {
                   <div
                     key={role}
                     onClick={() => {
-                      handleRoleSelect(role);
+                      setSelectedRole(role);
                       setDropdownOpen(false); // close on select
-                    }}
+                    }}                    
                     className={`px-4 py-2 hover:bg-blue-100 cursor-pointer text-left ${
                       selectedRole === role ? "bg-blue-100 font-semibold" : ""
                     }`}

@@ -7,11 +7,13 @@ import {
 import SignupForm from "./pages/Signup";
 import LoginForm from "./pages/Login";
 import FarmerDashboard from "./pages/Farmer/Dashboard_Farmer";
+import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
 import FarmerLayout from "./pages/Farmer/FarmerLayout"; // ⬅️ new layout
+import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
 
 const ProtectedRoute = ({ role, children }) => {
   const user = JSON.parse(localStorage.getItem("user"));
-  const allowedRoles = ["Farmer", "Doctor", "Medical"]; // List of valid roles
+  const allowedRoles = ["Farmer", "Doctor", "MedicalStore"]; // List of valid roles
   
   // Check if the user is not logged in or does not have one of the allowed roles
   if (!user || !allowedRoles.includes(user.role)) {
@@ -44,6 +46,20 @@ function App() {
           <Route index element={<FarmerDashboard />} />{" "}
           {/* This will be the default for /farmer */}
           <Route path="dashboard" element={<FarmerDashboard />} />
+        </Route>
+
+        <Route
+          path="/medicalstore"
+          element={
+            <ProtectedRoute role="Medical">
+              <MedicalLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Set the "dashboard" as the index route */}
+          <Route index element={<HomeMedical />} />{" "}
+          {/* This will be the default for /farmer */}
+          <Route path="dashboard" element={<HomeMedical />} />
         </Route>
       </Routes>
     </Router>
