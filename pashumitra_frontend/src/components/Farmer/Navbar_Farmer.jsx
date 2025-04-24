@@ -15,12 +15,11 @@ export default function FarmerNavbar() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-                  M
+                <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
+                  PM
                 </div>
                 <span className="ml-2 text-lg font-semibold">
-                  Meditech{" "}
-                  <span className="text-gray-600 font-normal">Farmer</span>
+                  PashuMitra
                 </span>
               </div>
             </div>

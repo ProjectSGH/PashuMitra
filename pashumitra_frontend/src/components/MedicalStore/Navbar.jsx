@@ -9,9 +9,9 @@ const Navbar = () => {
             <div className="flex-shrink-0">
               <div className="flex items-center">
                 <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
-                  M
+                  PM
                 </div>
-                <span className="ml-2 text-lg font-bold">Meditech</span>
+                <span className="ml-2 text-lg font-bold">PashuMitra</span>
               </div>
             </div>
             <nav className="ml-6 hidden md:flex space-x-4">
