@@ -46,10 +46,11 @@ const NavItem = ({ icon, text, isLogout = false }) => {
   const role = user?.role?.toLowerCase(); // e.g., "farmer", "medicalstore"
 
   const routes = {
-    Home: `/${role}/dashboard`,
+    Home: `/${role}/home`,
     Profile: `/${role}/profile`, // ✅ role-based path
     "Transport Requests": `/${role}/transport`,
     "Request Medicines": `/${role}/request-medicines`,
+    "Inventory": `/${role}/inventorymanagement`,
     Logout: "/",
   };
 

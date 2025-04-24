@@ -10,12 +10,15 @@ import LoginForm from "./pages/Login";
 import FarmerHome from "./pages/Farmer/FarmerHome";
 import Profile from "./pages/userprofile";
 import Home from "./pages/Home";
-import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
 import FarmerLayout from "./pages/Farmer/FarmerLayout"; 
 import FarmerMedicineBank from "./pages/Farmer/FarmerMedicineBank"
+//Medical Store
+import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
+import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
 import Transport from "./pages/MedicalStoreOwner/transportRequests";
 import RequestMedicines from "./pages/MedicalStoreOwner/requestMedicines";
-import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
+import InventoryManagement from "./pages/MedicalStoreOwner/InventoryManagement_Madical";
+
 
 const ProtectedRoute = ({ role, children }) => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -55,6 +58,7 @@ function App() {
             <Route path="profile" element={<Profile />} />{" "}
             <Route path="transport" element={<Transport />} />
             <Route path="request-medicines" element={<RequestMedicines />} />
+            <Route path="inventorymanagement" element={<InventoryManagement />} />
             {/* ✅ This profile inherits MedicalLayout */}
           </Route>
 
