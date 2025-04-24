@@ -30,7 +30,7 @@ export default function ServicesDropdown() {
     {
       icon: <AlertTriangle size={16} />,
       text: "Disease Awareness",
-      link: "/farmer/disease-awareness",
+      link: "/farmer/dieasesawarness",
     },
     {
       icon: <Package size={16} />,

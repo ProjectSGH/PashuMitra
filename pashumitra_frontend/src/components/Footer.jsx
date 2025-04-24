@@ -9,9 +9,9 @@ const Footer = () => {
           <div>
             <div className="flex items-center mb-4">
               <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
+                <span className="text-white font-bold text-lg">PM</span>
               </div>
-              <span className="ml-2 text-lg font-semibold text-gray-900">Meditech</span>
+              <span className="ml-2 text-lg font-semibold text-gray-900">PashuMitra</span>
             </div>
             <p className="text-gray-600 text-sm mb-4">
               Transforming animal healthcare accessibility and management for rural communities and veterinary
@@ -101,7 +101,7 @@ const Footer = () => {
               <li className="flex">
                 <MapPin size={18} className="text-blue-600 mr-2 flex-shrink-0" />
                 <span className="text-gray-600 text-sm">
-                  Meditech Headquarters
+                  PashuMitra Headquarters
                   <br />
                   123 Rural Road, District Zone
                   <br />
@@ -110,8 +110,8 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Mail size={18} className="text-blue-600 mr-2 flex-shrink-0" />
-                <a href="mailto:info@meditech.org" className="text-gray-600 text-sm hover:text-blue-600">
-                  info@meditech.org
+                <a href="mailto:info@PashuMitra.org" className="text-gray-600 text-sm hover:text-blue-600">
+                  info@PashuMitra.org
                 </a>
               </li>
               <li className="flex items-center">
@@ -126,7 +126,7 @@ const Footer = () => {
 
         {/* Bottom Footer */}
         <div className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm mb-4 md:mb-0">© 2023 Meditech. All rights reserved.</p>
+          <p className="text-gray-500 text-sm mb-4 md:mb-0">© 2023 PashuMitra. All rights reserved.</p>
           <div className="flex space-x-6">
             <a href="#" className="text-gray-500 hover:text-blue-600 text-sm">
               Privacy Policy

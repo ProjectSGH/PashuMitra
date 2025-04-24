@@ -12,6 +12,8 @@ import Profile from "./pages/userprofile";
 import Home from "./pages/Home";
 import FarmerLayout from "./pages/Farmer/FarmerLayout"; 
 import FarmerMedicineBank from "./pages/Farmer/FarmerMedicineBank"
+import MedicineTransportSystem from "./pages/Farmer/MedicineTransportSystem_Farmer"
+import DieasesAwarness from "./pages/Farmer/DieasesAwarness"; // Import the new component
 //Medical Store
 import MedicalLayout from "./pages/MedicalStoreOwner/MedicalLayout"; // ⬅️ new layout
 import HomeMedical from "./pages/MedicalStoreOwner/Home_Medical";
@@ -74,6 +76,8 @@ function App() {
             <Route path="home" element={<FarmerHome />} />
             <Route path="profile" element={<Profile />} />{" "}
             <Route path="medicinebank" element={<FarmerMedicineBank />} />{" "}
+            <Route path="dieasesawarness" element={<DieasesAwarness />} />{" "}
+            <Route path="transport" element={<MedicineTransportSystem />} />{" "}
             {/* ✅ This profile inherits FarmerLayout */}
           </Route>
         </Routes>
