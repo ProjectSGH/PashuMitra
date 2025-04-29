@@ -1,5 +1,6 @@
 import { Home, Package, Truck, Pill, Building2, Clock, User, Bell, HelpCircle, LogOut } from "lucide-react"
 import { Link } from "react-router-dom";
+import resources from "../../resource";
 const Navbar = () => {
   return (
     <header className="bg-white shadow-sm">
@@ -8,9 +9,14 @@ const Navbar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
+                {/* <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
                   PM
-                </div>
+                </div> */}
+                <img
+                  src={resources.Logo.src}
+                  alt="Logo"
+                  className="h-8 w-8 rounded-md"
+                />
                 <span className="ml-2 text-lg font-bold">PashuMitra</span>
               </div>
             </div>
@@ -21,6 +27,7 @@ const Navbar = () => {
               <NavItem icon={<Pill size={18} />} text="Request Medicines" />
               <NavItem icon={<Building2 size={18} />} text="Medicine Bank" />
               <NavItem icon={<Clock size={18} />} text="Expiry Alerts" />
+              <NavItem text="About" />
             </nav>
           </div>
           <div className="hidden md:flex items-center space-x-4">
@@ -51,6 +58,7 @@ const NavItem = ({ icon, text, isLogout = false }) => {
     "Transport Requests": `/${role}/transport`,
     "Request Medicines": `/${role}/request-medicines`,
     "Inventory": `/${role}/inventorymanagement`,
+    "About": `/${role}/about`,
     Logout: "/",
   };
 

@@ -6,6 +6,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import AboutPage from "./pages/About";
 import SignupForm from "./pages/Signup";
 import LoginForm from "./pages/Login";
 import FarmerHome from "./pages/Farmer/FarmerHome";
@@ -63,6 +64,7 @@ function App() {
               <Route path="transport" element={<MedicineTransportSystem />} />
               <Route path="emergency" element={<MedicalEmergency />} />
               <Route path="chat" element={<ExpertChatApp />} />
+              <Route path="about" element={<AboutPage />} />
             </Route>
           </Route>
 
@@ -75,6 +77,7 @@ function App() {
               <Route path="transport" element={<Transport />} />
               <Route path="request-medicines" element={<RequestMedicines />} />
               <Route path="inventorymanagement" element={<InventoryManagement />} />
+              <Route path="about" element={<AboutPage />} />
             </Route>
           </Route>
         </Routes>

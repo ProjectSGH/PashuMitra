@@ -3,6 +3,7 @@
 import { ChevronDown, Bell, LogOut } from "lucide-react";
 import ServicesDropdown from "./Home/Service_Dropdown_Farmer";
 import { useState } from "react";
+import resources from "../../resource";
 
 export default function FarmerNavbar() {
   const [showServices, setShowServices] = useState(false);
@@ -15,9 +16,14 @@ export default function FarmerNavbar() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
+                {/* <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold">
                   PM
-                </div>
+                </div> */}
+                <img
+                  src={resources.Logo.src}
+                  alt="Logo"
+                  className="h-8 w-8 rounded-md"
+                />
                 <span className="ml-2 text-lg font-semibold">
                   PashuMitra
                 </span>
@@ -50,6 +56,12 @@ export default function FarmerNavbar() {
                 icon="bell"
                 text="Notifications"
                 link="/farmer/notifications"
+                active={false}
+              />
+              <NavItem
+                icon=""
+                text="About"
+                link="/farmer/about"
                 active={false}
               />
             </div>
