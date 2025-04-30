@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useRef } from "react"
 import { motion, useInView } from "framer-motion"
-import { Users, ShoppingBag, Truck, Clock } from "lucide-react"
+import {
+  Stethoscope,
+  PackageCheck,
+  Truck,
+  PhoneCall,
+  CalendarCheck,
+  HeartHandshake,
+  MessageCircleHeart,
+} from "lucide-react"
 
 export default function ImpactSection() {
   const ref = useRef(null)
@@ -10,37 +18,55 @@ export default function ImpactSection() {
 
   const stats = [
     {
-      icon: Users,
-      value: 5000,
-      label: "Farmers Served",
+      icon: Stethoscope,
+      value: 4200,
+      label: "Emergency Consultations",
       color: "bg-blue-600",
     },
     {
-      icon: ShoppingBag,
-      value: 12500,
-      label: "Crops Sold Directly",
+      icon: PackageCheck,
+      value: 9800,
+      label: "Medicines Delivered",
       color: "bg-green-600",
     },
     {
       icon: Truck,
-      value: 3200,
-      label: "Medicine Deliveries",
+      value: 1600,
+      label: "Transport Requests Completed",
       color: "bg-amber-600",
     },
     {
-      icon: Clock,
-      value: 8500,
-      label: "Hours of Consultation",
+      icon: PhoneCall,
+      value: 3100,
+      label: "Helpline Calls Assisted",
       color: "bg-purple-600",
+    },
+    {
+      icon: CalendarCheck,
+      value: 2200,
+      label: "Seasonal Awareness Drives",
+      color: "bg-indigo-600",
+    },
+    {
+      icon: HeartHandshake,
+      value: 1350,
+      label: "Medicine Donations Processed",
+      color: "bg-rose-600",
+    },
+    {
+      icon: MessageCircleHeart,
+      value: 2750,
+      label: "Chats with Experts",
+      color: "bg-teal-600",
     },
   ]
 
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">Our Impact & Benefits</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">Our Veterinary Impact</h2>
 
-        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {stats.map((stat, index) => (
             <motion.div
               key={index}
@@ -49,9 +75,7 @@ export default function ImpactSection() {
               transition={{ duration: 0.5, delay: index * 0.2 }}
               className="bg-white rounded-2xl shadow-md p-6 text-center"
             >
-              <div
-                className={`${stat.color} text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4`}
-              >
+              <div className={`${stat.color} text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4`}>
                 <stat.icon className="h-8 w-8" />
               </div>
               <CountUp

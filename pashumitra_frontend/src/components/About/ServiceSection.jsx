@@ -1,39 +1,46 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { HelpingHand, Leaf, PackageCheck, MessageSquare, FileText, GraduationCap } from "lucide-react"
+import {
+  PackageCheck,
+  MessageCircleHeart,
+  Truck,
+  PhoneCall,
+  CalendarClock,
+  HandHeart,
+} from "lucide-react"
 
 export default function ServicesSection() {
   const services = [
     {
       icon: PackageCheck,
-      title: "Medicine Transport",
-      description: "Fast delivery of veterinary medicines from alternate stores to remote areas",
+      title: "Medicine Inventory System",
+      description: "Check availability of veterinary medicines across nearby stores.",
     },
     {
-      icon: Leaf,
-      title: "Direct Crop Trading",
-      description: "Sell and buy crops directly without middlemen for better profits",
+      icon: Truck,
+      title: "Medicine Transport System",
+      description: "Request transport of medicines from alternate nearby stores.",
     },
     {
-      icon: MessageSquare,
-      title: "Expert Consultation",
-      description: "Chat with agricultural and veterinary experts for timely advice",
+      icon: MessageCircleHeart,
+      title: "Expert Consultation Portal",
+      description: "Chat with veterinary doctors for emergencies and guidance.",
     },
     {
-      icon: FileText,
-      title: "Government Schemes",
-      description: "Access information about government schemes and subsidies",
+      icon: PhoneCall,
+      title: "Emergency Helpline",
+      description: "Get immediate contact support for animal-related emergencies.",
     },
     {
-      icon: GraduationCap,
-      title: "Educational Portal",
-      description: "Learn modern farming techniques and best practices",
+      icon: CalendarClock,
+      title: "Predictive Medicine Supply",
+      description: "Forecast medicine demand based on seasonal diseases.",
     },
     {
-      icon: HelpingHand,
-      title: "Community Support",
-      description: "Connect with other farmers and share knowledge",
+      icon: HandHeart,
+      title: "Community Medicine Bank",
+      description: "Receive donated medicines from NGOs and government initiatives.",
     },
   ]
 
@@ -59,7 +66,7 @@ export default function ServicesSection() {
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">What We Do</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">Our Veterinary Services</h2>
 
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
