@@ -8,7 +8,7 @@ export default function HeroSection() {
   return (
     <div className="relative overflow-hidden">
       <div className="container mx-auto">
-        <div className="flex flex-col-reverse lg:flex-row min-h-[80vh] items-center">
+        <div className="flex flex-col-reverse lg:flex-row min-h-[60vh] items-center">
           {/* Content Side */}
           <motion.div
             className="w-full lg:w-1/2 py-12 px-4 lg:px-8 z-10"
@@ -30,13 +30,13 @@ export default function HeroSection() {
           </motion.div>
 
           {/* Image Side with Diagonal Cut */}
-          <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[80vh]">
-            <div className="absolute inset-0 bg-blue-600 transform -skew-x-12 origin-top-right scale-110"></div>
+          <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[60vh]">
+            {/* <div className="absolute inset-0 bg-blue-600 transform -skew-x-0 origin-top-right scale-110"></div> */}
             <div
               className="absolute inset-0 bg-cover bg-center transform -skew-x-12 origin-top-right scale-110"
               style={{
                 backgroundImage: `url(${resources.About.src})`,
-                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)",
+                clipPath: "polygon(0 0, 100% 0%, 100% 100%, 0% 100%)",
               }}
             ></div>
           </div>
