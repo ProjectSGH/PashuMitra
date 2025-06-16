@@ -1,9 +1,16 @@
-import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Mail,
+  Phone,
+  MapPin,
+} from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="bg-white pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Company Info */}
           <div>
@@ -11,11 +18,13 @@ const Footer = () => {
               <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
                 <span className="text-white font-bold text-lg">PM</span>
               </div>
-              <span className="ml-2 text-lg font-semibold text-gray-900">PashuMitra</span>
+              <span className="ml-2 text-lg font-semibold text-gray-900">
+                PashuMitra
+              </span>
             </div>
             <p className="text-gray-600 text-sm mb-4">
-              Transforming animal healthcare accessibility and management for rural communities and veterinary
-              professionals.
+              Transforming animal healthcare accessibility and management for
+              rural communities and veterinary professionals.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-500 hover:text-blue-600">
@@ -35,27 +44,42 @@ const Footer = () => {
             <h3 className="text-gray-900 font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Home
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Medicine Inventory
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Dashboard
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Expert Consultation
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Community Medicine Bank
                 </a>
               </li>
@@ -67,27 +91,42 @@ const Footer = () => {
             <h3 className="text-gray-900 font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Emergency Helpline
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Awareness Portal
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Health Articles
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   FAQs
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-blue-600 text-sm">
+                <a
+                  href="#"
+                  className="text-gray-600 hover:text-blue-600 text-sm"
+                >
                   Contact Us
                 </a>
               </li>
@@ -99,25 +138,36 @@ const Footer = () => {
             <h3 className="text-gray-900 font-semibold mb-4">Contact</h3>
             <ul className="space-y-3">
               <li className="flex">
-                <MapPin size={18} className="text-blue-600 mr-2 flex-shrink-0" />
+                <MapPin
+                  size={18}
+                  className="text-blue-600 mr-2 flex-shrink-0"
+                />
                 <span className="text-gray-600 text-sm">
                   PashuMitra Headquarters
                   <br />
-                  123 Rural Road, District Zone
+                  U.V. Patel College of Engineering - Ganpat University, Kherva,
                   <br />
-                  Agriculture Region, PIN-123456
+                  Mehsana, Gujarat, India
                 </span>
               </li>
               <li className="flex items-center">
                 <Mail size={18} className="text-blue-600 mr-2 flex-shrink-0" />
-                <a href="mailto:info@PashuMitra.org" className="text-gray-600 text-sm hover:text-blue-600">
-                  info@PashuMitra.org
+                <a
+                  href="mailto:info.hexcodebreaker@gmail.com"
+                  className="text-gray-600 text-sm hover:text-blue-600"
+                >
+                  info.hexcodebreaker@gmail.com
                 </a>
               </li>
               <li className="flex items-center">
                 <Phone size={18} className="text-blue-600 mr-2 flex-shrink-0" />
-                <a href="tel:+911234567890" className="text-gray-600 text-sm hover:text-blue-600">
-                  +91 123-456-7890
+                <a
+                  href="tel:+919316846548"
+                  className="text-gray-600 text-sm hover:text-blue-600"
+                >
+                  +91 93168 46548 (Project Query) <br />
+                  +91 90238 97448 (Service Query) <br />
+                  +91 70435 69445 (Interface Query)
                 </a>
               </li>
             </ul>
@@ -126,7 +176,9 @@ const Footer = () => {
 
         {/* Bottom Footer */}
         <div className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm mb-4 md:mb-0">© 2023 PashuMitra. All rights reserved.</p>
+          <p className="text-gray-500 text-sm mb-4 md:mb-0">
+            © 2023 PashuMitra. All rights reserved.
+          </p>
           <div className="flex space-x-6">
             <a href="#" className="text-gray-500 hover:text-blue-600 text-sm">
               Privacy Policy
@@ -141,7 +193,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;
