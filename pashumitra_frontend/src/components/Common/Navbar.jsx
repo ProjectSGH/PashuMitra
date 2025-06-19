@@ -75,13 +75,13 @@ const Navbar = () => {
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-5 space-x-2">
               <a
-                href="#"
+                href="/login"
                 className="text-gray-600 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"
               >
                 Login
               </a>
               <a
-                href="#"
+                href="/signup"
                 className="bg-blue-600 text-white block px-4 py-2 rounded-md text-base font-medium hover:bg-blue-700"
               >
                 Get Started
