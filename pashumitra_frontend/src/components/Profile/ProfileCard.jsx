@@ -1,3 +1,4 @@
+import { User } from "lucide-react"
 import { Mail, Phone, MapPin, LogOut } from "lucide-react"
 
 const ProfileCard = ({ userData }) => {
@@ -46,8 +47,5 @@ const ProfileCard = ({ userData }) => {
     </div>
   )
 }
-
-// Add the User icon import at the top
-import { User } from "lucide-react"
 
 export default ProfileCard

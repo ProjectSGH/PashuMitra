@@ -3,6 +3,7 @@ const connectDB = require("./config/db");
 const cors = require('cors');
 const dotenv = require('dotenv');
 const userRoutes = require('./routes/userRoutes')
+const medicalStoreRoutes = require('./routes/medicalStoreVarificationRoutes');
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/users', userRoutes);
-
+app.use('/api/medicalstore', medicalStoreRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
