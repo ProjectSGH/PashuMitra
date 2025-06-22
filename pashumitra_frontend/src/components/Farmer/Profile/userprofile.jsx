@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ProfileHeader from "../components/Profile/ProfileHeader";
-import ProfileCard from "../components/Profile/ProfileCard";
-import ProfileInformation from "../components/Profile/ProfileInformation";
+import ProfileHeader from "./ProfileHeader";
+import ProfileCard from "./ProfileCard";
+import ProfileInformation from "./ProfileInformation";
 import StoreVerificationForm from "../components/MedicalStore/MedicalStoreVarification";
 import MedicalStoreCard from "../components/MedicalStore/MedicalStoreCard";
 
