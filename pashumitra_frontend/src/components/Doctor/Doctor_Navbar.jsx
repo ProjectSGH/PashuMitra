@@ -1,10 +1,19 @@
-import React from "react"
-import { useNavigate } from "react-router-dom"
-import { motion } from "framer-motion"
-import { Bell, MessageCircle, History, AlertCircle, User, Home } from "lucide-react"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Bell,
+  MessageCircle,
+  History,
+  AlertCircle,
+  User,
+  Home,
+  LogOut,
+} from "lucide-react";
 
 export default function Navbar() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const navItems = [
     { name: "Home", icon: Home, path: "/doctor/home" },
@@ -12,7 +21,15 @@ export default function Navbar() {
     { name: "Patient_History", icon: History, path: "/doctor/Patient_History" },
     { name: "Awareness", icon: AlertCircle, path: "/doctor/Awareness" },
     { name: "Profile", icon: User, path: "/doctor/Profile" },
-  ]
+  ];
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      localStorage.removeItem("token");
+      navigate("/login");
+    }, 600); // Wait for animation
+  };
 
   return (
     <motion.header
@@ -56,8 +73,9 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Notification */}
+          {/* Notification + Logout */}
           <div className="flex items-center space-x-4">
+            {/* Notification Bell */}
             <motion.button
               className="relative p-2 text-gray-600 hover:text-gray-900"
               whileHover={{ scale: 1.1 }}
@@ -66,9 +84,27 @@ export default function Navbar() {
               <Bell className="w-6 h-6" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </motion.button>
+
+            {/* Logout Button */}
+            <AnimatePresence>
+              {!isLoggingOut && (
+                <motion.button
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  transition={{ duration: 0.6 }}
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
     </motion.header>
-  )
+  );
 }
