@@ -7,7 +7,7 @@ export default function Navbar() {
   const navigate = useNavigate()
 
   const navItems = [
-    { name: "Home", icon: Home, path: "/" },
+    { name: "Home", icon: Home, path: "/doctor/home" },
     { name: "Consultations", icon: MessageCircle, path: "/doctor/consultations" },
     { name: "Patient History", icon: History, path: "/doctor/history" },
     { name: "Awareness", icon: AlertCircle, path: "/doctor/awareness" },
