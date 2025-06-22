@@ -1,6 +1,6 @@
-import { Outlet } from "lucide-react";
-import Navbar from "../../components/Common/Navbar";
-import Footer from "../../components/Common/Footer";
+import { Outlet } from "react-router-dom";
+import Navbar from "../../components/Doctor/Doctor_Navbar";
+import Footer from "../../components/Doctor/Doctor_Footer";
 
 const DoctorLayout = () => {
   return (

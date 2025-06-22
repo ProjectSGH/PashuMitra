@@ -9,6 +9,9 @@ import { Toaster } from "react-hot-toast";
 import SignupForm from "./pages/Signup";
 import LoginForm from "./pages/Login";
 import Home from "./pages/Home";
+import Doctor_Home from "./pages/Doctor/Home_Doctor";
+import DoctorLayout from "./pages/Layouts/DoctorLayout";
+
 // Role-based Route Protection
 const ProtectedRoute = ({ role }) => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -36,8 +39,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<SignupForm />} />
+
+          {/* Protected Doctor Routes */}
+          <Route element={<ProtectedRoute role="Doctor" />}>
+            <Route path="/doctor" element={<DoctorLayout />}>
+              <Route path="home" element={<Doctor_Home />} />
+            </Route>
+          </Route>
         </Routes>
-        
       </Router>
     </>
   );
