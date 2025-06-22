@@ -1,15 +1,17 @@
-// components/Navbar.jsx
 import React from "react"
+import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { Bell, MessageCircle, History, AlertCircle, User, Home } from "lucide-react"
 
 export default function Navbar() {
+  const navigate = useNavigate()
+
   const navItems = [
-    { name: "Home", icon: Home, active: true },
-    { name: "Consultations", icon: MessageCircle },
-    { name: "Patient History", icon: History },
-    { name: "Awareness", icon: AlertCircle },
-    { name: "Profile", icon: User },
+    { name: "Home", icon: Home, path: "/" },
+    { name: "Consultations", icon: MessageCircle, path: "/doctor/consultations" },
+    { name: "Patient History", icon: History, path: "/doctor/history" },
+    { name: "Awareness", icon: AlertCircle, path: "/doctor/awareness" },
+    { name: "Profile", icon: User, path: "/doctor/profile" },
   ]
 
   return (
@@ -23,7 +25,12 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <motion.div className="flex items-center" whileHover={{ scale: 1.05 }}>
-            <h1 className="text-2xl font-bold text-blue-600">VetPortal</h1>
+            <h1
+              className="text-2xl font-bold text-blue-600 cursor-pointer"
+              onClick={() => navigate("/")}
+            >
+              VetPortal
+            </h1>
           </motion.div>
 
           {/* Navigation */}
@@ -31,8 +38,9 @@ export default function Navbar() {
             {navItems.map((item, index) => (
               <motion.button
                 key={item.name}
+                onClick={() => navigate(item.path)}
                 className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  item.active
+                  window.location.pathname === item.path
                     ? "bg-blue-600 text-white"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 }`}
