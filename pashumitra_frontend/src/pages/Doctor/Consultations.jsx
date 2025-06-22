@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { MessageCircle, Video, FileText, ChevronDown, Clock } from "lucide-react"
 
 const consultationsData = [
@@ -44,6 +44,17 @@ const consultationsData = [
     timeAgo: "2 hours ago",
     actions: ["View Summary"],
   },
+
+  {
+    id: 4,
+    patientName: "Johnson",
+    animalType: "Sheep",
+    priority: "Low",
+    status: "Completed",
+    issue: "Vaccination schedule consultation",
+    timeAgo: "2 hours ago",
+    actions: ["View Summary"],
+  },
 ]
 
 const priorityColors = {
@@ -68,37 +79,10 @@ const buttonStyles = {
 export default function Consultations() {
   const [statusFilter, setStatusFilter] = useState("All Status")
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  }
-
-  const cardVariants = {
-    hidden: {
-      opacity: 0,
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut",
-      },
-    },
-    hover: {
-      y: -4,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
-    },
-  }
+  const filteredConsultations =
+    statusFilter === "All Status"
+      ? consultationsData
+      : consultationsData.filter((item) => item.status === statusFilter)
 
   const getButtonIcon = (action) => {
     switch (action) {
@@ -129,7 +113,11 @@ export default function Consultations() {
             <p className="text-gray-600 text-sm md:text-base">Manage your consultation requests and ongoing sessions</p>
           </div>
 
-          <motion.div className="relative" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -147,68 +135,95 @@ export default function Consultations() {
         {/* Consultations Grid */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6"
-          variants={containerVariants}
           initial="hidden"
           animate="visible"
+          variants={{
+            visible: {
+              transition: {
+                staggerChildren: 0.1,
+              },
+            },
+          }}
         >
-          {consultationsData.map((consultation) => (
-            <motion.div
-              key={consultation.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
-              variants={cardVariants}
-              whileHover="hover"
-            >
-              {/* Patient Info */}
-              <div className="mb-4">
-                <h3 className="font-semibold text-gray-900 text-lg mb-1">{consultation.patientName}</h3>
-                <p className="text-gray-600 text-sm">{consultation.animalType}</p>
-              </div>
-
-              {/* Priority and Status Badges */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <motion.span
-                  className={`px-3 py-1 rounded-full text-xs font-medium border ${priorityColors[consultation.priority]}`}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  {consultation.priority} Priority
-                </motion.span>
-                <motion.span
-                  className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[consultation.status]}`}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  {consultation.status}
-                </motion.span>
-              </div>
-
-              {/* Issue Description */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Issue:</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{consultation.issue}</p>
-              </div>
-
-              {/* Time and Actions */}
-              <div className="space-y-3">
-                <div className="flex items-center text-xs text-gray-500">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {consultation.timeAgo}
+          <AnimatePresence>
+            {filteredConsultations.map((consultation, index) => (
+              <motion.div
+                key={consultation.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-200"
+                variants={{
+                  hidden: { opacity: 0, y: 30, scale: 0.95 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    transition: {
+                      duration: 0.5,
+                      delay: index * 0.1,
+                    },
+                  },
+                  exit: {
+                    opacity: 0,
+                    scale: 0.9,
+                    transition: { duration: 0.3 },
+                  },
+                }}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                {/* Patient Info */}
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 text-lg mb-1">{consultation.patientName}</h3>
+                  <p className="text-gray-600 text-sm">{consultation.animalType}</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {consultation.actions.map((action, index) => (
-                    <motion.button
-                      key={index}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 ${buttonStyles[action]}`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {getButtonIcon(action)}
-                      {action}
-                    </motion.button>
-                  ))}
+                {/* Priority and Status Badges */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <motion.span
+                    className={`px-3 py-1 rounded-full text-xs font-medium border ${priorityColors[consultation.priority]}`}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {consultation.priority} Priority
+                  </motion.span>
+                  <motion.span
+                    className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[consultation.status]}`}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {consultation.status}
+                  </motion.span>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+
+                {/* Issue Description */}
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Issue:</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">{consultation.issue}</p>
+                </div>
+
+                {/* Time and Actions */}
+                <div className="space-y-3">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {consultation.timeAgo}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {consultation.actions.map((action, index) => (
+                      <motion.button
+                        key={index}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 ${buttonStyles[action]}`}
+                        whileHover={{ scale: 1.07 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {getButtonIcon(action)}
+                        {action}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       </div>
     </div>
