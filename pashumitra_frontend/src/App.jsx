@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 
 // Modular Routes
 import doctorRoutes from "./pages/Routes/Doctor_Routes";
+import FarmerRoutes from "./pages/Routes/Farmer_Routes";
 
 function App() {
   return (
@@ -24,6 +25,8 @@ function App() {
 
           {/* Role-based Routes */}
           {doctorRoutes}
+          {FarmerRoutes}
+
         </Routes>
       </Router>
     </>
