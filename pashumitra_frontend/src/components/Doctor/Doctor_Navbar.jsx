@@ -10,8 +10,8 @@ export default function Navbar() {
     { name: "Home", icon: Home, path: "/doctor/home" },
     { name: "Consultations", icon: MessageCircle, path: "/doctor/consultations" },
     { name: "Patient_History", icon: History, path: "/doctor/Patient_History" },
-    { name: "Awareness", icon: AlertCircle, path: "/doctor/awareness" },
-    { name: "Profile", icon: User, path: "/doctor/profile" },
+    { name: "Awareness", icon: AlertCircle, path: "/doctor/Awareness" },
+    { name: "Profile", icon: User, path: "/doctor/Profile" },
   ]
 
   return (

@@ -4,6 +4,8 @@ import DoctorLayout from "../../pages/Layouts/DoctorLayout";
 import HomeDoctor from "../../pages/Doctor/Home_Doctor";
 import Consultations from "../../pages/Doctor/Consultations"; // fixed path
 import PatientHistory from "../Doctor/Patient_History";
+import AwarenessContributions from "../Doctor/Awareness";
+import ProfileSchedule from "../Doctor/Profile";
 
 const DoctorRoutes = (
   <Route element={<ProtectedRoute role="Doctor" />}>
@@ -12,6 +14,8 @@ const DoctorRoutes = (
       <Route path="home" element={<HomeDoctor />} />
       <Route path="consultations" element={<Consultations />} />
       <Route path="Patient_History" element={<PatientHistory />} />
+      <Route path="Awareness" element={<AwarenessContributions />} />
+      <Route path="Profile" element={<ProfileSchedule />} />
     </Route>
   </Route>
 );
