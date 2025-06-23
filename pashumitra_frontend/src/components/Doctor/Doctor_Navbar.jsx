@@ -18,7 +18,7 @@ export default function Navbar() {
   const navItems = [
     { name: "Home", icon: Home, path: "/doctor/home" },
     { name: "Consultations", icon: MessageCircle, path: "/doctor/consultations" },
-    { name: "Patient_History", icon: History, path: "/doctor/Patient_History" },
+    { name: "Patient History", icon: History, path: "/doctor/Patient_History" },
     { name: "Awareness", icon: AlertCircle, path: "/doctor/Awareness" },
     { name: "Profile", icon: User, path: "/doctor/Profile" },
   ];
