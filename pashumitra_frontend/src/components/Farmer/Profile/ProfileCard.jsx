@@ -1,5 +1,5 @@
-import { User } from "lucide-react"
-import { Mail, Phone, MapPin, LogOut } from "lucide-react"
+import { User } from "lucide-react";
+import { Mail, Phone, MapPin, LogOut } from "lucide-react";
 
 const ProfileCard = ({ userData }) => {
   return (
@@ -9,7 +9,9 @@ const ProfileCard = ({ userData }) => {
         <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4">
           <User className="text-blue-600" size={48} />
         </div>
-        <h2 className="text-white text-xl font-bold">{userData.fullName}</h2>
+        <h2 className="text-white text-xl font-bold">
+          {userData.fullName || userData.farmerProfile?.fullName}
+        </h2>
         <p className="text-white text-sm opacity-90">{userData.role}</p>
       </div>
 
@@ -25,14 +27,19 @@ const ProfileCard = ({ userData }) => {
             <span className="text-gray-700">{userData.phone}</span>
           </div>
           <div className="flex">
-            <MapPin className="text-gray-400 mr-3 mt-1 flex-shrink-0" size={18} />
+            <MapPin
+              className="text-gray-400 mr-3 mt-1 flex-shrink-0"
+              size={18}
+            />
             <div>
-              <p className="text-gray-700">{userData.address}</p>
+              <p className="text-gray-700">{userData.farmerProfile?.address}</p>
               <p className="text-gray-700">
-                {userData.village}, {userData.city}
+                {userData.farmerProfile?.village},{" "}
+                {userData.farmerProfile?.city}
               </p>
               <p className="text-gray-700">
-                {userData.state} - {userData.pincode}
+                {userData.farmerProfile?.state} -{" "}
+                {userData.farmerProfile?.pincode}
               </p>
             </div>
           </div>
@@ -45,7 +52,7 @@ const ProfileCard = ({ userData }) => {
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProfileCard
+export default ProfileCard;

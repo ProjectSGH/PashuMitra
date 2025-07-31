@@ -4,7 +4,8 @@ import {
   Route,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import SignupForm from "./pages/Signup";
+import FarmerSignup from "./pages/Farmer/Signup_Farmer";
+import RoleSelector from "./pages/RoleSelector";
 import LoginForm from "./pages/Login";
 import Home from "./pages/Home";
 
@@ -22,7 +23,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginForm />} />
-          <Route path="/signup" element={<SignupForm />} />
+          <Route path="/signup" element={<RoleSelector />} />
+          <Route path="/signup/farmer" element={<FarmerSignup />} />
 
           {/* Role-based Routes */}
           {doctorRoutes}
