@@ -8,6 +8,7 @@ import FarmerSignup from "./pages/Farmer/Signup_Farmer";
 import RoleSelector from "./pages/RoleSelector";
 import LoginForm from "./pages/Login";
 import Home from "./pages/Home";
+import DoctorSignup from "./pages/Doctor/Signup_Doctor";
 
 // Modular Routes
 import doctorRoutes from "./pages/Routes/Doctor_Routes";
@@ -25,6 +26,7 @@ function App() {
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<RoleSelector />} />
           <Route path="/signup/farmer" element={<FarmerSignup />} />
+          <Route path="/signup/doctor" element={<DoctorSignup />} />
 
           {/* Role-based Routes */}
           {doctorRoutes}

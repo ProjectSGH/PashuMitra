@@ -7,6 +7,7 @@ const {loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 
 router.post('/signup/farmer', userController.registerFarmer );
+router.post('/signup/doctor', userController.registerDoctor);
 router.post('/login', loginUser);
 
 router.get('/:id', async (req, res) => {
