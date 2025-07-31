@@ -94,11 +94,12 @@ export default function Header() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
-                    }`}
+                    className={`px-3 py-2 text-sm font-medium transition-colors ${
+  isActive
+    ? "bg-blue-600 text-white border-blue-600 rounded-full"
+    : "text-gray-700 border-gray-300 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-600"
+}`}
+
                   >
                     {item.name}
                   </motion.button>
