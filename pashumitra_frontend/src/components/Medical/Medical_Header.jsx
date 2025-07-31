@@ -171,7 +171,7 @@ export default function Header() {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => navigate("/farmer/profile")}
+              onClick={() => navigate("/medical/Profile")}
               className="p-1"
             >
               <User className="h-6 w-6 text-gray-600 cursor-pointer" />
