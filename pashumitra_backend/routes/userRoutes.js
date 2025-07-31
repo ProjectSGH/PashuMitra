@@ -1,31 +1,75 @@
 // routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
-const User = require("../models/User");
-const { registerUser, loginUser } = require('../controllers/userController');
+const User = require('../models/UserModel'); 
+const Farmer = require('../models/FarmerModel'); 
+const {loginUser } = require('../controllers/userController');
+const userController = require('../controllers/userController');
 
-router.post('/register', registerUser);
+router.post('/signup/farmer', userController.registerFarmer );
 router.post('/login', loginUser);
 
-router.get("/:id", async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.role === 'Farmer') {
+      const farmerData = await Farmer.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), farmerProfile: farmerData });
+    }
+
+    res.json(user); // fallback
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in GET /:id:", err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
 router.put("/:id", async (req, res) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const userId = req.params.id;
+
+    // Update User collection
+    const userUpdateFields = {
+      email: req.body.email,
+      phone: req.body.phone,
+      fullName: req.body.fullName,
+      isVerified: req.body.isVerified,
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(userId, userUpdateFields, {
       new: true,
       runValidators: true,
     }).select("-password");
-    res.json(updatedUser);
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // If role is Farmer, also update FarmerModel
+    if (updatedUser.role === "Farmer") {
+      const farmerUpdateFields = {
+        fullName: req.body.fullName,
+        address: req.body.address,
+        village: req.body.village,
+        city: req.body.city,
+        state: req.body.state,
+        pincode: req.body.pincode,
+      };
+
+      await Farmer.findOneAndUpdate(
+        { userId },
+        farmerUpdateFields,
+        { new: true, runValidators: true }
+      );
+    }
+
+    res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+
   } catch (err) {
-    res.status(500).json({ message: "Update failed", error: err });
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Update failed", error: err.message });
   }
 });
 
