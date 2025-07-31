@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 // Modular Routes
 import doctorRoutes from "./pages/Routes/Doctor_Routes";
 import FarmerRoutes from "./pages/Routes/Farmer_Routes";
+import MedicalStoreRoutes from "./pages/Routes/MedicalStore_Routes";
 
 function App() {
   return (
@@ -26,6 +27,9 @@ function App() {
           {/* Role-based Routes */}
           {doctorRoutes}
           {FarmerRoutes}
+          {MedicalStoreRoutes}
+
+          {/* Fallback Route */}
 
         </Routes>
       </Router>

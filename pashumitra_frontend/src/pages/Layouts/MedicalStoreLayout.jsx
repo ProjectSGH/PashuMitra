@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import Navbar from "../../components/Common/Navbar";
-import Footer from "../../components/Common/Footer";
+import Navbar from "../../components/Medical/Medical_Header";
+import Footer from "../../components/Medical/Medical_footer";
 
 const MedicalStoreLayout = () => {
   return (
