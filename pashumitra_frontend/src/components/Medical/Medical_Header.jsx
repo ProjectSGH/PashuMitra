@@ -52,12 +52,13 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   const navItems = [
-    { name: "Home", href: "/farmer/home" },
-    { name: "Search Medicine", href: "/farmer/medicine-search" },
-    { name: "Nearby Stores", href: "/farmer/nearbystore" },
-    { name: "Consult Doctor", href: "/farmer/doctor-consult" },
-    { name: "Awareness", href: "/farmer/awareness" },
-    { name: "Community Bank", href: "/farmer/community-bank" },
+    { name: "Home", href: "/medical/home" },
+    { name: "inventory", href: "/medical/inventory" },
+    { name: "Requests", href: "/medical/Requests" },
+    { name: "Transfer", href: "/medical/Transfer" },
+    { name: "Transport", href: "/medical/Transport" },
+    { name: "Community Bank", href: "/medical/community-bank" },
+    { name: "Profile", href: "/medical/Profile" },
   ];
 
   return (
