@@ -16,5 +16,10 @@
     "url": "https://github.com/ProjectSGH/PashuMitra/issues"
   },
   "homepage": "https://github.com/ProjectSGH/PashuMitra#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "cloudinary": "^2.7.0",
+    "multer": "^2.0.2",
+    "streamifier": "^0.1.1"
+  }
 }

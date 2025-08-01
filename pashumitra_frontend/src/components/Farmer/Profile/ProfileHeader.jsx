@@ -1,4 +1,5 @@
 import { User } from "lucide-react";
+
 const ProfileHeader = ({ userData }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
@@ -7,7 +8,7 @@ const ProfileHeader = ({ userData }) => {
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
             User Profile
-            {userData?.farmerProfile?.isVerified && (
+            {!userData?.farmerProfile?.isVerified && (
               <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-sm font-medium flex items-center gap-1">
                 ✅ Verified
               </span>
@@ -21,4 +22,5 @@ const ProfileHeader = ({ userData }) => {
     </div>
   );
 };
+
 export default ProfileHeader;
