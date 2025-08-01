@@ -82,34 +82,34 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
             </span>
           )}
         </h3>
-
-        {!userData.isVerified ? (
-          <>
-            <p className="text-gray-600 mb-4">
-              Please upload a valid document to verify you are an active
-              livestock farmer. Example: animal ownership certificate,
-              veterinary record, or government-issued proof.
-            </p>
-            <form className="space-y-4" onSubmit={handleVerificationUpload}>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                className="block w-full text-sm text-gray-600 border border-gray-300 rounded-md p-2"
-                onChange={(e) => setFile(e.target.files[0])}
-              />
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {isUploading ? "Uploading..." : "Submit for Verification"}
-              </button>
-            </form>
-          </>
+        {userData.farmerProfile?.verificationStatus === "not_submitted" ||
+        userData.farmerProfile?.verificationStatus === "rejected" ? (
+          <form className="space-y-4" onSubmit={handleVerificationUpload}>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              className="block w-full text-sm text-gray-600 border border-gray-300 rounded-md p-2"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {isUploading ? "Uploading..." : "Submit for Verification"}
+            </button>
+          </form>
         ) : (
-          <p className="text-green-700 font-medium">
-            You are already verified.
-          </p>
+          <div className="text-sm text-gray-700">
+            {userData.farmerProfile?.verificationStatus === "pending" && (
+              <p className="text-yellow-600">
+                ✅ Document uploaded. Awaiting review.
+              </p>
+            )}
+            {userData.farmerProfile?.verificationStatus === "approved" && (
+              <p className="text-green-600">✅ You are verified.</p>
+            )}
+          </div>
         )}
       </div>
     </>
