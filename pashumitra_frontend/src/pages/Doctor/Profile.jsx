@@ -13,25 +13,38 @@ export default function ProfileSchedule() {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
- useEffect(() => {
-  if (user && user._id) {
+  useEffect(() => {
+    if (user && user._id) {
+      axios
+        .get(`http://localhost:5000/api/users/${user._id}`)
+        .then((res) => {
+          const userData = res.data;
+
+          setProfile({
+            fullName: userData.doctorProfile?.fullName || "",
+            specialization: userData.doctorProfile?.specialization || "",
+            hospitalname: userData.doctorProfile?.hospitalname || "",
+            experience: userData.doctorProfile?.experience || "",
+            state: userData.doctorProfile?.state || "",
+            city: userData.doctorProfile?.city || "",
+            phone: userData.phone || "",
+            email: userData.email || "",
+          });
+
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching user data", err);
+          setLoading(false);
+        });
+        if (user && user._id) {
     axios
       .get(`http://localhost:5000/api/users/${user._id}`)
       .then((res) => {
         const userData = res.data;
 
-        setProfile({
-          fullName: userData.doctorProfile?.fullName || "",
-          specialization: userData.doctorProfile?.specialization || "",
-          hospitalname: userData.doctorProfile?.hospitalname || "",
-          experience: userData.doctorProfile?.experience || "",
-          state: userData.doctorProfile?.state || "",
-          city: userData.doctorProfile?.city || "",
-          phone: userData.phone || "",
-          email: userData.email || "",
-        });
-
-        setSchedule(userData.doctorProfile?.schedule || {
+        // Fallback if no schedule exists
+        const defaultSchedule = {
           Monday: { available: true, startTime: "09:00", endTime: "17:00" },
           Tuesday: { available: true, startTime: "09:00", endTime: "17:00" },
           Wednesday: { available: true, startTime: "09:00", endTime: "17:00" },
@@ -39,16 +52,18 @@ export default function ProfileSchedule() {
           Friday: { available: true, startTime: "09:00", endTime: "17:00" },
           Saturday: { available: true, startTime: "10:00", endTime: "14:00" },
           Sunday: { available: false, startTime: "", endTime: "" },
-        });
+        };
 
-        setLoading(false);
+        setSchedule(userData.doctorProfile?.schedule || defaultSchedule);
       })
       .catch((err) => {
-        console.error("Error fetching user data", err);
-        setLoading(false);
+        console.error("Error fetching schedule", err);
+        setSchedule(null);
       });
-  }
-}, []);
+    }
+    }
+    
+  }, []);
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -61,41 +76,67 @@ export default function ProfileSchedule() {
     }));
   };
 
-const handleUpdateProfile = async () => {
+  const handleUpdateSchedule = async () => {
   try {
-    const payload = {
-      phone: profile.phone,
-      email: profile.email,
-      fullName: profile.fullName,
-      specialization: profile.specialization,
-      hospitalname: profile.hospitalname,
-      experience: profile.experience,
-      state: profile.state,
-      city: profile.city,
-      schedule, // include schedule here if you want to store it in backend
-    };
+    const response = await axios.put(
+      `http://localhost:5000/api/schedules/${user._id}`,
+      schedule
+    );
 
-    const response = await axios.put(`http://localhost:5000/api/users/${user._id}`, payload);
-
-    toast.success("Profile updated successfully", {
+    toast.success("Schedule updated successfully", {
       duration: 4000,
       position: "bottom-right",
       style: {
-        backgroundColor: "#4CAF50",
+        backgroundColor: "#059669",
         color: "#fff",
         fontWeight: "bold",
         borderRadius: "8px",
       },
     });
-
-    // Optional: Refresh state if needed
-    // setProfile(updatedProfileFromResponse);
-
   } catch (err) {
-    console.error("Error updating profile", err);
-    toast.error("Update failed. Try again later.");
+    console.error("Error updating schedule", err);
+    toast.error("Schedule update failed. Try again.");
   }
 };
+
+
+  const handleUpdateProfile = async () => {
+    try {
+      const payload = {
+        phone: profile.phone,
+        email: profile.email,
+        fullName: profile.fullName,
+        specialization: profile.specialization,
+        hospitalname: profile.hospitalname,
+        experience: profile.experience,
+        state: profile.state,
+        city: profile.city,
+        schedule, // include schedule here if you want to store it in backend
+      };
+
+      const response = await axios.put(
+        `http://localhost:5000/api/users/${user._id}`,
+        payload
+      );
+
+      toast.success("Profile updated successfully", {
+        duration: 4000,
+        position: "bottom-right",
+        style: {
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+
+      // Optional: Refresh state if needed
+      // setProfile(updatedProfileFromResponse);
+    } catch (err) {
+      console.error("Error updating profile", err);
+      toast.error("Update failed. Try again later.");
+    }
+  };
 
   if (loading || !profile || !schedule) {
     return <div className="p-10 text-center">Loading profile...</div>;
@@ -150,23 +191,26 @@ const handleUpdateProfile = async () => {
             </div>
 
             <div className="space-y-4">
-              {["fullName", "email", "phone", "specialization", "experience", "licenseNumber"].map(
-                (field) => (
-                  <div key={field}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {field.replace(/([A-Z])/g, " $1")}
-                    </label>
-                    <input
-                      type="text"
-                      value={profile[field]}
-                      onChange={(e) =>
-                        handleProfileChange(field, e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                )
-              )}
+              {[
+                "fullName",
+                "email",
+                "phone",
+                "specialization",
+                "experience",
+                "licenseNumber",
+              ].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                    {field.replace(/([A-Z])/g, " $1")}
+                  </label>
+                  <input
+                    type="text"
+                    value={profile[field]}
+                    onChange={(e) => handleProfileChange(field, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              ))}
             </div>
 
             <motion.button
@@ -207,7 +251,11 @@ const handleUpdateProfile = async () => {
                         type="checkbox"
                         checked={daySchedule.available}
                         onChange={(e) =>
-                          handleScheduleChange(day, "available", e.target.checked)
+                          handleScheduleChange(
+                            day,
+                            "available",
+                            e.target.checked
+                          )
                         }
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
@@ -225,7 +273,11 @@ const handleUpdateProfile = async () => {
                           type="time"
                           value={daySchedule.startTime}
                           onChange={(e) =>
-                            handleScheduleChange(day, "startTime", e.target.value)
+                            handleScheduleChange(
+                              day,
+                              "startTime",
+                              e.target.value
+                            )
                           }
                           className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
@@ -251,7 +303,7 @@ const handleUpdateProfile = async () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleUpdateProfile}
+              onClick={handleUpdateSchedule}
               className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200"
             >
               Update Schedule

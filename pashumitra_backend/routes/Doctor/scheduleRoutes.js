@@ -1,5 +1,5 @@
 const express = require("express");
-const DoctorSchedule = require("../models/Doctor/Doctor_Schedule");
+const DoctorSchedule = require("../../models/Doctor/Doctor_Schedule");
 const router = express.Router();
 
 // Get schedule for a user
