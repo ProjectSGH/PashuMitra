@@ -27,47 +27,48 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// routes/userRoutes.js
 router.put("/:id", async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Update User collection
-    const userUpdateFields = {
-      email: req.body.email,
-      phone: req.body.phone,
-      fullName: req.body.fullName,
-      isVerified: req.body.isVerified,
-    };
-
-    const updatedUser = await User.findByIdAndUpdate(userId, userUpdateFields, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // If role is Farmer, also update FarmerModel
-    if (updatedUser.role === "Farmer") {
-      const farmerUpdateFields = {
+    // Update User
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        email: req.body.email,
+        phone: req.body.phone,
         fullName: req.body.fullName,
-        address: req.body.address,
-        village: req.body.village,
-        city: req.body.city,
-        state: req.body.state,
-        pincode: req.body.pincode,
-      };
+      },
+      { new: true, runValidators: true }
+    ).select("-password");
 
-      await Farmer.findOneAndUpdate(
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    let updatedFarmer = null;
+
+    if (updatedUser.role === "Farmer") {
+      updatedFarmer = await Farmer.findOneAndUpdate(
         { userId },
-        farmerUpdateFields,
+        {
+          fullName: req.body.fullName,
+          address: req.body.address,
+          village: req.body.village,
+          city: req.body.city,
+          state: req.body.state,
+          pincode: req.body.pincode,
+        },
         { new: true, runValidators: true }
       );
     }
 
-    res.status(200).json({ message: "Profile updated successfully", user: updatedUser });
+    // Merge for frontend
+    const responseUser = {
+      ...updatedUser.toObject(),
+      farmerProfile: updatedFarmer,
+    };
 
+    res.status(200).json({ message: "Profile updated", user: responseUser });
   } catch (err) {
     console.error("Update error:", err);
     res.status(500).json({ message: "Update failed", error: err.message });

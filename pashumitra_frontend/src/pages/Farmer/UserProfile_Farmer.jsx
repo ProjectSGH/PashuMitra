@@ -28,7 +28,7 @@ const UserProfile = () => {
   return (
     <div className="h-auto mt-5 bg-gray-50 flex flex-col mb-5">
       <main className="flex-grow container mx-auto px-4 py-6">
-        <ProfileHeader />
+        <ProfileHeader userData={userData} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <div className="md:col-span-1">
             <ProfileCard userData={userData} />

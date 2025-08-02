@@ -107,7 +107,7 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
               </p>
             )}
             {userData.farmerProfile?.verificationStatus === "approved" && (
-              <p className="text-green-600">✅ You are verified.</p>
+              <p className="text-green-600 text-base">✅ You are verified.</p>
             )}
           </div>
         )}
