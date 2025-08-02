@@ -1,16 +1,35 @@
 const express = require("express");
-const DoctorSchedule = require("../../models/Doctor/Doctor_Schedule");
+const DoctorSchedule = require("../../models/Doctor/DoctorScheduleModel");
 const router = express.Router();
 
-// Get schedule for a user
+// Default structure for a blank weekly schedule
+const defaultScheduleStructure = {
+  Monday: { available: false, startTime: "", endTime: "" },
+  Tuesday: { available: false, startTime: "", endTime: "" },
+  Wednesday: { available: false, startTime: "", endTime: "" },
+  Thursday: { available: false, startTime: "", endTime: "" },
+  Friday: { available: false, startTime: "", endTime: "" },
+  Saturday: { available: false, startTime: "", endTime: "" },
+  Sunday: { available: false, startTime: "", endTime: "" },
+};
+
+// ✅ Get or create schedule for a user
 router.get("/:userId", async (req, res) => {
   try {
-    const schedule = await DoctorSchedule.findOne({ userId: req.params.userId });
+    let schedule = await DoctorSchedule.findOne({ userId: req.params.userId });
+
     if (!schedule) {
-      return res.status(404).json({ message: "Schedule not found" });
+      // Create new default schedule if not found
+      schedule = await DoctorSchedule.create({
+        userId: req.params.userId,
+        ...defaultScheduleStructure,
+      });
+      console.log(`✅ Default schedule created for user: ${req.params.userId}`);
     }
+
     res.json(schedule);
   } catch (err) {
+    console.error("❌ Error in GET /schedules/:userId", err);
     res.status(500).json({ error: "Server error" });
   }
 });

@@ -44,8 +44,6 @@ exports.registerDoctor = async (req, res) => {
   }
 };
 
-
-
 exports.registerFarmer = async (req, res) => {
   try {
     const { email, password, phone, role, fullName } = req.body;

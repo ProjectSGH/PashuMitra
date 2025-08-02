@@ -6,6 +6,7 @@ import VaternityLogo from './assets/VaternityLogo.jpeg'
 import Farmer_Hero_1 from './assets/Farmer_Hero_1.jpg';
 import Farmer_Hero_2 from './assets/Farmer_Hero_2.jpg';
 import Farmer_Hero_3 from './assets/Farmer_Hero_3.jpg';
+import customVerificationMark from './assets/Verified.png'
 
 const resources = {
     Logo: {
@@ -39,6 +40,10 @@ const resources = {
     Farmer_Hero_3: {
         src: Farmer_Hero_3,
         alt: 'Farmer Hero 3',
+    },
+    customVerificationMark: {
+        src: customVerificationMark,
+        alt: 'Custom Verification Mark',
     },
 };
 export default resources;
