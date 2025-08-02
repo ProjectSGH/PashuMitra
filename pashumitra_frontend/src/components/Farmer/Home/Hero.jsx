@@ -6,12 +6,12 @@ import resources from "../../../resource";
 const slides = [
   {
     id: 1,
-    title: "Access Community Support",
-    subtitle: "Join our community of farmers sharing knowledge and resources",
-    image: resources.Farmer_Hero_3.src,
+    title: "Sustainable Livestock Farming Solutions",
+    subtitle: "Discover eco-friendly practices for better crop yields",
+    image: resources.Farmer_Hero_1.src,
     buttons: [
-      { text: "Join Community", primary: true },
-      { text: "View Resources", primary: false },
+      { text: "Explore Solutions", primary: true },
+      { text: "Case Studies", primary: false },
     ],
   },
   {
@@ -20,18 +20,18 @@ const slides = [
     subtitle: "Get professional advice from certified agricultural specialists",
     image: resources.Farmer_Hero_2.src,
     buttons: [
-        { text: "Get Guidance", primary: true },
+      { text: "Get Guidance", primary: true },
       { text: "Learn More", primary: false },
     ],
-},
+  },
   {
-      id: 3,
-      title: "Sustainable Livestock Farming Solutions",
-    subtitle: "Discover eco-friendly practices for better crop yields",
-    image: resources.Farmer_Hero_1.src,
+    id: 3,
+    title: "Access Community Support",
+    subtitle: "Join our community to get best practices and resources",
+    image: resources.Farmer_Hero_3.src,
     buttons: [
-      { text: "Explore Solutions", primary: true },
-      { text: "Case Studies", primary: false },
+      { text: "Join Community", primary: true },
+      { text: "View Resources", primary: false },
     ],
   },
 ];

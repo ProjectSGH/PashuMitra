@@ -1,12 +1,13 @@
 // routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
-const User = require('../models/UserModel'); 
-const Farmer = require('../models/FarmerModel'); 
-const {loginUser } = require('../controllers/userController');
+const User = require('../models/UserModel');
+const Farmer = require('../models/FarmerModel');
+const Doctor = require('../models/DoctorModel');
+const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 
-router.post('/signup/farmer', userController.registerFarmer );
+router.post('/signup/farmer', userController.registerFarmer);
 router.post('/signup/doctor', userController.registerDoctor);
 router.post('/login', loginUser);
 
@@ -20,35 +21,38 @@ router.get('/:id', async (req, res) => {
       return res.json({ ...user.toObject(), farmerProfile: farmerData });
     }
 
+    if (user.role === 'Doctor') {
+      const doctorData = await Doctor.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), doctorProfile: doctorData });
+    }
+
     res.json(user); // fallback
   } catch (err) {
     console.error("Error in GET /:id:", err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
-
 // routes/userRoutes.js
 router.put("/:id", async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Update User
+    // Update User (common fields)
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         email: req.body.email,
         phone: req.body.phone,
-        fullName: req.body.fullName,
       },
       { new: true, runValidators: true }
     ).select("-password");
 
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
-    let updatedFarmer = null;
+    let updatedProfile = null;
 
     if (updatedUser.role === "Farmer") {
-      updatedFarmer = await Farmer.findOneAndUpdate(
+      updatedProfile = await Farmer.findOneAndUpdate(
         { userId },
         {
           fullName: req.body.fullName,
@@ -62,10 +66,26 @@ router.put("/:id", async (req, res) => {
       );
     }
 
-    // Merge for frontend
+    if (updatedUser.role === "Doctor") {
+      updatedProfile = await Doctor.findOneAndUpdate(
+        { userId },
+        {
+          fullName: req.body.fullName,
+          specialization: req.body.specialization,
+          hospitalname: req.body.hospitalname,
+          experience: req.body.experience,
+          state: req.body.state,
+          city: req.body.city,
+          schedule: req.body.schedule, // <- add this line if not already present
+        },
+        { new: true, runValidators: true }
+      );
+    }
+
+    // Combine for frontend
     const responseUser = {
       ...updatedUser.toObject(),
-      farmerProfile: updatedFarmer,
+      [`${updatedUser.role.toLowerCase()}Profile`]: updatedProfile,
     };
 
     res.status(200).json({ message: "Profile updated", user: responseUser });
