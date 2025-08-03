@@ -24,7 +24,7 @@ router.post("/upload/:userId", upload.single("document"), async (req, res) => {
     const userId = req.params.userId;
 
     // Step 1: Find doctor profile by userId
-    const doctorProfile = await require("../../models/DoctorModel").findOne({ userId });
+    const doctorProfile = await require("../../models/Doctor/DoctorModel").findOne({ userId });
 
     if (!doctorProfile)
       return res.status(404).json({ message: "Doctor profile not found" });
@@ -78,7 +78,7 @@ router.post("/upload/:userId", upload.single("document"), async (req, res) => {
 
 router.get("/status/:userId", async (req, res) => {
   try {
-    const doctorProfile = await require("../../models/DoctorModel").findOne({ userId: req.params.userId });
+    const doctorProfile = await require("../../models/Doctor/DoctorModel").findOne({ userId: req.params.userId });
     if (!doctorProfile)
       return res.status(404).json({ message: "Doctor not found" });
 
