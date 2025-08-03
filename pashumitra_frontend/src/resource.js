@@ -8,6 +8,9 @@ import Farmer_Hero_2 from './assets/Farmer_Hero_2.jpg';
 import Farmer_Hero_3 from './assets/Farmer_Hero_3.jpg';
 import customVerificationMark from './assets/Verified.png'
 import CustomLoader from './assets/CustomLoader.gif';
+import Jeet from './assets/Doctor/jeet.jpg';
+import Herin from './assets/Doctor/Herin.jpg';
+import Dhruv from './assets/Doctor/Dhruv.jpg';
 
 const resources = {
     Logo: {
@@ -49,6 +52,18 @@ const resources = {
     CustomLoader: {
         src: CustomLoader,
         alt: 'Custom Loader',
+    },
+    Jeet: {
+        src: Jeet,
+        alt: 'Jeet',
+    },
+    Herin: {
+        src: Herin,
+        alt: 'Herin',
+    },
+    Dhruv: {
+        src: Dhruv,
+        alt: 'Dhruv',
     },
 };
 export default resources;

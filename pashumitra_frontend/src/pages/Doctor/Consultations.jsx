@@ -1,7 +1,47 @@
 "use client"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { MessageCircle, Video, FileText, ChevronDown, Clock } from "lucide-react"
+import {
+  MessageCircle,
+  Video,
+  FileText,
+  ChevronDown,
+  Clock,
+  Calendar,
+  Users,
+  Lightbulb,
+} from "lucide-react"
+
+// Reusable animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
+}
+
+const cardVariants = {
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { duration: 0.4 },
+  },
+  hover: {
+    scale: 1.02,
+    transition: { duration: 0.2 },
+  },
+}
 
 const consultationsData = [
   {
@@ -37,17 +77,6 @@ const consultationsData = [
   {
     id: 4,
     patientName: "Sarah Johnson",
-    animalType: "Sheep",
-    priority: "Low",
-    status: "Completed",
-    issue: "Vaccination schedule consultation",
-    timeAgo: "2 hours ago",
-    actions: ["View Summary"],
-  },
-
-  {
-    id: 4,
-    patientName: "Johnson",
     animalType: "Sheep",
     priority: "Low",
     status: "Completed",
@@ -101,6 +130,41 @@ export default function Consultations() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
+
+        {/*  Stats Section Moved to Top */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+                {/* Welcome */}
+                <motion.div variants={itemVariants} className="mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Dr. Johnson!</h2>
+                  <p className="text-gray-600">Here's what's happening with your practice today.</p>
+                </motion.div>
+        
+                {/* Stats */}
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  {[
+                    { title: "Pending Consultations", value: "8", icon: MessageCircle, color: "blue" },
+                    { title: "Today's Appointments", value: "12", icon: Calendar, color: "green" },
+                    { title: "Follow-ups Due", value: "5", icon: Users, color: "yellow" },
+                  ].map((stat, index) => (
+                    <motion.div
+                      key={stat.title}
+                      variants={cardVariants}
+                      whileHover="hover"
+                      className="bg-white rounded-lg p-6 shadow-sm border"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                          <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                        </div>
+                        <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
+                          <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
         {/* Header */}
         <motion.div
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6"
@@ -110,14 +174,12 @@ export default function Consultations() {
         >
           <div className="mb-4 sm:mb-0">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Consultations</h1>
-            <p className="text-gray-600 text-sm md:text-base">Manage your consultation requests and ongoing sessions</p>
+            <p className="text-gray-600 text-sm md:text-base">
+              Manage your consultation requests and ongoing sessions
+            </p>
           </div>
 
-          <motion.div
-            className="relative"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.div className="relative" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -172,13 +234,13 @@ export default function Consultations() {
                 exit="exit"
                 whileHover={{ y: -4, scale: 1.02 }}
               >
-                {/* Patient Info */}
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 text-lg mb-1">{consultation.patientName}</h3>
+                  <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                    {consultation.patientName}
+                  </h3>
                   <p className="text-gray-600 text-sm">{consultation.animalType}</p>
                 </div>
 
-                {/* Priority and Status Badges */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <motion.span
                     className={`px-3 py-1 rounded-full text-xs font-medium border ${priorityColors[consultation.priority]}`}
@@ -194,19 +256,16 @@ export default function Consultations() {
                   </motion.span>
                 </div>
 
-                {/* Issue Description */}
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Issue:</p>
                   <p className="text-sm text-gray-600 leading-relaxed">{consultation.issue}</p>
                 </div>
 
-                {/* Time and Actions */}
                 <div className="space-y-3">
                   <div className="flex items-center text-xs text-gray-500">
                     <Clock className="w-3 h-3 mr-1" />
                     {consultation.timeAgo}
                   </div>
-
                   <div className="flex flex-wrap gap-2">
                     {consultation.actions.map((action, index) => (
                       <motion.button
