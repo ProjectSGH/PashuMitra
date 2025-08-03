@@ -4,9 +4,9 @@ import { Outlet } from "react-router-dom";
 
 const FarmerLayout = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-screen">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-6">
+      <main className="flex-grow w-screen mx-auto ">
         <Outlet />
       </main>
       <Footer />

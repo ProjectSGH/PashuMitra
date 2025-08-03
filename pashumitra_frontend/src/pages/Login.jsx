@@ -88,7 +88,7 @@ const LoginPage = () => {
             <a href="#forgot" className="text-blue-600 hover:underline">
               Forgot Password?
             </a>
-            <a href="/" className="text-blue-600 hover:underline">
+            <a href="/signup" className="text-blue-600 hover:underline">
               Create Account
             </a>
           </div>

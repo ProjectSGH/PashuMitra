@@ -1,13 +1,35 @@
+import { useState, useEffect } from "react";
 import { Edit } from "lucide-react";
-import { useState } from "react";
 import EditProfileModal from "./EditProfile";
 import axios from "axios";
 import toast from "react-hot-toast"; // for better user feedback
+import resources from "../../../resource";
 
 const ProfileInformation = ({ userData, onUserUpdate }) => {
   const [showModal, setShowModal] = useState(false);
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("not_submitted");
+  const [isVerified, setIsVerified] = useState(false);
+
+  useEffect(() => {
+    const fetchVerificationStatus = async () => {
+      const farmerId = userData.farmerProfile?._id;
+      if (!farmerId) return;
+
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/farmer/varify/status/${farmerId}`
+        );
+        setVerificationStatus(res.data.verificationStatus);
+        setIsVerified(res.data.isVerified);
+      } catch (err) {
+        console.error("Failed to fetch verification status", err);
+      }
+    };
+
+    fetchVerificationStatus(); // ✅ only inside useEffect
+  }, [userData.farmerProfile?._id]);
 
   const handleVerificationUpload = async (e) => {
     e.preventDefault();
@@ -18,13 +40,15 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
 
     try {
       setIsUploading(true);
-      const res = await axios.post(
+      await axios.post(
         `http://localhost:5000/api/farmer/varify/upload/${userData.farmerProfile?._id}`,
         formData
       );
       toast.success("Verification document submitted!");
-      // Optionally, refetch user data:
-      onUserUpdate();
+
+      await onUserUpdate(); // ⬅️ refresh profile in parent
+      await fetchVerificationStatus(); // ⬅️ refresh status locally
+      setFile(null); // clear file input
     } catch (err) {
       console.error(err);
       toast.error("Failed to upload document");
@@ -76,14 +100,14 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
       <div className="bg-white p-6 rounded-lg shadow-md mt-8">
         <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           Farmer Verification
-          {userData.isVerified && (
+          {isVerified && (
             <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
               ✅ Verified
             </span>
           )}
         </h3>
-        {userData.farmerProfile?.verificationStatus === "not_submitted" ||
-        userData.farmerProfile?.verificationStatus === "rejected" ? (
+        {verificationStatus === "not_submitted" ||
+        verificationStatus === "rejected" ? (
           <form className="space-y-4" onSubmit={handleVerificationUpload}>
             <input
               type="file"
@@ -96,18 +120,30 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
               disabled={isUploading}
               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {isUploading ? "Uploading..." : "Submit for Verification"}
+              {" "}
+              {isUploading ? (
+                <>
+                  <img src={resources.CustomLoader.src} alt="Loading" className="w-5 h-5" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                "Submit for Verification"
+              )}
             </button>
           </form>
         ) : (
           <div className="text-sm text-gray-700">
-            {userData.farmerProfile?.verificationStatus === "pending" && (
-              <p className="text-yellow-600">
-                ✅ Document uploaded. Awaiting review.
+            {verificationStatus === "pending" && (
+              <p className="text-yellow-600 font-medium">
+                📄 Your verification document has been submitted. It is
+                currently under review by our team. You’ll be notified once
+                verified.
               </p>
             )}
-            {userData.farmerProfile?.verificationStatus === "approved" && (
-              <p className="text-green-600">✅ You are verified.</p>
+            {verificationStatus === "approved" && (
+              <p className="text-green-600 text-base font-semibold">
+                ✅ You are verified.
+              </p>
             )}
           </div>
         )}

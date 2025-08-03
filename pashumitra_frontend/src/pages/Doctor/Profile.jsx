@@ -1,46 +1,273 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Clock, User, Calendar } from "lucide-react"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast"; // Make sure it's installed
+import { motion } from "framer-motion";
+import { Clock, User, Calendar } from "lucide-react";
+import resources from "../../resource";
 
 export default function ProfileSchedule() {
-  const [profile, setProfile] = useState({
-    fullName: "Dr. Sarah Johnson",
-    email: "sarah.johnson@vetportal.com",
-    phone: "+1 (555) 123-4567",
-    specialization: "Large Animal Medicine",
-    experience: "12 years",
-    licenseNumber: "VET-2024-001234",
-  })
+  const [profile, setProfile] = useState(null);
+  const [schedule, setSchedule] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [file, setFile] = useState(null);
+  const [license, setLicense] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
-  const [schedule, setSchedule] = useState({
-    Monday: { available: true, startTime: "09:00", endTime: "17:00" },
-    Tuesday: { available: true, startTime: "09:00", endTime: "17:00" },
-    Wednesday: { available: true, startTime: "09:00", endTime: "17:00" },
-    Thursday: { available: true, startTime: "09:00", endTime: "17:00" },
-    Friday: { available: true, startTime: "09:00", endTime: "17:00" },
-    Saturday: { available: true, startTime: "10:00", endTime: "14:00" },
-    Sunday: { available: false, startTime: "", endTime: "" },
-  })
+  const vetSpecializations = [
+    "General Veterinary Medicine",
+    "Small Animal Medicine",
+    "Large Animal Medicine",
+    "Equine Medicine",
+    "Canine and Feline Practice",
+    "Food Animal Medicine",
+    "Poultry Medicine",
+    "Wildlife and Zoo Medicine",
+    "Exotic Animal Medicine",
+    "Veterinary Surgery",
+    "Veterinary Internal Medicine",
+    "Veterinary Dermatology",
+    "Veterinary Ophthalmology",
+    "Veterinary Dentistry",
+    "Veterinary Anesthesiology",
+    "Veterinary Radiology & Imaging",
+    "Veterinary Pathology",
+    "Veterinary Microbiology",
+    "Veterinary Pharmacology",
+    "Veterinary Parasitology",
+    "Veterinary Public Health",
+    "Veterinary Toxicology",
+    "Veterinary Epidemiology",
+    "Veterinary Oncology",
+    "Veterinary Neurology",
+    "Veterinary Nutrition",
+    "Aquatic Animal Health",
+    "Dairy Science",
+    "Animal Reproduction & Gynecology",
+    "Veterinary Emergency & Critical Care",
+    "Veterinary Preventive Medicine",
+    "Veterinary Biotechnology",
+    "other",
+  ];
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    const fetchProfileAndSchedule = async () => {
+      try {
+        const userRes = await axios.get(
+          `http://localhost:5000/api/users/${user._id}`
+        );
+        const userData = userRes.data;
+
+        // ✅ Fetch live verification status
+        let verificationStatus = "not_submitted";
+        try {
+          const verificationRes = await axios.get(
+            `http://localhost:5000/api/doctor/varify/status/${user._id}`
+          );
+          verificationStatus = verificationRes.data.status || "pending";
+        } catch (err) {
+          console.warn(
+            "Verification status not found, defaulting to not_submitted"
+          );
+        }
+
+        setProfile({
+          fullName: userData.doctorProfile?.fullName || "",
+          specialization: userData.doctorProfile?.specialization || "",
+          hospitalname: userData.doctorProfile?.hospitalname || "",
+          experience: userData.doctorProfile?.experience || "",
+          state: userData.doctorProfile?.state || "",
+          city: userData.doctorProfile?.city || "",
+          phone: userData.phone || "",
+          email: userData.email || "",
+          verificationStatus, // ✅ this now uses real-time value
+        });
+
+        let scheduleData;
+        try {
+          const scheduleRes = await axios.get(
+            `http://localhost:5000/api/schedules/${user._id}`
+          );
+          scheduleData = scheduleRes.data;
+        } catch (err) {
+          if (err.response && err.response.status === 404) {
+            // This is expected for new users, don't log it as an error
+            console.warn("No existing schedule found, using fallback.");
+            scheduleData = null;
+          } else {
+            // Only log unexpected errors
+            console.error("Error fetching schedule:", err);
+          }
+        }
+
+        const fallbackSchedule = {
+          Monday: { available: true, startTime: "09:00", endTime: "17:00" },
+          Tuesday: { available: true, startTime: "09:00", endTime: "17:00" },
+          Wednesday: { available: true, startTime: "09:00", endTime: "17:00" },
+          Thursday: { available: true, startTime: "09:00", endTime: "17:00" },
+          Friday: { available: true, startTime: "09:00", endTime: "17:00" },
+          Saturday: { available: true, startTime: "10:00", endTime: "14:00" },
+          Sunday: { available: false, startTime: "", endTime: "" },
+        };
+
+        setSchedule({ ...fallbackSchedule, ...scheduleData });
+      } catch (err) {
+        console.error("Error fetching data", err);
+        setSchedule(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileAndSchedule();
+  }, [user._id]);
 
   const handleProfileChange = (field, value) => {
-    setProfile((prev) => ({ ...prev, [field]: value }))
-  }
+    setProfile((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleScheduleChange = (day, field, value) => {
     setSchedule((prev) => ({
       ...prev,
       [day]: { ...prev[day], [field]: value },
-    }))
-  }
+    }));
+  };
 
-  const handleUpdateProfile = () => {
-    console.log("Profile updated:", profile)
-  }
+  const handleUpdateSchedule = async () => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/schedules/${user._id}`,
+        schedule
+      );
 
-  const handleUpdateSchedule = () => {
-    console.log("Schedule updated:", schedule)
+      toast.success("Schedule updated successfully", {
+        duration: 4000,
+        position: "bottom-right",
+        style: {
+          backgroundColor: "#059669",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+    } catch (err) {
+      console.error("Error updating schedule", err);
+      toast.error("Schedule update failed. Try again.");
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const payload = {
+        phone: profile.phone,
+        email: profile.email,
+        fullName: profile.fullName,
+        specialization: profile.specialization,
+        hospitalname: profile.hospitalname,
+        experience: profile.experience,
+        state: profile.state,
+        city: profile.city,
+        schedule, // include schedule here if you want to store it in backend
+      };
+
+      const response = await axios.put(
+        `http://localhost:5000/api/users/${user._id}`,
+        payload
+      );
+
+      toast.success("Profile updated successfully", {
+        duration: 4000,
+        position: "bottom-right",
+        style: {
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+
+      // setProfile(updatedProfileFromResponse);
+    } catch (err) {
+      console.error("Error updating profile", err);
+      toast.error("Update failed. Try again later.");
+    }
+  };
+
+  const getDoctorIdFromUserId = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/doctors/byUserId/${user._id}`
+      );
+      return res.data._id; // This is the Doctor_User._id
+    } catch (err) {
+      console.error("Doctor not found for this user", err);
+      return null;
+    }
+  };
+
+  const handleVerificationUpload = async (e) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append("document", file);
+    formData.append("licenseNumber", license);
+
+    try {
+      const doctorId = await getDoctorIdFromUserId();
+      if (!doctorId) return toast.error("Doctor profile not found");
+
+      const response = await fetch(
+        `http://localhost:5000/api/doctor/varify/upload/${doctorId}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const verificationRes = await axios.get(
+        `http://localhost:5000/api/doctor/varify/status/${doctorId}`
+      );
+      setProfile((prev) => ({
+        ...prev,
+        verificationStatus: verificationRes.data.verificationStatus,
+      }));
+      const data = await response.json();
+      if (response.ok) {
+        toast.success("Verification uploaded successfully!", {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            backgroundColor: "#2563eb",
+            color: "#fff",
+            fontWeight: "bold",
+            borderRadius: "8px",
+          },
+        });
+
+        // 👇 Instantly update UI without reload
+        setProfile((prev) => ({
+          ...prev,
+          verificationStatus: "pending",
+        }));
+      } else {
+        toast.error(data.message || "Upload failed", {
+          position: "top-right",
+        });
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Server error during upload");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  if (loading || !profile || !schedule) {
+    return <div className="p-10 text-center">Loading profile...</div>;
   }
 
   const containerVariants = {
@@ -53,92 +280,87 @@ export default function ProfileSchedule() {
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-7xl mx-auto">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="max-w-7xl mx-auto"
+      >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Profile & Schedule</h1>
-          <p className="text-gray-600">Manage your personal information and availability</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Profile & Schedule
+          </h1>
+          <p className="text-gray-600">
+            Manage your personal information and availability
+          </p>
         </motion.div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-          {/* Personal Information Section */}
-          <motion.div variants={itemVariants} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <User className="w-5 h-5 text-gray-700" />
-              <h2 className="text-xl font-semibold text-gray-900">Personal Information</h2>
+          {/* Personal Info */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
+            <div className="flex items-center justify-between gap-2 mb-6">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <User className="text-gray-700" />
+                Personal Information
+              </h2>
+              <div className="">
+                {profile.verificationStatus === "approved" && (
+                  <div className="flex items-center gap-1">
+                    <img
+                      src={resources.customVerificationMark.src}
+                      alt="Verified"
+                      className="w-8 h-8"
+                    />
+                    <span>Verified</span>
+                  </div>
+                )}
+              </div>
             </div>
-
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={profile.fullName}
-                  onChange={(e) => handleProfileChange("fullName", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => handleProfileChange("email", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  value={profile.phone}
-                  onChange={(e) => handleProfileChange("phone", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
-                <input
-                  type="text"
-                  value={profile.specialization}
-                  onChange={(e) => handleProfileChange("specialization", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
-                <input
-                  type="text"
-                  value={profile.experience}
-                  onChange={(e) => handleProfileChange("experience", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-                <input
-                  type="text"
-                  value={profile.licenseNumber}
-                  onChange={(e) => handleProfileChange("licenseNumber", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              {["fullName", "email", "phone", "experience"].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                    {field.replace(/([A-Z])/g, " $1")}
+                  </label>
+                  <input
+                    type="text"
+                    value={profile[field]}
+                    onChange={(e) => handleProfileChange(field, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              ))}
             </div>
+            <label className="block text-sm font-medium text-gray-700">
+              Specialization
+            </label>
+            <select
+              value={profile.specialization}
+              onChange={(e) =>
+                handleProfileChange("specialization", e.target.value)
+              }
+              className="w-full px-3 py-2 border rounded-md"
+            >
+              <option value="">Select Specialization</option>
+              {vetSpecializations.map((specialization) => (
+                <option key={specialization} value={specialization}>
+                  {specialization}
+                </option>
+              ))}
+            </select>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -150,58 +372,97 @@ export default function ProfileSchedule() {
             </motion.button>
           </motion.div>
 
-          {/* Weekly Schedule Section */}
-          <motion.div variants={itemVariants} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          {/* Weekly Schedule */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
             <div className="flex items-center gap-2 mb-6">
               <Calendar className="w-5 h-5 text-gray-700" />
-              <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Weekly Schedule
+              </h2>
             </div>
 
             <div className="space-y-4">
-              {Object.entries(schedule).map(([day, daySchedule]) => (
-                <motion.div
-                  key={day}
-                  variants={itemVariants}
-                  className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border border-gray-200 rounded-md"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="font-medium text-gray-900 w-20 flex-shrink-0">{day}</span>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={daySchedule.available}
-                        onChange={(e) => handleScheduleChange(day, "available", e.target.checked)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-blue-600 font-medium">Available</span>
-                    </label>
-                  </div>
-
-                  {daySchedule.available && day !== "Sunday" && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4 text-gray-500" />
+              {Object.entries(schedule)
+                .filter(([day]) =>
+                  [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                  ].includes(day)
+                )
+                .map(([day, daySchedule]) => (
+                  <motion.div
+                    key={day}
+                    variants={itemVariants}
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border border-gray-200 rounded-md"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="font-medium text-gray-900 w-20 flex-shrink-0">
+                        {day}
+                      </span>
+                      <label className="flex items-center gap-2 cursor-pointer">
                         <input
-                          type="time"
-                          value={daySchedule.startTime}
-                          onChange={(e) => handleScheduleChange(day, "startTime", e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          type="checkbox"
+                          checked={daySchedule.available}
+                          onChange={(e) =>
+                            handleScheduleChange(
+                              day,
+                              "available",
+                              e.target.checked
+                            )
+                          }
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                         />
-                      </div>
-                      <span className="text-gray-500">to</span>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <input
-                          type="time"
-                          value={daySchedule.endTime}
-                          onChange={(e) => handleScheduleChange(day, "endTime", e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
+                        <span className="text-sm text-blue-600 font-medium">
+                          Available
+                        </span>
+                      </label>
                     </div>
-                  )}
-                </motion.div>
-              ))}
+
+                    {daySchedule.available && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <input
+                            type="time"
+                            value={daySchedule.startTime}
+                            onChange={(e) =>
+                              handleScheduleChange(
+                                day,
+                                "startTime",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <span className="text-gray-500">to</span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <input
+                            type="time"
+                            value={daySchedule.endTime}
+                            onChange={(e) =>
+                              handleScheduleChange(
+                                day,
+                                "endTime",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
             </div>
 
             <motion.button
@@ -215,6 +476,54 @@ export default function ProfileSchedule() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Doctor Varification */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-8"
+      >
+        <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            Doctor Verification
+          </h3>
+
+          {["not_submitted", "rejected", ""].includes(
+            profile.verificationStatus
+          ) ? (
+            <form onSubmit={handleVerificationUpload} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Enter License Number"
+                value={license}
+                onChange={(e) => setLicense(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="w-full p-2 border rounded"
+                onChange={(e) => setFile(e.target.files[0])}
+                required
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : "Submit for Verification"}
+              </button>
+            </form>
+          ) : (
+            <p className="text-gray-700">
+              {profile.verificationStatus === "pending" &&
+                "📄 Document uploaded. Awaiting admin review."}
+              {profile.verificationStatus === "approved" &&
+                "✅ You are verified."}
+            </p>
+          )}
+        </div>
+      </motion.div>
     </div>
-  )
+  );
 }
