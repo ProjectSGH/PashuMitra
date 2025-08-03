@@ -32,7 +32,8 @@ const vetSpecializations = [
   "Animal Reproduction & Gynecology",
   "Veterinary Emergency & Critical Care",
   "Veterinary Preventive Medicine",
-  "Veterinary Biotechnology"
+  "Veterinary Biotechnology",
+  "other"
 ];
 
 const StoreSchema = new mongoose.Schema({
@@ -42,11 +43,13 @@ const StoreSchema = new mongoose.Schema({
   specialization: {
     type: String,
     required: true,
-    enum: vetSpecializations
+    enum: vetSpecializations,
   },
   established: { type: Date, required: true },
+  address: { type: String, required: true },
   state: { type: String, required: true },
   city: { type: String, required: true },
+  pincode: { type: String, required: true },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Store_User',StoreSchema);
+module.exports = mongoose.model('Store_User', StoreSchema);

@@ -82,8 +82,7 @@ exports.registerFarmer = async (req, res) => {
 
 exports.registerStore = async (req, res) => {
   try {
-    const { email, password, phone, role } = req.body;
-    const {storename, ownername, address, village, city, state, pincode, established ,specialization} = req.body;
+    const { email, password, phone, role, storeName, ownerName, address, city, state, pincode, established, specialization } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -91,33 +90,33 @@ exports.registerStore = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create User
+    // ✅ Use storeName as fullName (since you're not collecting fullName separately)
     const newUser = await User.create({
       email,
       password: hashedPassword,
       phone,
       role: "MedicalStore",
-      fullName
+      fullName: storeName
     });
 
-    // Create Store
     const newStore = await Store.create({
       userId: newUser._id,
-      storename,
-      ownername,
+      storeName,
+      ownerName,
       specialization,
       established,
+      address,
       state,
-      city
+      city,
+      pincode
     });
 
     res.status(201).json({ message: "Store registered", userId: newUser._id });
   } catch (error) {
     console.error("Store registration error:", error);
-    res.status(500).json({ message: "Registration failed", error });
+    res.status(500).json({ message: "Registration failed", error: error.message });
   }
 };
 

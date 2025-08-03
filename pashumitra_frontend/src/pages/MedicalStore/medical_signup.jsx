@@ -109,59 +109,59 @@ const SignupPage = () => {
           <Input label="Address" name="address" value={formData.address} onChange={handleChange} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Village (optional)" name="village" value={formData.village} onChange={handleChange} />
             <Input label="City/District" name="city" value={formData.city} onChange={handleChange} />
             <Input label="State" name="state" value={formData.state} onChange={handleChange} />
             <Input label="Pin-Code" name="pincode" value={formData.pincode} onChange={handleChange} />
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
-                <select
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Select Specialization</option>
-                  {[
-                    "General Veterinary Medicine",
-                    "Small Animal Medicine",
-                    "Large Animal Medicine",
-                    "Equine Medicine",
-                    "Canine and Feline Practice",
-                    "Food Animal Medicine",
-                    "Poultry Medicine",
-                    "Wildlife and Zoo Medicine",
-                    "Exotic Animal Medicine",
-                    "Veterinary Surgery",
-                    "Veterinary Internal Medicine",
-                    "Veterinary Dermatology",
-                    "Veterinary Ophthalmology",
-                    "Veterinary Dentistry",
-                    "Veterinary Anesthesiology",
-                    "Veterinary Radiology & Imaging",
-                    "Veterinary Pathology",
-                    "Veterinary Microbiology",
-                    "Veterinary Pharmacology",
-                    "Veterinary Parasitology",
-                    "Veterinary Public Health",
-                    "Veterinary Toxicology",
-                    "Veterinary Epidemiology",
-                    "Veterinary Oncology",
-                    "Veterinary Neurology",
-                    "Veterinary Nutrition",
-                    "Aquatic Animal Health",
-                    "Dairy Science",
-                    "Animal Reproduction & Gynecology",
-                    "Veterinary Emergency & Critical Care",
-                    "Veterinary Preventive Medicine",
-                    "Veterinary Biotechnology"
-                  ].map((specialty) => (
-                    <option key={specialty} value={specialty}>
-                      {specialty}
-                    </option>
-                  ))}
-                </select>
-            </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
+  <select
+    name="specialization"
+    value={formData.specialization}
+    onChange={handleChange}
+    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+  >
+    <option value="">Select Specialization</option>
+    {[
+      "General Veterinary Medicine",
+      "Small Animal Medicine",
+      "Large Animal Medicine",
+      "Equine Medicine",
+      "Canine and Feline Practice",
+      "Food Animal Medicine",
+      "Poultry Medicine",
+      "Wildlife and Zoo Medicine",
+      "Exotic Animal Medicine",
+      "Veterinary Surgery",
+      "Veterinary Internal Medicine",
+      "Veterinary Dermatology",
+      "Veterinary Ophthalmology",
+      "Veterinary Dentistry",
+      "Veterinary Anesthesiology",
+      "Veterinary Radiology & Imaging",
+      "Veterinary Pathology",
+      "Veterinary Microbiology",
+      "Veterinary Pharmacology",
+      "Veterinary Parasitology",
+      "Veterinary Public Health",
+      "Veterinary Toxicology",
+      "Veterinary Epidemiology",
+      "Veterinary Oncology",
+      "Veterinary Neurology",
+      "Veterinary Nutrition",
+      "Aquatic Animal Health",
+      "Dairy Science",
+      "Animal Reproduction & Gynecology",
+      "Veterinary Emergency & Critical Care",
+      "Veterinary Preventive Medicine",
+      "Veterinary Biotechnology",
+      "other"
+    ].map((specialty) => (
+      <option key={specialty} value={specialty}>
+        {specialty}
+      </option>
+    ))}
+  </select>
+</div>
           </div>
 
           {/* Submit */}
