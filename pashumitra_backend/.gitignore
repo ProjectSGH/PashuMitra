@@ -6,7 +6,5 @@ package-lock.json
 pashumitra_backend/.env
 # Ignore backend node modules
 pashumitra_backend/node_modules
-# Ignore backend package lock files
-pashumitra_backend/package-lock.json
 # Ignore environment files
 .env
