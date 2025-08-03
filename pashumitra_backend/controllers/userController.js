@@ -3,6 +3,7 @@ const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const bcrypt = require('bcrypt');       // Adjust paths as necessary
 const Doctor = require("../models/Doctor/DoctorModel");
+const Store = require("../models/Medical/StoreModel");
 
 exports.registerDoctor = async (req, res) => {
   try {
@@ -75,6 +76,47 @@ exports.registerFarmer = async (req, res) => {
 
     res.status(201).json({ message: "Farmer registered", userId: newUser._id });
   } catch (error) {
+    res.status(500).json({ message: "Registration failed", error });
+  }
+};
+
+exports.registerStore = async (req, res) => {
+  try {
+    const { email, password, phone, role } = req.body;
+    const {storename, ownername, address, village, city, state, pincode, established ,specialization} = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create User
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      phone,
+      role: "MedicalStore",
+      fullName
+    });
+
+    // Create Store
+    const newStore = await Store.create({
+      userId: newUser._id,
+      storename,
+      ownername,
+      specialization,
+      established,
+      state,
+      city
+    });
+
+    res.status(201).json({ message: "Store registered", userId: newUser._id });
+  } catch (error) {
+    console.error("Store registration error:", error);
     res.status(500).json({ message: "Registration failed", error });
   }
 };
