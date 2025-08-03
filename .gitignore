@@ -3,3 +3,5 @@ pashumitra_backend/.env
 pashumitra_backend/node_modules
 pashumitra_backend/package-lock.json
 pashumitra_backend/package.json
+
+.env
