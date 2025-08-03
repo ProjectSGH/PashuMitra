@@ -7,6 +7,7 @@ import Farmer_Hero_1 from './assets/Farmer_Hero_1.jpg';
 import Farmer_Hero_2 from './assets/Farmer_Hero_2.jpg';
 import Farmer_Hero_3 from './assets/Farmer_Hero_3.jpg';
 import customVerificationMark from './assets/Verified.png'
+import CustomLoader from './assets/CustomLoader.gif';
 
 const resources = {
     Logo: {
@@ -44,6 +45,10 @@ const resources = {
     customVerificationMark: {
         src: customVerificationMark,
         alt: 'Custom Verification Mark',
+    },
+    CustomLoader: {
+        src: CustomLoader,
+        alt: 'Custom Loader',
     },
 };
 export default resources;

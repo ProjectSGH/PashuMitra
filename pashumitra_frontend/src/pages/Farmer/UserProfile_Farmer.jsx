@@ -6,19 +6,28 @@ import ProfileInformation from "../../components/Farmer/Profile/ProfileInformati
 
 const UserProfile = () => {
   const [userData, setUserData] = useState(null);
-  const [storeData, setStoreData] = useState(null);
-  const [showStoreForm, setShowStoreForm] = useState(false);
-
+  const [verificationData, setVerificationData] = useState(null); // ✅ New
   const user = JSON.parse(localStorage.getItem("user"));
+
+  const fetchUserData = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/users/${user._id}`);
+      setUserData(res.data);
+
+      // ✅ Also fetch verification status
+      const farmerId = res.data?.farmerProfile?._id;
+      if (farmerId) {
+        const vRes = await axios.get(`http://localhost:5000/api/farmer/varify/status/${farmerId}`);
+        setVerificationData(vRes.data);
+      }
+    } catch (err) {
+      console.error("Error fetching user/verification data", err);
+    }
+  };
 
   useEffect(() => {
     if (user && user._id) {
-      axios
-        .get(`http://localhost:5000/api/users/${user._id}`)
-        .then((res) => {
-          setUserData(res.data);
-        })
-        .catch((err) => console.error("Error fetching user data", err));
+      fetchUserData();
     }
   }, []);
 
@@ -28,7 +37,7 @@ const UserProfile = () => {
   return (
     <div className="h-auto mt-5 bg-gray-50 flex flex-col mb-5">
       <main className="flex-grow container mx-auto px-4 py-6">
-        <ProfileHeader userData={userData} />
+        <ProfileHeader userData={userData} verificationData={verificationData} /> {/* ✅ Pass verificationData */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <div className="md:col-span-1">
             <ProfileCard userData={userData} />
@@ -36,7 +45,7 @@ const UserProfile = () => {
           <div className="md:col-span-2">
             <ProfileInformation
               userData={userData}
-              onUserUpdate={setUserData}
+              onUserUpdate={fetchUserData} // ✅ important
             />
           </div>
         </div>
@@ -44,5 +53,6 @@ const UserProfile = () => {
     </div>
   );
 };
+
 
 export default UserProfile;

@@ -2,8 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/UserModel');
-const Farmer = require('../models/FarmerModel');
-const Doctor = require('../models/DoctorModel');
+const Farmer = require('../models/Farmer/FarmerModel');
+const Doctor = require('../models/Doctor/DoctorModel');
 const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 

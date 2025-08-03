@@ -1,8 +1,8 @@
 // controllers/userController.js
 const User = require('../models/UserModel');
-const Farmer = require('../models/FarmerModel');
+const Farmer = require('../models/Farmer/FarmerModel');
 const bcrypt = require('bcrypt');       // Adjust paths as necessary
-const Doctor = require("../models/DoctorModel");
+const Doctor = require("../models/Doctor/DoctorModel");
 
 exports.registerDoctor = async (req, res) => {
   try {

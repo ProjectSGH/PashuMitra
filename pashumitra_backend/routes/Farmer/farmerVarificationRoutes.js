@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const Farmer = require("../../models/FarmerModel");
+const Farmer = require("../../models/Farmer/FarmerModel");
+const FarmerVerification = require("../../models/Farmer/FarmerVerificationModel");
 const { uploader } = require("cloudinary").v2;
 const multer = require("multer");
 const streamifier = require("streamifier");
@@ -21,17 +22,11 @@ const upload = multer({ storage });
 
 router.post("/upload/:farmerId", upload.single("document"), async (req, res) => {
   try {
-    console.log("Incoming file:", req.file); // ✅ Debug
-    console.log("Farmer ID:", req.params.farmerId); // ✅ Debug
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+    const farmerExists = await Farmer.findById(req.params.farmerId);
+    if (!farmerExists) return res.status(404).json({ message: "Farmer not found" });
 
-    const farmer = await Farmer.findById(req.params.farmerId);
-    if (!farmer) return res.status(404).json({ message: "Farmer not found" });
-
-    // Upload to Cloudinary
     const streamUpload = (buffer) => {
       return new Promise((resolve, reject) => {
         const stream = uploader.upload_stream(
@@ -47,19 +42,26 @@ router.post("/upload/:farmerId", upload.single("document"), async (req, res) => 
 
     const result = await streamUpload(req.file.buffer);
 
-    farmer.verificationDocument = {
-      url: result.secure_url,
-      public_id: result.public_id,
-    };
-    farmer.verificationStatus = "pending";
-    await farmer.save();
+    const verificationDoc = await FarmerVerification.findOneAndUpdate(
+      { farmerId: req.params.farmerId },
+      {
+        farmerId: req.params.farmerId,
+        verificationDocument: {
+          url: result.secure_url,
+          public_id: result.public_id,
+        },
+        verificationStatus: "pending",
+        isVerified: false,
+      },
+      { upsert: true, new: true }
+    );
 
     res.status(200).json({
-      message: "Document uploaded successfully",
+      message: "Verification document uploaded successfully",
       url: result.secure_url,
     });
   } catch (error) {
-    console.error("Upload failed:", error); // ✅ Show full error
+    console.error("Upload failed:", error);
     res.status(500).json({ message: "Failed to upload", error });
   }
 });
@@ -76,6 +78,29 @@ router.put("/approve/:farmerId", async (req, res) => {
     res.json({ message: "Farmer verified successfully" });
   } catch (err) {
     res.status(500).json({ message: "Verification failed", error: err });
+  }
+});
+
+router.get("/status/:farmerId", async (req, res) => {
+  try {
+    const verification = await FarmerVerification.findOne({
+      farmerId: req.params.farmerId,
+    });
+
+    if (!verification) {
+      return res.status(200).json({
+        verificationStatus: "not_submitted",
+        isVerified: false,
+      });
+    }
+
+    return res.status(200).json({
+      verificationStatus: verification.verificationStatus,
+      isVerified: verification.isVerified,
+    });
+  } catch (err) {
+    console.error("Verification status fetch failed:", err);
+    return res.status(500).json({ message: "Server error", error: err });
   }
 });
 
