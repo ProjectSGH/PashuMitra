@@ -3,6 +3,7 @@ const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const bcrypt = require('bcrypt');       // Adjust paths as necessary
 const Doctor = require("../models/Doctor/DoctorModel");
+const Store = require("../models/Medical/StoreModel");
 
 exports.registerDoctor = async (req, res) => {
   try {
@@ -76,6 +77,46 @@ exports.registerFarmer = async (req, res) => {
     res.status(201).json({ message: "Farmer registered", userId: newUser._id });
   } catch (error) {
     res.status(500).json({ message: "Registration failed", error });
+  }
+};
+
+exports.registerStore = async (req, res) => {
+  try {
+    const { email, password, phone, role, storeName, ownerName, address, city, state, pincode, established, specialization } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Use storeName as fullName (since you're not collecting fullName separately)
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      phone,
+      role: "MedicalStore",
+      fullName: storeName
+    });
+
+    const newStore = await Store.create({
+      userId: newUser._id,
+      storeName,
+      ownerName,
+      specialization,
+      established,
+      address,
+      state,
+      city,
+      pincode
+    });
+
+    res.status(201).json({ message: "Store registered", userId: newUser._id });
+  } catch (error) {
+    console.error("Store registration error:", error);
+    res.status(500).json({ message: "Registration failed", error: error.message });
   }
 };
 

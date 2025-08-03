@@ -4,11 +4,13 @@ const router = express.Router();
 const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const Doctor = require('../models/Doctor/DoctorModel');
+const store = require('../models/Medical/StoreModel');
 const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 
 router.post('/signup/farmer', userController.registerFarmer);
 router.post('/signup/doctor', userController.registerDoctor);
+router.post('/signup/store', userController.registerStore);
 router.post('/login', loginUser);
 
 router.get('/:id', async (req, res) => {

@@ -52,13 +52,12 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   const navItems = [
-    { name: "Home", href: "/medical/home" },
-    { name: "inventory", href: "/medical/inventory" },
-    { name: "Requests", href: "/medical/Requests" },
-    { name: "Transfer", href: "/medical/Transfer" },
-    { name: "Transport", href: "/medical/Transport" },
-    { name: "Community Bank", href: "/medical/community-bank" },
-    { name: "Profile", href: "/medical/Profile" },
+    { name: "Home", href: "/medicalstore/home" },
+    { name: "inventory", href: "/medicalstore/inventory" },
+    { name: "Requests", href: "/medicalstore/requests" },
+    { name: "Transfer", href: "/medicalstore/transfer" },
+    { name: "Transport", href: "/medicalstore/transport" },
+    { name: "Community Bank", href: "/medicalstore/communityBank" },
   ];
 
   return (
@@ -172,7 +171,7 @@ export default function Header() {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => navigate("/medical/Profile")}
+              onClick={() => navigate("/medicalstore/Profile")}
               className="p-1"
             >
               <User className="h-6 w-6 text-gray-600 cursor-pointer" />
@@ -264,7 +263,7 @@ export default function Header() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/farmer/profile")}
+                onClick={() => navigate("/medicalstore/profile")}
                 className="p-1"
               >
                 <User className="h-6 w-6 text-gray-600 cursor-pointer" />
