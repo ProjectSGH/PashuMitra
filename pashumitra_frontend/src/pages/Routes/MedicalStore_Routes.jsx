@@ -8,6 +8,7 @@ import TransferManagement from "../MedicalStore/transfer-management";
 import TransportManagement from "../MedicalStore/transport-management";
 import CommunityMedicineBank from "../MedicalStore/community-medicine-bank";
 import StoreProfileSettings from "../MedicalStore/store-profile-settings";
+import SignupPage from "../MedicalStore/medical_signup";
 
 const MedicalStoreRoutes = (
   // <Route element={<ProtectedRoute role="MedicalStore" />}>
