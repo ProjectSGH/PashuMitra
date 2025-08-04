@@ -5,10 +5,10 @@ import resources from "../resource";
 
 const roles = [
   {
-    title: "Livestock Farmer",
-    tagline: "Effortless Animal Care Access",
+    title: "પશુપાલક",
+    tagline: "સહેલાઇથી પશુ સંભાળની સુવિધા",
     description:
-      "For livestock owners managing animal health, medicine orders, and consultations right from their home.",
+      "પશુધન માલિકો માટે જેઓ તેમના ઘરેથી જ પશુ આરોગ્ય, દવાના ઓર્ડર અને પરામર્શનું સંચાલન કરે છે.",
     image: resources.FarmerLogo.src,
     color: "from-green-500 to-lime-500",
     path: "/signup/farmer",

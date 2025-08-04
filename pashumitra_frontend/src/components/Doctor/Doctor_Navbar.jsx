@@ -10,6 +10,7 @@ import {
   Home,
   LogOut,
 } from "lucide-react";
+import resources from "../../resource";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -38,14 +39,16 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <motion.div className="flex items-center" whileHover={{ scale: 1.05 }}>
             <h1
-              className="text-2xl font-bold text-blue-600 cursor-pointer"
+              className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
+              
+            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               Doctor Portal
             </h1>
           </motion.div>

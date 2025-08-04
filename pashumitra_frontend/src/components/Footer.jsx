@@ -6,6 +6,7 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import resources from "../resource";
 
 const Footer = () => {
   return (
@@ -16,7 +17,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center mb-4">
               <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-lg">PM</span>
+                  <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               </div>
               <span className="ml-2 text-lg font-semibold text-gray-900">
                 PashuMitra

@@ -21,7 +21,7 @@ const Hero = () => {
           >
             Get Started
           </a>
-          <a href="/login" className="text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors">
+          <a href="/signup/farmer" className="text-gray-700 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors">
             Browse Medicines
           </a>
         </div>

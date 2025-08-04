@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Home, Package, LayoutDashboard, Menu, X } from 'lucide-react';
+import resources from "../../resource";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,7 +16,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-lg">PM</span>
+            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               </div>
               <span className="ml-2 text-lg font-semibold text-gray-900">PashuMitra</span>
             </div>
@@ -30,6 +31,15 @@ const Navbar = () => {
               >
                 <Home size={18} className="mr-1" />
                 Home
+              </a>
+            </div>
+            <div className="flex space-x-4">
+              <a
+                href="/about"
+                className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+              >
+                {/* <Home size={18} className="mr-1" /> */}
+                About
               </a>
             </div>
             <div className="flex items-center space-x-2">

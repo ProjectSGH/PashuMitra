@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeftCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import resources from "../resource";
 
 const LoginPage = () => {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -39,7 +40,11 @@ const LoginPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200 flex items-center justify-center -mt-5">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 h-full">
+        <div className="flex items-center mb-6">
+            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-10 bg-cover" />
+          <h1 className="text-4xl font-bold text-blue-600 ml-2">PashuMitra</h1>
+          </div>
         <div className="mb-6 text-left">
           <h2 className="text-3xl font-bold text-gray-800">
             Welcome back to <span className="text-blue-600">PashuMitra</span>

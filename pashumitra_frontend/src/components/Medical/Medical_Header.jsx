@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, User, Menu, X, LogOut } from "lucide-react";
+import resources from "../../resource";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,14 +68,15 @@ export default function Header() {
       transition={{ duration: 0.5 }}
       className="bg-white shadow-sm border-b border-gray-100"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">            
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">            
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <motion.div whileHover={{ scale: 1.05 }} className="flex-shrink-0">
             <h1
-              className="text-2xl font-bold text-blue-600 cursor-pointer"
+              className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
+            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               MedicalCare
             </h1>
           </motion.div>

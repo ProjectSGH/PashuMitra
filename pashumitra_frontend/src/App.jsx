@@ -7,6 +7,7 @@ import { Toaster } from "react-hot-toast";
 import FarmerSignup from "./pages/Farmer/Signup_Farmer";
 import RoleSelector from "./pages/RoleSelector";
 import LoginForm from "./pages/Login";
+import About from "./pages/About";
 import Home from "./pages/Home";
 import DoctorSignup from "./pages/Doctor/Signup_Doctor";
 import MedicalSignup from "./pages/MedicalStore/medical_signup";
@@ -24,6 +25,9 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          
+          {/* Authentication Routes */}
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<RoleSelector />} />
           <Route path="/signup/farmer" element={<FarmerSignup />} />
