@@ -11,7 +11,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       const res = await fetch("/api/users/login", {
         method: "POST",
@@ -20,15 +20,15 @@ const LoginPage = () => {
         },
         body: JSON.stringify({ email: emailOrPhone, password }),
       });
-  
+
       const data = await res.json();
-      console.log("Login data:", data);  // Log the data
-  
+      console.log("Login data:", data); // Log the data
+
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data.user));
         const role = data.user.role.toLowerCase();
         console.log("Redirecting to: ", `/${role}/home`); // Log the redirection path
-        navigate(`/${role}/home`);  // Redirect after login
+        navigate(`/${role}/home`); // Redirect after login
       } else {
         setMessage(data.message || "Invalid credentials");
       }
@@ -37,14 +37,18 @@ const LoginPage = () => {
       setMessage("Server error");
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200 flex items-center justify-center -mt-5">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 h-full">
         <div className="flex items-center mb-6">
-            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-10 bg-cover" />
+          <img
+            src={resources.Logo.src}
+            alt="FarmerCare Logo"
+            className="h-10 bg-cover"
+          />
           <h1 className="text-4xl font-bold text-blue-600 ml-2">PashuMitra</h1>
-          </div>
+        </div>
         <div className="mb-6 text-left">
           <h2 className="text-3xl font-bold text-gray-800">
             Welcome back to <span className="text-blue-600">PashuMitra</span>
@@ -53,7 +57,17 @@ const LoginPage = () => {
             Log in to access your animal healthcare dashboard
           </p>
         </div>
-        
+
+        <div className="flex justify-start mb-4">
+          <a
+            href="/"
+            className="flex items-center text-blue-600 hover:underline font-medium"
+          >
+            <ArrowLeftCircle className="mr-1" size={18} />
+            Back to Home
+          </a>
+        </div>
+
         {message && (
           <div
             className={`text-sm mb-3 px-4 py-2 rounded ${
