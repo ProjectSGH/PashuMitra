@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const slides = [
   {
     id: 1,
-    image: resources.Farmer_Hero_1.src,
+    image: resources.Common_Hero_1.src,
     titleParts: {
       before: "Connecting Rural ",
       highlight: "Healthcare",
@@ -21,7 +21,7 @@ const slides = [
   },
   {
     id: 2,
-    image: resources.Farmer_Hero_2.src,
+    image: resources.Common_Hero_2.src,
     titleParts: {
       before: "Expert ",
       highlight: "Consultation",
@@ -87,9 +87,9 @@ export const HeroCarousel = () => {
             className="h-full bg-cover bg-center relative"
             style={{ backgroundImage: `url(${slide.image})` }}
           >
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/35" />
             <div className="relative h-full flex items-center justify-center text-center px-4">
-              <div className="max-w-4xl mx-auto text-white animate-fadeIn backdrop-blur-md bg-white/10 rounded-xl p-8">
+              <div className="max-w-4xl mx-auto text-white animate-fadeIn backdrop-blur-md bg-black/20 rounded-xl p-8">
                 <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
                   {slide.titleParts.before}
                   <span className="text-blue-600">
