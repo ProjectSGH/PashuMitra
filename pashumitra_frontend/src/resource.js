@@ -11,6 +11,10 @@ import CustomLoader from './assets/CustomLoader.gif';
 import Jeet from './assets/Doctor/jeet.jpg';
 import Herin from './assets/Doctor/Herin.jpg';
 import Dhruv from './assets/Doctor/Dhruv.jpg';
+import DoctorWithCow from './assets/Doctor/DoctorWithCow.png';
+import DigitalHealthMonitoring from './assets/Doctor/DigitalHealthMonitoring.jpg';
+import SeasonalVaccination from './assets/Doctor/SeasonalVaccination.png';
+import EarlyMastitisDetection from './assets/Doctor/EarlyMastitisDetection.png';
 
 const resources = {
     Logo: {
@@ -65,5 +69,22 @@ const resources = {
         src: Dhruv,
         alt: 'Dhruv',
     },
+    DoctorWithCow: {
+        src: DoctorWithCow,
+        alt: 'DoctorWithCow',
+    },
+    DigitalHealthMonitoring: {
+        src: DigitalHealthMonitoring,
+        alt: 'DigitalHealthMonitoring',
+    },
+    SeasonalVaccination: {
+        src: SeasonalVaccination,
+        alt: 'SeasonalVaccination',
+    },
+    EarlyMastitisDetection: {
+        src: EarlyMastitisDetection,
+        alt: 'EarlyMastitisDetection',
+    },    
+   
 };
 export default resources;

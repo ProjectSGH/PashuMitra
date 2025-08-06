@@ -1,4 +1,3 @@
-
 {
   "name": "pashumitra_backend",
   "version": "1.0.0",
@@ -13,11 +12,14 @@
   "dependencies": {
     "axios": "^1.10.0",
     "bcrypt": "^5.1.1",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mongoose": "^8.13.2",
-    "pashumitra_backend": "file:"
+    "multer": "^2.0.2",
+    "pashumitra_backend": "file:",
+    "streamifier": "^0.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
