@@ -197,8 +197,8 @@ export default function VeterinaryPlatform() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Carousel Section */}
-      <div className="relative w-full max-w-9xl mx-auto overflow-hidden rounded-none sm:rounded-xl shadow-2xl">
-        <div className="relative md:h-[450px] w-full">
+      <div className="relative w-full max-w-9xl mx-auto overflow-hidden rounded-none sm:rounded-xl shadow-sm">
+        <div className="relative md:h-[100vh] w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide}
@@ -294,7 +294,7 @@ export default function VeterinaryPlatform() {
               variants={itemVariants}
               className="text-center mb-12 sm:mb-16"
             >
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-4 sm:mb-6">
                 Functionality Overview for Doctors
               </h2>
               <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -318,7 +318,7 @@ export default function VeterinaryPlatform() {
                   >
                     <motion.div
                       variants={cardHoverVariants}
-                      className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300 h-full"
+                      className="bg-white shadow-blue-200 rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-shadow duration-300 h-full"
                     >
                       <div className="flex flex-col items-center text-center">
                         <div className="bg-gray-100 rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6">
@@ -351,7 +351,7 @@ export default function VeterinaryPlatform() {
               variants={itemVariants}
               className="text-center mb-12 sm:mb-16"
             >
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-4 sm:mb-6">
                 How It Works
               </h2>
               <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
@@ -421,7 +421,7 @@ export default function VeterinaryPlatform() {
               variants={itemVariants}
               className="text-center mb-12 sm:mb-16"
             >
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-4 sm:mb-6">
                 Awareness & Community Impact
               </h2>
               <p className="text-lg sm:text-xl text-blue-600 max-w-3xl mx-auto leading-relaxed">
@@ -546,7 +546,7 @@ export default function VeterinaryPlatform() {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <button className="bg-white text-gray-900 hover:bg-gray-100 px-8 sm:px-10 py-4 sm:py-5 rounded-lg font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto">
-              Register Now
+              Verify Now
             </button>
             <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 sm:px-10 py-4 sm:py-5 rounded-lg font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 w-full sm:w-auto">
               Learn More
