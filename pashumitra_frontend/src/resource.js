@@ -6,6 +6,8 @@ import VaternityLogo from './assets/VaternityLogo.jpeg'
 import Farmer_Hero_1 from './assets/Farmer_Hero_1.jpg';
 import Farmer_Hero_2 from './assets/Farmer_Hero_2.jpg';
 import Farmer_Hero_3 from './assets/Farmer_Hero_3.jpg';
+import Common_Hero_1 from './assets/Common_Hero_1.jpg';
+import Common_Hero_2 from './assets/Common_Hero_2.webp';
 import customVerificationMark from './assets/Verified.png'
 import CustomLoader from './assets/CustomLoader.gif';
 import Jeet from './assets/Doctor/jeet.jpg';
@@ -56,6 +58,14 @@ const resources = {
     CustomLoader: {
         src: CustomLoader,
         alt: 'Custom Loader',
+    },
+    Common_Hero_1: {
+        src: Common_Hero_1,
+        alt: 'Common Hero 1',
+    },
+    Common_Hero_2: {
+        src: Common_Hero_2,
+        alt: 'Common Hero 2',
     },
     Jeet: {
         src: Jeet,

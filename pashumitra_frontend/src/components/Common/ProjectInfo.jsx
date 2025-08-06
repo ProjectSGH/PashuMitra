@@ -53,10 +53,8 @@ export const ProjectInfo = () => {
               custom={4}
               variants={fadeUp}
             >
-              <strong className="text-blue-600">
-                PashuMitra
-              </strong>{" "}
-              is developed as part of our semester project at{" "}
+              <strong className="text-blue-600">PashuMitra</strong> is developed
+              as part of our semester project at{" "}
               <strong>U.V. Patel College of Engineering</strong>. This platform
               represents our commitment to solving real-world problems in rural
               veterinary healthcare through innovative technology solutions.
@@ -69,15 +67,19 @@ export const ProjectInfo = () => {
             >
               <div className="flex items-center justify-center space-x-3">
                 <Users className="w-5 h-5 text-blue-600" />
-                <span className="text-muted-foreground">Student Team Project</span>
+                <span className="text-muted-foreground">
+                  Student Team Project
+                </span>
               </div>
               <div className="flex items-center justify-center space-x-3">
                 <Calendar className="w-5 h-5 text-blue-600" />
-                <span className="text-muted-foreground">Semester 2024-25</span>
+                <span className="text-muted-foreground">7th Semester (2024-25)</span>
               </div>
               <div className="flex items-center justify-center space-x-3">
                 <GraduationCap className="w-5 h-5 text-blue-600" />
-                <span className="text-muted-foreground">Engineering Innovation</span>
+                <span className="text-muted-foreground">
+                  Engineering Innovation
+                </span>
               </div>
             </motion.div>
 
@@ -86,11 +88,23 @@ export const ProjectInfo = () => {
               custom={6}
               variants={fadeUp}
             >
-              <p className="text-muted-foreground text-lg italic">
-                "Our vision is to bridge the digital divide in rural healthcare and create sustainable
-                solutions that empower farming communities with better access to veterinary services
-                and medicines."
+              <p className="text-muted-foreground text-xl italic">
+                "Our vision is to bridge the digital divide in rural healthcare
+                and create sustainable solutions that empower farming
+                communities with better access to veterinary services and
+                medicines."
               </p>
+              <div className="flex justify-evenly items-center mt-4">
+                <p className="mt-4 text-muted-foreground text-sm">
+                  ~ <b>DHRUV SHERE</b> <p>sheredhruv@gmail.com</p><p>(Project Lead)</p>
+                </p>
+                <p className="mt-2 text-muted-foreground text-sm">
+                  ~ <b>JEET JANI</b> <p>janijeet50@gmail.com</p><p>(Project Co-Lead)</p>
+                </p>
+                <p className="mt-2 text-muted-foreground text-sm">
+                  ~ <b>HERIN PATEL</b> <p>herin7151@gmail.com</p> <p>(Project Co-Lead)</p>
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         </motion.div>
