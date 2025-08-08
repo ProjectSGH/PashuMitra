@@ -15,10 +15,10 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center">
+              <div className="h-8 w-8 rounded-md flex items-center justify-center">
             <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               </div>
-              <span className="ml-2 text-lg font-semibold text-gray-900">PashuMitra</span>
+              <span className="ml-2 text-lg font-semibold  text-blue-600">PashuMitra</span>
             </div>
           </div>
 
