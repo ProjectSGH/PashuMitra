@@ -15,6 +15,7 @@ import Hero from "../../components/Farmer/Home/Hero";
 import NewsSection from "../../components/Farmer/Home/news-section";
 import TestimonialsSection from "../../components/Farmer/Home/testomonial-section";
 import StatsSection from "../../components/Farmer/Home/state-section";
+import FarmerSteps from "../../components/Farmer/Home/farmer-demonstration-steps";
 import resources from "../../resource";
 
 const veterinarians = [
@@ -340,6 +341,8 @@ export default function FarmerCareHomepage() {
           </motion.section>
         </div>
       </div>
+      {/* Farmer Steps Section */}
+      <FarmerSteps />
 
       <NewsSection />
 
