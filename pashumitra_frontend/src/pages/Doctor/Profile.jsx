@@ -195,19 +195,7 @@ export default function ProfileSchedule() {
       toast.error("Update failed. Try again later.");
     }
   };
-
-  const getDoctorIdFromUserId = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:5000/api/doctors/byUserId/${user._id}`
-      );
-      return res.data._id; // This is the Doctor_User._id
-    } catch (err) {
-      console.error("Doctor not found for this user", err);
-      return null;
-    }
-  };
-
+  
   const handleVerificationUpload = async (e) => {
     e.preventDefault();
     setIsUploading(true);
@@ -217,11 +205,15 @@ export default function ProfileSchedule() {
     formData.append("licenseNumber", license);
 
     try {
-      const doctorId = await getDoctorIdFromUserId();
+      const userRes = await axios.get(
+          `http://localhost:5000/api/users/${user._id}`
+        );
+        const userData = userRes.data;
+      const doctorId = userData.doctorProfile?._id;
       if (!doctorId) return toast.error("Doctor profile not found");
 
       const response = await fetch(
-        `http://localhost:5000/api/doctor/varify/upload/${doctorId}`,
+        `http://localhost:5000/api/doctor/varify/upload/${user._id}`,
         {
           method: "POST",
           body: formData,
@@ -229,7 +221,7 @@ export default function ProfileSchedule() {
       );
 
       const verificationRes = await axios.get(
-        `http://localhost:5000/api/doctor/varify/status/${doctorId}`
+        `http://localhost:5000/api/doctor/varify/status/${user._id}`
       );
       setProfile((prev) => ({
         ...prev,
