@@ -1,4 +1,4 @@
-import Logo from './assets/Logo2.png';
+import Logo from './assets/Logo_New_3.png';
 import About from './assets/About.png';
 import FarmerLogo from './assets/FarmerLogo.jpg'
 import MedicalStoreLogo from './assets/MedicalStoreLogo.jpg'
