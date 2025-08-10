@@ -1,253 +1,280 @@
 "use client";
 
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Umbrella,
-  Sun,
-  Snowflake,
-  Play,
-  Syringe,
-  Search,
+  Image,
+  FileText,
+  Megaphone,
   Heart,
-  ArrowRight,
+  Download,
+  ExternalLink,
+  Phone,
+  MessageCircle,
 } from "lucide-react";
 
-export default function HealthAwareness() {
+export default function FarmerHealthAwareness() {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.5 },
-    },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
   };
 
-  const seasonalTips = [
+  // Demo content
+  const posts = [
     {
-      title: "Monsoon Care for Cattle",
-      subtitle: "Monsoon",
-      description: "Essential tips to protect your cattle during the rainy season",
-      points: ["Provide proper drainage", "Prevent water stagnation", "Monitor for hoof infections"],
-      icon: Umbrella,
-      color: "bg-blue-500",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-700",
+      doctorName: "Dr. Pashumitra",
+      doctorImg: "https://via.placeholder.com/40x40?text=DP",
+      title: "Vaccination Awareness",
+      description: "Importance of timely vaccination for livestock health.",
+      hashtags: ["LivestockCare", "Vaccination", "HealthyFarms"],
+      likes: 120,
+      images: [
+        "https://via.placeholder.com/300x200?text=Image+1",
+        "https://via.placeholder.com/300x200?text=Image+2",
+        "https://via.placeholder.com/300x200?text=Image+3",
+      ],
     },
     {
-      title: "Summer Heat Stress Prevention",
-      subtitle: "Summer",
-      description: "Keep animals cool and healthy during hot weather",
-      points: ["Provide adequate shade", "Ensure fresh water supply", "Adjust feeding times"],
-      icon: Sun,
-      color: "bg-orange-500",
-      bgColor: "bg-orange-50",
-      textColor: "text-orange-700",
-    },
-    {
-      title: "Winter Health Management",
-      subtitle: "Winter",
-      description: "Protect livestock from cold weather challenges",
-      points: ["Provide warm shelter", "Increase energy feed", "Monitor respiratory health"],
-      icon: Snowflake,
-      color: "bg-cyan-500",
-      bgColor: "bg-cyan-50",
-      textColor: "text-cyan-700",
+      doctorName: "Dr. Pashumitra",
+      doctorImg: "https://via.placeholder.com/40x40?text=DP",
+      title: "Summer Feeding Tips",
+      description:
+        "How to keep your cattle hydrated and well-fed in hot weather.",
+      hashtags: ["SummerCare", "AnimalHealth"],
+      likes: 85,
+      images: [
+        "https://via.placeholder.com/300x200?text=Image+1",
+        "https://via.placeholder.com/300x200?text=Image+2",
+      ],
     },
   ];
 
-  const healthArticles = [
+  const blogs = [
     {
-      title: "Understanding Foot and Mouth Disease",
-      tag: "Disease Prevention",
-      description: "Learn about symptoms, prevention, and treatment of FMD in livestock",
+      title: "Importance of Deworming in Livestock",
+      description:
+        "Learn why regular deworming is essential for your cattle’s health.",
+      readTime: "4 min read",
+      link: "https://example.com/full-deworming-blog",
+      downloadLink: "/docs/deworming-guide.pdf",
+    },
+    {
+      title: "Summer Care for Dairy Animals",
+      description:
+        "Practical tips to prevent heat stress and keep your animals healthy.",
       readTime: "5 min read",
-    },
-    {
-      title: "Vaccination Schedule for Dairy Animals",
-      tag: "Veterinary Care",
-      description: "Complete guide to vaccination timing and importance for dairy cattle",
-      readTime: "7 min read",
-    },
-    {
-      title: "Nutrition Requirements for Growing Calves",
-      tag: "Nutrition",
-      description: "Essential nutritional needs for healthy calf development",
-      readTime: "6 min read",
+      link: "https://example.com/summer-care",
+      downloadLink: "/docs/summer-care.pdf",
     },
   ];
 
-  const educationalVideos = [
+  const campaigns = [
     {
-      title: "Proper Injection Techniques",
-      duration: "2.5k views",
-      icon: Syringe,
+      title: "Free Vaccination Camp",
+      date: "15th August 2025",
+      location: "Village Panchayat Hall",
+      description:
+        "Bring your cattle for a free vaccination drive organized by local vets.",
+      contact: "+91 9876543210",
     },
     {
-      title: "Identifying Common Cattle Diseases",
-      duration: "4.1k views",
-      icon: Search,
-    },
-    {
-      title: "First Aid for Farm Animals",
-      duration: "3.2k views",
-      icon: Heart,
+      title: "Nutrition Awareness Drive",
+      date: "1st September 2025",
+      location: "Community Center",
+      description: "Learn about balanced feeding for improved milk production.",
+      contact: "+91 9123456780",
     },
   ];
+
+  // Track image index for each post
+  const [imageIndexes, setImageIndexes] = useState(posts.map(() => 0));
+
+  const nextImage = (postIndex) => {
+    setImageIndexes((prev) =>
+      prev.map((val, i) =>
+        i === postIndex
+          ? val === posts[postIndex].images.length - 1
+            ? 0
+            : val + 1
+          : val
+      )
+    );
+  };
+
+  const prevImage = (postIndex) => {
+    setImageIndexes((prev) =>
+      prev.map((val, i) =>
+        i === postIndex
+          ? val === 0
+            ? posts[postIndex].images.length - 1
+            : val - 1
+          : val
+      )
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <motion.div
-        className="bg-white shadow-sm"
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Health Awareness</h1>
-          <p className="text-gray-600">Seasonal Care Tips</p>
-        </div>
-      </motion.div>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[80vw] mx-auto space-y-12">
+        {/* Posts Section */}
+        <h2 className="text-2xl font-bold mb-4">Posts</h2>
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+          {posts.map((post, postIndex) => (
+            <motion.div
+              key={postIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-md mx-auto overflow-hidden"
+            >
+              {/* Doctor Header */}
+              <div className="flex items-center space-x-3 p-4">
+                <img
+                  src={post.doctorImg}
+                  alt={post.doctorName}
+                  className="w-10 h-10 rounded-full object-cover border"
+                />
+                <span className="font-semibold text-gray-900">
+                  {post.doctorName}
+                </span>
+              </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Seasonal Tips */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {seasonalTips.map((tip, index) => (
-            <motion.div key={index} variants={itemVariants}>
-              <div className={`${tip.bgColor} border rounded-lg h-full p-6 hover:shadow-lg transition-shadow duration-300`}>
-                <div className="text-center pb-4">
-                  <div className={`w-12 h-12 ${tip.color} rounded-full flex items-center justify-center mx-auto mb-3`}>
-                    <tip.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className={`text-lg font-semibold ${tip.textColor} mb-1`}>{tip.title}</h3>
-                  <p className={`text-sm ${tip.textColor} opacity-80`}>{tip.subtitle}</p>
-                </div>
-                <div>
-                  <p className={`text-sm ${tip.textColor} mb-4`}>{tip.description}</p>
-                  <ul className={`text-sm ${tip.textColor} space-y-2 mb-6`}>
-                    {tip.points.map((point, i) => (
-                      <li key={i} className="flex items-start">
-                        <span className="w-1.5 h-1.5 bg-current rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                        {point}
-                      </li>
-                    ))}
-                  </ul>
-                  <button className={`w-full px-4 py-2 rounded-md ${tip.color} hover:opacity-90 text-white text-sm`}>
-                    Read More
-                  </button>
+              {/* Image Carousel */}
+              <div className="relative w-full h-80 bg-black flex items-center justify-center overflow-hidden">
+                <img
+                  src={post.images[imageIndexes[postIndex]]}
+                  alt={`Post ${imageIndexes[postIndex] + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                {post.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => prevImage(postIndex)}
+                      className="absolute left-2 bg-black bg-opacity-50 text-white rounded-full px-2 py-1"
+                    >
+                      {"<"}
+                    </button>
+                    <button
+                      onClick={() => nextImage(postIndex)}
+                      className="absolute right-2 bg-black bg-opacity-50 text-white rounded-full px-2 py-1"
+                    >
+                      {">"}
+                    </button>
+                    <div className="absolute bottom-2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-xs">
+                      {imageIndexes[postIndex] + 1} / {post.images.length}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-around px-4 py-3 border-t border-gray-100">
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-red-500">
+                  <Heart className="w-6 h-6" />
+                </button>
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-blue-500">
+                  <MessageCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Likes */}
+              <div className="px-4 py-2 text-sm font-semibold">
+                {post.likes} likes
+              </div>
+
+              {/* Caption */}
+              <div className="px-4 pb-4 text-sm">
+                <span className="font-semibold">{post.doctorName} </span>
+                {post.description}
+                <div className="text-blue-600">
+                  {post.hashtags.map((tag, idx) => (
+                    <span key={idx} className="mr-1">
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Health Articles */}
+        </div>
+        {/* Blogs Section */}
         <motion.div
-          className="mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Health Articles</h2>
-          <div className="space-y-4">
-            {healthArticles.map((article, index) => (
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <FileText className="w-6 h-6 text-green-600" /> Blogs & Documents
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {blogs.map((blog, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                variants={itemVariants}
+                className="bg-white rounded-lg shadow hover:shadow-lg transition p-6"
               >
-                <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">{article.tag}</span>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-2">{article.description}</p>
-                      <p className="text-gray-500 text-xs">{article.readTime}</p>
-                    </div>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mt-4 sm:mt-0 sm:ml-4 text-sm">
-                      Read Article
-                    </button>
-                  </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {blog.title}
+                </h3>
+                <p className="text-gray-600 mb-3">{blog.description}</p>
+                <p className="text-xs text-gray-500 mb-4">{blog.readTime}</p>
+                <div className="flex gap-3">
+                  <a
+                    href={blog.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Read More
+                  </a>
+                  <a
+                    href={blog.downloadLink}
+                    download
+                    className="flex items-center gap-1 text-green-600 hover:underline text-sm"
+                  >
+                    <Download className="w-4 h-4" /> Download
+                  </a>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        {/* Educational Videos */}
+        {/* Campaigns Section */}
         <motion.div
-          className="mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Educational Videos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {educationalVideos.map((video, index) => (
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Megaphone className="w-6 h-6 text-orange-600" /> Campaigns
+          </h2>
+          <div className="space-y-6">
+            {campaigns.map((camp, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
+                variants={itemVariants}
+                className="bg-orange-50 border border-orange-200 rounded-lg p-6"
               >
-                <div className="bg-white rounded-lg p-6 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                      <video.icon className="w-8 h-8 text-gray-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{video.title}</h3>
-                    <p className="text-gray-500 text-sm mb-4">{video.duration}</p>
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center justify-center text-sm w-full">
-                      <Play className="w-4 h-4 mr-2" />
-                      Watch Video
-                    </button>
-                  </div>
-                </div>
+                <h3 className="text-lg font-semibold text-orange-800 mb-1">
+                  {camp.title}
+                </h3>
+                <p className="text-sm text-orange-700 mb-2">
+                  {camp.date} — {camp.location}
+                </p>
+                <p className="text-orange-600 mb-3">{camp.description}</p>
+                <p className="flex items-center gap-1 text-sm text-orange-800">
+                  <Phone className="w-4 h-4" /> Contact: {camp.contact}
+                </p>
               </motion.div>
             ))}
-          </div>
-        </motion.div>
-
-        {/* Newsletter Signup */}
-        <motion.div
-          className="bg-blue-50 rounded-lg p-8 text-center"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-        >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Stay Updated</h2>
-          <p className="text-gray-600 mb-6">
-            Subscribe to our newsletter for the latest health tips and veterinary updates
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center justify-center text-sm">
-              Subscribe
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </button>
           </div>
         </motion.div>
       </div>
