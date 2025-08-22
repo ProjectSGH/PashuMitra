@@ -4,31 +4,24 @@ const postSchema = new mongoose.Schema(
   {
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Doctor user who created it
+      ref: "User",
       required: true,
     },
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
+    authorName: {   // 👈 नवीन field
       type: String,
       required: true,
     },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
     images: [
       {
-        url: { type: String, required: true }, // Cloudinary / S3 link
-        public_id: { type: String }, // Optional if using Cloudinary
+        url: { type: String, required: true },
+        public_id: { type: String },
       },
     ],
     comments: [
       {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         text: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },
       },
