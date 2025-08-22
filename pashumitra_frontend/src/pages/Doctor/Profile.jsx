@@ -160,42 +160,56 @@ export default function ProfileSchedule() {
   };
 
   const handleUpdateProfile = async () => {
-    try {
-      const payload = {
-        phone: profile.phone,
-        email: profile.email,
-        fullName: profile.fullName,
-        specialization: profile.specialization,
-        hospitalname: profile.hospitalname,
-        experience: profile.experience,
-        state: profile.state,
-        city: profile.city,
-        schedule, // include schedule here if you want to store it in backend
-      };
+  try {
+    const payload = {
+      phone: profile.phone,
+      email: profile.email,
+      fullName: profile.fullName,
+      specialization: profile.specialization,
+      hospitalname: profile.hospitalname,
+      experience: profile.experience,
+      state: profile.state,
+      city: profile.city,
+      schedule,
+    };
 
-      const response = await axios.put(
-        `http://localhost:5000/api/users/${user._id}`,
-        payload
-      );
+    const response = await axios.put(
+      `http://localhost:5000/api/users/${user._id}`,
+      payload
+    );
 
-      toast.success("Profile updated successfully", {
-        duration: 4000,
-        position: "bottom-right",
-        style: {
-          backgroundColor: "#4CAF50",
-          color: "#fff",
-          fontWeight: "bold",
-          borderRadius: "8px",
-        },
-      });
+   // ✅ Update localStorage so Consultations.jsx sees new name instantly
+   const updatedUser = {
+     ...user,
+     doctorProfile: {
+       ...(user.doctorProfile || {}),
+       fullName: profile.fullName,
+       specialization: profile.specialization,
+       hospitalname: profile.hospitalname,
+       experience: profile.experience,
+       state: profile.state,
+       city: profile.city,
+     },
+     displayName: profile.fullName, // for fallback
+   };
+   localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // setProfile(updatedProfileFromResponse);
-    } catch (err) {
-      console.error("Error updating profile", err);
-      toast.error("Update failed. Try again later.");
-    }
-  };
-  
+    toast.success("Profile updated successfully", {
+      duration: 4000,
+      position: "bottom-right",
+      style: {
+        backgroundColor: "#4CAF50",
+        color: "#fff",
+        fontWeight: "bold",
+        borderRadius: "8px",
+      },
+    });
+  } catch (err) {
+    console.error("Error updating profile", err);
+    toast.error("Update failed. Try again later.");
+  }
+};
+
   const handleVerificationUpload = async (e) => {
     e.preventDefault();
     setIsUploading(true);

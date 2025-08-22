@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   MessageCircle,
@@ -9,8 +9,8 @@ import {
   Clock,
   Calendar,
   Users,
-  Lightbulb,
 } from "lucide-react"
+import axios from "axios"
 
 // Reusable animation variants
 const containerVariants = {
@@ -108,6 +108,72 @@ const buttonStyles = {
 export default function Consultations() {
   const [statusFilter, setStatusFilter] = useState("All Status")
 
+
+// Display name state (update after mount)
+// displayName state (used in greeting)
+const [displayName, setDisplayName] = useState("Doctor");
+
+useEffect(() => {
+  const loadDisplayName = async () => {
+    try {
+      const raw = localStorage.getItem("user");
+      const localUser = raw ? JSON.parse(raw) : null;
+
+      // 1) If localStorage already has a good displayName/fullName, use it.
+      let name =
+        (localUser?.displayName || localUser?.fullName || "").toString().trim();
+
+      // 2) If that is missing or is just the literal "Doctor", prefer doctorProfile or backend
+      if (!name || name.toLowerCase() === "doctor") {
+        // prefer nested doctorProfile if present in local storage
+        if (localUser?.doctorProfile?.fullName) {
+          name = localUser.doctorProfile.fullName.toString().trim();
+        } else if (localUser?._id) {
+          // fetch fresh user from backend (same endpoint you use in ProfileSchedule)
+          try {
+            const res = await axios.get(`http://localhost:5000/api/users/${localUser._id}`);
+            const userData = res.data;
+            name =
+              (userData?.doctorProfile?.fullName ||
+               userData?.fullName ||
+               userData?.name ||
+               `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
+               ""
+              ).toString().trim();
+
+            // update localStorage so future loads are faster
+            const merged = { ...(localUser || {}), ...(userData || {}) };
+            if (name) merged.displayName = name;
+            localStorage.setItem("user", JSON.stringify(merged));
+          } catch (err) {
+            console.warn("Could not fetch user from backend:", err);
+          }
+        }
+      }
+
+      name = (name || "").trim();
+
+      // 3) Final fallback and prefix logic
+      const role = (localUser?.role || "").toString().toLowerCase().trim();
+      const isDoctor = role === "doctor";
+      const hasDrPrefix = /^dr\.?\s/i.test(name);
+
+      if (!name) {
+        setDisplayName(isDoctor ? "Doctor" : (localUser?.role || "User"));
+      } else if (isDoctor && !hasDrPrefix && name.toLowerCase() !== "doctor") {
+        setDisplayName(`Dr. ${name}`);
+      } else {
+        setDisplayName(name);
+      }
+    } catch (err) {
+      console.error("Error computing displayName:", err);
+      setDisplayName("Doctor");
+    }
+  };
+
+  loadDisplayName();
+}, []);
+
   const filteredConsultations =
     statusFilter === "All Status"
       ? consultationsData
@@ -130,41 +196,60 @@ export default function Consultations() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-
         {/*  Stats Section Moved to Top */}
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
-                {/* Welcome */}
-                <motion.div variants={itemVariants} className="mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Dr. Johnson!</h2>
-                  <p className="text-gray-600">Here's what's happening with your practice today.</p>
-                </motion.div>
-        
-                {/* Stats */}
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  {[
-                    { title: "Pending Consultations", value: "8", icon: MessageCircle, color: "blue" },
-                    { title: "Today's Appointments", value: "12", icon: Calendar, color: "green" },
-                    { title: "Follow-ups Due", value: "5", icon: Users, color: "yellow" },
-                  ].map((stat, index) => (
-                    <motion.div
-                      key={stat.title}
-                      variants={cardVariants}
-                      whileHover="hover"
-                      className="bg-white rounded-lg p-6 shadow-sm border"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                          <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                        </div>
-                        <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
-                          <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
+          {/* Welcome */}
+          <motion.div variants={itemVariants} className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {`Welcome back, ${displayName}!`}
+            </h2>
+            <p className="text-gray-600">
+              Here's what's happening with your practice today.
+            </p>
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            variants={itemVariants}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          >
+            {[
+              {
+                title: "Pending Consultations",
+                value: "8",
+                icon: MessageCircle,
+                color: "blue",
+              },
+              {
+                title: "Today's Appointments",
+                value: "12",
+                icon: Calendar,
+                color: "green",
+              },
+              { title: "Follow-ups Due", value: "5", icon: Users, color: "yellow" },
+            ].map((stat) => (
+              <motion.div
+                key={stat.title}
+                variants={cardVariants}
+                whileHover="hover"
+                className="bg-white rounded-lg p-6 shadow-sm border"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      {stat.title}
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
+                    <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                  </div>
+                </div>
               </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6"
@@ -173,13 +258,19 @@ export default function Consultations() {
           transition={{ duration: 0.6 }}
         >
           <div className="mb-4 sm:mb-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Consultations</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Consultations
+            </h1>
             <p className="text-gray-600 text-sm md:text-base">
               Manage your consultation requests and ongoing sessions
             </p>
           </div>
 
-          <motion.div className="relative" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -238,7 +329,9 @@ export default function Consultations() {
                   <h3 className="font-semibold text-gray-900 text-lg mb-1">
                     {consultation.patientName}
                   </h3>
-                  <p className="text-gray-600 text-sm">{consultation.animalType}</p>
+                  <p className="text-gray-600 text-sm">
+                    {consultation.animalType}
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -258,7 +351,9 @@ export default function Consultations() {
 
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Issue:</p>
-                  <p className="text-sm text-gray-600 leading-relaxed">{consultation.issue}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {consultation.issue}
+                  </p>
                 </div>
 
                 <div className="space-y-3">
