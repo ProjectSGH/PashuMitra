@@ -1,7 +1,14 @@
 // src/pages/ContactUs.jsx
 "use client";
 
-import { Phone, Mail, MapPin, Send, ArrowDown, ChevronDown } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Send,
+  ArrowDown,
+  ChevronDown,
+} from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -64,26 +71,58 @@ const HeroSection = () => {
       </div>
 
       {/* FAQ Section */}
-      <div className="px-6 md:px-20 py-12 max-w-4xl mx-auto">
+      <div className="px-6 md:px-20 py-12 max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center mb-8 text-blue-600">
           Frequently Asked Questions
         </h2>
         <div className="bg-white rounded-xl shadow-lg p-6">
           <FAQ
-            question="How can I contact support?"
+            question="1) How can I contact support?"
             answer="You can reach us via phone, email, or by filling out the contact form below. We're available 24/7 for emergencies."
           />
           <FAQ
-            question="What kind of queries can I ask?"
+            question="2) What kind of queries can I ask?"
             answer="You can ask about veterinary care, medicine availability, transport support, or any technical help regarding our platform."
           />
           <FAQ
-            question="How quickly will I get a response?"
+            question="3) How quickly will I get a response?"
             answer="Our team usually replies within 24 hours for non-urgent queries. For emergencies, use our phone helpline."
           />
           <FAQ
-            question="Is there any cost for asking queries?"
+            question="4) Is there any cost for asking queries?"
             answer="No, asking queries is completely free. You only pay if you order medicines or request transport services."
+          />
+          <FAQ
+            question="5) Can I order medicines online?"
+            answer="Yes, our platform allows you to order medicines from verified medical stores directly."
+          />
+          <FAQ
+            question="6) How do I request urgent medicine delivery?"
+            answer="If a medicine is out of stock, you can mark it as urgent to trigger a transport request to nearby stores."
+          />
+          <FAQ
+            question="7) Do I need to register to ask a question?"
+            answer="No, you can submit queries using the contact form, but registration is required for medicine ordering and transport services."
+          />
+          <FAQ
+            question="8) Where can I find my previous queries or orders?"
+            answer="After logging in, you can access your consultation and order history in the dashboard section."
+          />
+          <FAQ
+            question="9) Can I contact a veterinarian directly?"
+            answer="Yes, registered users can request consultations with available veterinarians through the platform."
+          />
+          <FAQ
+            question="10) Are the medical stores verified?"
+            answer="Yes, all medical stores on our platform go through a verification process to ensure authenticity."
+          />
+          <FAQ
+            question="11) What should I do if my order is delayed?"
+            answer="You can contact support via phone or email, and we will track and resolve your order promptly."
+          />
+          <FAQ
+            question="12) How secure is my data on this platform?"
+            answer="We use standard encryption and privacy measures to protect your personal and medical information."
           />
         </div>
       </div>
