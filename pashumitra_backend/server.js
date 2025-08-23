@@ -7,6 +7,7 @@ const farmer_verification = require('./routes/Farmer/farmerVarificationRoutes');
 const doctor_verification = require('./routes/Doctor/doctorVerificationRoutes');
 const scheduleRoutes = require('./routes/Doctor/scheduleRoutes');
 const postRoutes = require('./routes/Common/PostRoutes');
+const docBlogRoutes = require('./routes/Common/BlogRoutes');  // 👈 नवीन
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/api/farmer/varify', farmer_verification);
 app.use('/api/doctor/varify', doctor_verification);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/docs", docBlogRoutes);   
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

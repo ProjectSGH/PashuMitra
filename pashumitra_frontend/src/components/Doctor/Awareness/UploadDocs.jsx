@@ -1,7 +1,8 @@
 import { useState, useRef } from "react"
 import { motion } from "framer-motion"
-import { Upload, FileType, Video, ImageIcon, FileText, X } from "lucide-react"
+import { Upload, FileText, X } from "lucide-react"
 import toast from "react-hot-toast"
+import axios from "axios"
 
 const UploadDocsTab = () => {
   const [uploadTitle, setUploadTitle] = useState("")
@@ -10,22 +11,23 @@ const UploadDocsTab = () => {
   const [filePreview, setFilePreview] = useState(null)
   const fileInputRef = useRef(null)
 
+  const storedUser = JSON.parse(localStorage.getItem("user"))
+  const author = storedUser?._id
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0]
     if (file) {
       const previewURL = URL.createObjectURL(file)
-      setFilePreview({ url: previewURL, name: file.name, type: file.type })
+      setFilePreview({ url: previewURL, name: file.name, type: file.type, file })
     }
   }
 
   const removeFile = () => {
     setFilePreview(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = null
-    }
+    if (fileInputRef.current) fileInputRef.current.value = null
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!uploadTitle.trim()) {
       toast.error("Please enter a title.")
       return
@@ -35,12 +37,41 @@ const UploadDocsTab = () => {
       return
     }
 
-    // Mock submit (replace with API call)
-    toast.success("Document submitted successfully!")
-    setUploadTitle("")
-    setUploadCaption("")
-    setBlogContent("")
-    removeFile()
+    try {
+      const formData = new FormData()
+      formData.append("title", uploadTitle)
+      formData.append("caption", uploadCaption)
+      formData.append("blogContent", blogContent)
+      formData.append("author", author)
+      if (filePreview?.file) {
+        formData.append("file", filePreview.file)
+      }
+
+      const res = await axios.post("http://localhost:5000/api/docs/create", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+
+      if (res.data?.docBlog) {
+        toast.success("Document/Blog uploaded successfully!", {
+          duration: 4000,
+          position: "bottom-right",
+          style: {
+            backgroundColor: "#059669",
+            color: "#fff",
+            fontWeight: "bold",
+            borderRadius: "8px",
+          },
+        })
+        // Reset form
+        setUploadTitle("")
+        setUploadCaption("")
+        setBlogContent("")
+        removeFile()
+      }
+    } catch (err) {
+      console.error("Upload error:", err)
+      toast.error("Upload failed. Try again.")
+    }
   }
 
   return (
@@ -71,9 +102,7 @@ const UploadDocsTab = () => {
 
         {/* Upload Area */}
         {!filePreview && (
-          <label
-            className="border-2 border-dashed rounded-lg p-8 text-center block cursor-pointer hover:border-blue-400 mb-4"
-          >
+          <label className="border-2 border-dashed rounded-lg p-8 text-center block cursor-pointer hover:border-blue-400 mb-4">
             <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p>Click or Drag & Drop Files Here</p>
             <input
