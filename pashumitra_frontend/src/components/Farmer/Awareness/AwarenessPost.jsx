@@ -1,39 +1,29 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle } from "lucide-react";
 
 export default function FarmerPosts() {
   const [posts, setPosts] = useState([]);
-  const [imageIndexes, setImageIndexes] = useState([]);
   const [newComments, setNewComments] = useState({});
+  const [activePostId, setActivePostId] = useState(null); // which post drawer is open
 
-  // ✅ Get current logged-in user properly
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const userId = storedUser?._id;
 
-  // 🔹 Debug userId once on mount
-  useEffect(() => {
-    console.log("📌 userId from localStorage:", userId);
-  }, [userId]);
-
-  // 🔹 Fetch posts
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/posts");
         setPosts(res.data);
-        setImageIndexes(res.data.map(() => 0));
       } catch (err) {
         console.error("Fetch posts error:", err);
       }
     };
-
     fetchPosts();
   }, []);
 
-  // 🔹 Like Post
   const handleLike = async (postId) => {
     try {
       const res = await fetch(
@@ -53,15 +43,8 @@ export default function FarmerPosts() {
     }
   };
 
-  // 🔹 Add Comment
   const handleAddComment = async (postId) => {
     if (!newComments[postId]?.trim()) return;
-
-    console.log("📌 Sending Comment:", {
-      userId,
-      text: newComments[postId],
-      postId,
-    });
 
     try {
       const res = await fetch(
@@ -76,8 +59,6 @@ export default function FarmerPosts() {
       if (data.post) {
         setPosts((prev) => prev.map((p) => (p._id === postId ? data.post : p)));
         setNewComments((prev) => ({ ...prev, [postId]: "" }));
-      } else {
-        console.error("Comment response error:", data);
       }
     } catch (err) {
       console.error("Comment error:", err);
@@ -90,26 +71,25 @@ export default function FarmerPosts() {
       <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
         {posts.map((post) => {
           const isLiked = post.likes?.includes(userId);
+          const isActive = activePostId === post._id;
 
           return (
             <motion.div
               key={post._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-md mx-auto overflow-hidden"
+              className="relative bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-md mx-auto overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center space-x-3 p-4">
                 <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
                   Dr
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {post.authorName || "Doctor"}
-                  </h3>
-                  {/* Specialization removed */}
-                </div>
+                <h3 className="font-semibold text-gray-900">
+                  {post.authorName || "Doctor"}
+                </h3>
               </div>
+
               {/* Post Image */}
               <div className="w-full max-h-[400px] bg-gray-100 overflow-hidden flex justify-center items-center">
                 <img
@@ -122,7 +102,7 @@ export default function FarmerPosts() {
                 />
               </div>
 
-              {/* Post Content */}
+              {/* Content */}
               <div className="p-4">
                 <h4 className="font-bold text-gray-900 mb-1">{post.title}</h4>
                 <p className="text-gray-600 text-sm mb-2">{post.description}</p>
@@ -154,44 +134,83 @@ export default function FarmerPosts() {
                     {post.likes?.length || 0}
                   </button>
 
-                  <button className="flex items-center gap-1">
+                  <button
+                    className="flex items-center gap-1"
+                    onClick={() =>
+                      setActivePostId(isActive ? null : post._id)
+                    }
+                  >
                     <MessageCircle className="w-5 h-5" />
                     {post.comments?.length || 0}
                   </button>
                 </div>
               </div>
 
-              {/* Comments */}
-              <div className="px-4 pb-4">
-                {post.comments?.map((c, idx) => (
-                  <div key={idx} className="text-sm text-gray-700">
-                    <span className="font-semibold">
-                      {c.user?.fullName || "User"}:
-                    </span>{" "}
-                    {c.text}
-                  </div>
-                ))}
-                <div className="flex mt-2">
-                  <input
-                    type="text"
-                    placeholder="Add a comment..."
-                    value={newComments[post._id] || ""}
-                    onChange={(e) =>
-                      setNewComments((prev) => ({
-                        ...prev,
-                        [post._id]: e.target.value,
-                      }))
-                    }
-                    className="flex-1 border rounded-l px-2 py-1 text-sm"
-                  />
-                  <button
-                    onClick={() => handleAddComment(post._id)}
-                    className="bg-blue-500 text-white px-3 rounded-r text-sm"
-                  >
-                    Post
-                  </button>
-                </div>
-              </div>
+              {/* 🔹 Bottom-to-up Drawer (INSIDE the post card) */}
+              {/* 🔹 Bottom-to-up Drawer (INSIDE the post card) */}
+<AnimatePresence>
+  {isActive && (
+    <>
+      {/* Backdrop (click to close) */}
+      <div
+        onClick={() => setActivePostId(null)}
+        className="absolute inset-0 bg-black bg-opacity-30"
+      ></div>
+
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ duration: 0.3 }}
+        className="absolute bottom-0 left-0 right-0 bg-white border-t rounded-t-xl shadow-lg h-1/2 p-4 flex flex-col z-10"
+      >
+        {/* Drawer Header with close button */}
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="font-semibold text-gray-900">Comments</h4>
+          <button
+            onClick={() => setActivePostId(null)}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Comments list */}
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {post.comments?.map((c, idx) => (
+            <div key={idx} className="text-sm text-gray-700">
+              <span className="font-semibold">{c.userName || "User"}:</span>{" "}
+              {c.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Add comment input */}
+        <div className="flex mt-2">
+          <input
+            type="text"
+            placeholder="Add a comment..."
+            value={newComments[post._id] || ""}
+            onChange={(e) =>
+              setNewComments((prev) => ({
+                ...prev,
+                [post._id]: e.target.value,
+              }))
+            }
+            className="flex-1 border rounded-l px-2 py-1 text-sm"
+          />
+          <button
+            onClick={() => handleAddComment(post._id)}
+            className="bg-blue-500 text-white px-3 rounded-r text-sm"
+          >
+            Post
+          </button>
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
+
             </motion.div>
           );
         })}

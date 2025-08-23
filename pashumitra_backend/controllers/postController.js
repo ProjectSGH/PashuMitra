@@ -1,7 +1,9 @@
 const Post = require("../models/Common/postModel");
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
-const Doctor = require("../models/Doctor/DoctorModel"); // 👈 import doctor model
+const Doctor = require("../models/Doctor/DoctorModel"); 
+const User = require("../models/UserModel");
+const Farmer = require("../models/Farmer/FarmerModel");
 
 // Cloudinary config (ensure env vars are set)
 cloudinary.config({
@@ -61,6 +63,7 @@ exports.createPost = async (req, res) => {
         res.status(500).json({ message: "Server error", error });
     }
 };
+
 exports.getAllPosts = async (req, res) => {
     try {
         const posts = await Post.find().sort({ createdAt: -1 });
@@ -114,28 +117,38 @@ exports.toggleLike = async (req, res) => {
 };
 
 exports.addComment = async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const { userId, text } = req.body;
+  try {
+    const { postId } = req.params;
+    const { userId, text } = req.body;
 
-        console.log("📌 Comment API Request:", { postId, userId, text });
-
-        if (!userId || !text) {
-            return res.status(400).json({ message: "userId and text are required" });
-        }
-
-        const post = await Post.findById(postId);
-        if (!post) return res.status(404).json({ message: "Post not found" });
-
-        post.comments.push({ user: userId, text });
-        await post.save();
-
-        await post.populate("author", "fullName email");
-        await post.populate("comments.user", "fullName email");
-
-        res.status(201).json({ message: "Comment added", post });
-    } catch (error) {
-        console.error("Add comment error:", error);
-        res.status(500).json({ message: "Server error" });
+    if (!userId || !text) {
+      return res.status(400).json({ message: "userId and text are required" });
     }
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const user = await User.findById(userId);
+    let userName = "Unknown User";
+
+    if (user) {
+      if (user.role === "Doctor") {
+        const doctor = await Doctor.findOne({ userId }); // 👈 fix
+        if (doctor) userName = doctor.fullName;
+      } else if (user.role === "Farmer") {
+        const farmer = await Farmer.findOne({ userId }); // 👈 fix
+        if (farmer) userName = farmer.fullName;
+      } else {
+        userName = user.fullName || "User";
+      }
+    }
+
+    post.comments.push({ user: userId, userName, text });
+    await post.save();
+
+    res.status(201).json({ message: "Comment added", post });
+  } catch (error) {
+    console.error("Add comment error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
