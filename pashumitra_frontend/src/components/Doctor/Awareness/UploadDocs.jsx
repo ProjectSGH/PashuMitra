@@ -3,12 +3,14 @@ import { motion } from "framer-motion"
 import { Upload, FileText, X } from "lucide-react"
 import toast from "react-hot-toast"
 import axios from "axios"
+import resources from "../../../resource" // 👈 तुझा custom loader
 
 const UploadDocsTab = () => {
   const [uploadTitle, setUploadTitle] = useState("")
   const [uploadCaption, setUploadCaption] = useState("")
   const [blogContent, setBlogContent] = useState("")
   const [filePreview, setFilePreview] = useState(null)
+  const [loading, setLoading] = useState(false) // 🔹 loader state
   const fileInputRef = useRef(null)
 
   const storedUser = JSON.parse(localStorage.getItem("user"))
@@ -38,6 +40,8 @@ const UploadDocsTab = () => {
     }
 
     try {
+      setLoading(true) // 🔹 start loader
+
       const formData = new FormData()
       formData.append("title", uploadTitle)
       formData.append("caption", uploadCaption)
@@ -71,12 +75,21 @@ const UploadDocsTab = () => {
     } catch (err) {
       console.error("Upload error:", err)
       toast.error("Upload failed. Try again.")
+    } finally {
+      setLoading(false) // 🔹 stop loader
     }
   }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+      <div className="relative bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+        {/* Loader Overlay (only inside card) */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl z-20">
+            <img src={resources.CustomLoader.src} alt="Uploading..." className="w-20 h-20" />
+          </div>
+        )}
+
         <div className="flex items-center mb-6">
           <Upload className="w-6 h-6 text-blue-600 mr-2" />
           <h2 className="text-xl font-semibold text-gray-900">Upload Documentation or Write Blog</h2>
@@ -156,9 +169,10 @@ const UploadDocsTab = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleSubmit}
+          disabled={loading}
           className="w-full bg-blue-600 text-white py-3 rounded-lg mt-6"
         >
-          Submit
+          {loading ? "Uploading..." : "Submit"}
         </motion.button>
       </div>
     </motion.div>

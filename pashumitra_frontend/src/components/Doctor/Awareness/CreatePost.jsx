@@ -4,12 +4,14 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { PlusCircle, Heart, Share2, X } from "lucide-react";
 import toast from "react-hot-toast";
+import resources from "../../../resource"; // 👈 तुझा loader resource
 
 const CreatePostTab = () => {
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
   const [postTags, setPostTags] = useState("");
   const [mediaFiles, setMediaFiles] = useState([]);
+  const [loading, setLoading] = useState(false); // 🔹 loader state
   const fileInputRef = useRef(null);
 
   const handleMediaUpload = (e) => {
@@ -23,53 +25,56 @@ const CreatePostTab = () => {
     const previews = files.map((file) => ({
       url: URL.createObjectURL(file),
       type: file.type,
-      file, // Store the original File for backend
+      file,
     }));
 
     setMediaFiles((prev) => [...prev, ...previews]);
   };
 
   const handleSubmit = async () => {
-  if (!postTitle.trim() && !postContent.trim() && mediaFiles.length === 0) {
-    toast.error("Please add some content or media before publishing.");
-    return;
-  }
-
-  try {
-    const userData = JSON.parse(localStorage.getItem("user")); 
-    if (!userData || !userData._id) {
-      toast.error("User not found. Please login again.");
+    if (!postTitle.trim() && !postContent.trim() && mediaFiles.length === 0) {
+      toast.error("Please add some content or media before publishing.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", postTitle);
-    formData.append("description", postContent);
-    formData.append("hashtags", postTags);
-    formData.append("author", userData._id); // send user ID
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (!userData || !userData._id) {
+        toast.error("User not found. Please login again.");
+        return;
+      }
 
-    // Append media files (make sure field name matches backend "images")
-    mediaFiles.forEach((fileObj) => {
-      formData.append("images", fileObj.file);
-    });
+      setLoading(true); // 🔹 start loader
 
-    const res = await fetch("http://localhost:5000/api/posts/create", {
-      method: "POST",
-      body: formData,
-    });
+      const formData = new FormData();
+      formData.append("title", postTitle);
+      formData.append("description", postContent);
+      formData.append("hashtags", postTags);
+      formData.append("author", userData._id);
 
-    if (!res.ok) throw new Error("Failed to create post");
+      mediaFiles.forEach((fileObj) => {
+        formData.append("images", fileObj.file);
+      });
 
-    toast.success("Post published successfully!");
-    setPostTitle("");
-    setPostContent("");
-    setPostTags("");
-    setMediaFiles([]);
-  } catch (err) {
-    console.error(err);
-    toast.error("Error creating post. Please try again.");
-  }
-};
+      const res = await fetch("http://localhost:5000/api/posts/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to create post");
+
+      toast.success("Post published successfully!");
+      setPostTitle("");
+      setPostContent("");
+      setPostTags("");
+      setMediaFiles([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error creating post. Please try again.");
+    } finally {
+      setLoading(false); // 🔹 stop loader
+    }
+  };
 
   const removeMedia = (index) => {
     setMediaFiles((prev) => prev.filter((_, i) => i !== index));
@@ -83,7 +88,18 @@ const CreatePostTab = () => {
       className="grid grid-cols-1 lg:grid-cols-2 gap-6"
     >
       {/* Create Post Form */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+      <div className="relative bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100">
+        {/* Loader Overlay (only on form) */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-xl z-20">
+            <img
+              src={resources.CustomLoader.src}
+              alt="Uploading..."
+              className="w-20 h-20"
+            />
+          </div>
+        )}
+
         <div className="flex items-center mb-6">
           <PlusCircle className="w-6 h-6 text-blue-600 mr-2" />
           <h2 className="text-xl font-semibold text-gray-900">
@@ -142,8 +158,9 @@ const CreatePostTab = () => {
             whileTap={{ scale: 0.98 }}
             className="w-full bg-blue-600 text-white py-3 rounded-lg"
             onClick={handleSubmit}
+            disabled={loading}
           >
-            Publish Post
+            {loading ? "Uploading..." : "Publish Post"}
           </motion.button>
         </div>
       </div>
