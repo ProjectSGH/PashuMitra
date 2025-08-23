@@ -1,9 +1,95 @@
 // src/pages/ContactUs.jsx
-import { Phone, Mail, MapPin, Send } from "lucide-react";
+"use client";
+
+import { Phone, Mail, MapPin, Send, ArrowDown, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import Navbar from "../components/Common/Navbar";
 import Footer from "../components/Footer";
+import resources from "../resource";
+
+// FAQ Component
+const FAQ = ({ question, answer }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-gray-300">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex justify-between items-center py-4 text-lg font-medium text-left"
+      >
+        {question}
+        <ChevronDown
+          className={`h-5 w-5 transform transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {open && <p className="pb-4 text-gray-600">{answer}</p>}
+    </div>
+  );
+};
+
+// Hero Section (Image Left, Text Right + FAQ)
+const HeroSection = () => {
+  return (
+    <div className="relative overflow-hidden">
+      <div className="flex flex-col lg:flex-row bg-white items-center min-h-[80vh] w-full">
+        {/* Left: Image */}
+        <div className="w-full lg:w-3/5 h-[60vh] lg:h-[80vh] relative order-1 lg:order-none">
+          <div
+            className="absolute inset-0 bg-blue-600 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${resources.ContactHero.src})`,
+              clipPath: "polygon(0 0, 85% 0, 100% 100%, 0% 100%)",
+            }}
+          ></div>
+        </div>
+
+        {/* Right: Text */}
+        <motion.div
+          className="w-full lg:w-2/5 px-6 lg:px-16 py-12 z-10 text-center lg:text-left"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            Any Query? <br /> Then why be Confused, Ask Us
+          </h1>
+          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-xl mx-auto lg:mx-0">
+            We're here to answer your doubts and guide you with the right
+            information you need <b>24 x 7.</b>
+          </p>
+        </motion.div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="px-6 md:px-20 py-12 max-w-4xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-8 text-blue-600">
+          Frequently Asked Questions
+        </h2>
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <FAQ
+            question="How can I contact support?"
+            answer="You can reach us via phone, email, or by filling out the contact form below. We're available 24/7 for emergencies."
+          />
+          <FAQ
+            question="What kind of queries can I ask?"
+            answer="You can ask about veterinary care, medicine availability, transport support, or any technical help regarding our platform."
+          />
+          <FAQ
+            question="How quickly will I get a response?"
+            answer="Our team usually replies within 24 hours for non-urgent queries. For emergencies, use our phone helpline."
+          />
+          <FAQ
+            question="Is there any cost for asking queries?"
+            answer="No, asking queries is completely free. You only pay if you order medicines or request transport services."
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ContactUs = () => {
   const [form, setForm] = useState({
@@ -39,6 +125,7 @@ const ContactUs = () => {
   return (
     <>
       <Navbar />
+      <HeroSection /> {/* ✅ Hero + FAQ section added here */}
       <div className="bg-white text-blue-600">
         {/* Header */}
         <div className="text-center px-4 py-10">
@@ -91,6 +178,7 @@ const ContactUs = () => {
             </p>
           </div>
         </div>
+
         {/* Contact Form */}
         <div className="px-4 md:px-20 mb-20">
           <div className="grid md:grid-cols-2 gap-10 items-start">

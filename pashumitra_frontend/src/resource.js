@@ -1,5 +1,6 @@
 import Logo from './assets/Logo_New_3.png';
 import About from './assets/About.png';
+import ContactHero from './assets/Contact Us.png';
 import FarmerLogo from './assets/FarmerLogo.jpg'
 import MedicalStoreLogo from './assets/MedicalStoreLogo.jpg'
 import VaternityLogo from './assets/VaternityLogo.jpeg'
@@ -94,7 +95,10 @@ const resources = {
     EarlyMastitisDetection: {
         src: EarlyMastitisDetection,
         alt: 'EarlyMastitisDetection',
-    },    
-   
+    },
+    ContactHero: {
+        src: ContactHero,
+        alt: 'ContactHero',
+    },
 };
 export default resources;
