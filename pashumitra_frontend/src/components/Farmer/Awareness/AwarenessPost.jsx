@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function FarmerPosts() {
   const [posts, setPosts] = useState([]);
@@ -59,6 +60,17 @@ export default function FarmerPosts() {
       if (data.post) {
         setPosts((prev) => prev.map((p) => (p._id === postId ? data.post : p)));
         setNewComments((prev) => ({ ...prev, [postId]: "" }));
+
+        toast.success("Comment added successfully!", {
+          duration: 4000,
+          position: "bottom-right",
+          style: {
+            backgroundColor: "#4CAF50",
+            color: "#fff",
+            fontWeight: "bold",
+            borderRadius: "8px",
+          },
+        });
       }
     } catch (err) {
       console.error("Comment error:", err);
@@ -136,9 +148,7 @@ export default function FarmerPosts() {
 
                   <button
                     className="flex items-center gap-1"
-                    onClick={() =>
-                      setActivePostId(isActive ? null : post._id)
-                    }
+                    onClick={() => setActivePostId(isActive ? null : post._id)}
                   >
                     <MessageCircle className="w-5 h-5" />
                     {post.comments?.length || 0}
@@ -148,69 +158,72 @@ export default function FarmerPosts() {
 
               {/* 🔹 Bottom-to-up Drawer (INSIDE the post card) */}
               {/* 🔹 Bottom-to-up Drawer (INSIDE the post card) */}
-<AnimatePresence>
-  {isActive && (
-    <>
-      {/* Backdrop (click to close) */}
-      <div
-        onClick={() => setActivePostId(null)}
-        className="absolute inset-0 bg-black bg-opacity-30"
-      ></div>
+              <AnimatePresence>
+                {isActive && (
+                  <>
+                    {/* Backdrop (click to close) */}
+                    <div
+                      onClick={() => setActivePostId(null)}
+                      className="absolute inset-0 bg-black bg-opacity-30"
+                    ></div>
 
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ duration: 0.3 }}
-        className="absolute bottom-0 left-0 right-0 bg-white border-t rounded-t-xl shadow-lg h-1/2 p-4 flex flex-col z-10"
-      >
-        {/* Drawer Header with close button */}
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="font-semibold text-gray-900">Comments</h4>
-          <button
-            onClick={() => setActivePostId(null)}
-            className="text-gray-500 hover:text-gray-800"
-          >
-            ✕
-          </button>
-        </div>
+                    <motion.div
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "100%" }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute bottom-0 left-0 right-0 bg-white border-t rounded-t-xl shadow-lg h-1/2 p-4 flex flex-col z-10"
+                    >
+                      {/* Drawer Header with close button */}
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-semibold text-gray-900">
+                          Comments
+                        </h4>
+                        <button
+                          onClick={() => setActivePostId(null)}
+                          className="text-gray-500 hover:text-gray-800"
+                        >
+                          ✕
+                        </button>
+                      </div>
 
-        {/* Comments list */}
-        <div className="flex-1 overflow-y-auto space-y-2">
-          {post.comments?.map((c, idx) => (
-            <div key={idx} className="text-sm text-gray-700">
-              <span className="font-semibold">{c.userName || "User"}:</span>{" "}
-              {c.text}
-            </div>
-          ))}
-        </div>
+                      {/* Comments list */}
+                      <div className="flex-1 overflow-y-auto space-y-2">
+                        {post.comments?.map((c, idx) => (
+                          <div key={idx} className="text-sm text-gray-700">
+                            <span className="font-semibold">
+                              {c.userName || "User"}:
+                            </span>{" "}
+                            {c.text}
+                          </div>
+                        ))}
+                      </div>
 
-        {/* Add comment input */}
-        <div className="flex mt-2">
-          <input
-            type="text"
-            placeholder="Add a comment..."
-            value={newComments[post._id] || ""}
-            onChange={(e) =>
-              setNewComments((prev) => ({
-                ...prev,
-                [post._id]: e.target.value,
-              }))
-            }
-            className="flex-1 border rounded-l px-2 py-1 text-sm"
-          />
-          <button
-            onClick={() => handleAddComment(post._id)}
-            className="bg-blue-500 text-white px-3 rounded-r text-sm"
-          >
-            Post
-          </button>
-        </div>
-      </motion.div>
-    </>
-  )}
-</AnimatePresence>
-
+                      {/* Add comment input */}
+                      <div className="flex mt-2">
+                        <input
+                          type="text"
+                          placeholder="Add a comment..."
+                          value={newComments[post._id] || ""}
+                          onChange={(e) =>
+                            setNewComments((prev) => ({
+                              ...prev,
+                              [post._id]: e.target.value,
+                            }))
+                          }
+                          className="flex-1 border rounded-l px-2 py-1 text-sm"
+                        />
+                        <button
+                          onClick={() => handleAddComment(post._id)}
+                          className="bg-blue-500 text-white px-3 rounded-r text-sm"
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
