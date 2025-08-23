@@ -132,10 +132,7 @@ exports.addComment = async (req, res) => {
     let userName = "Unknown User";
 
     if (user) {
-      if (user.role === "Doctor") {
-        const doctor = await Doctor.findOne({ userId }); // 👈 fix
-        if (doctor) userName = doctor.fullName;
-      } else if (user.role === "Farmer") {
+      if (user.role === "Farmer") {
         const farmer = await Farmer.findOne({ userId }); // 👈 fix
         if (farmer) userName = farmer.fullName;
       } else {
