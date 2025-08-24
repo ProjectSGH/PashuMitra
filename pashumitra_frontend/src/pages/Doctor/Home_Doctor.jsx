@@ -523,19 +523,19 @@ export default function VeterinaryPlatform() {
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
         variants={containerVariants}
-        className="bg-gray-900 py-16 sm:py-20 lg:py-24"
+        className="bg-white py-16 sm:py-20 lg:py-24"
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h2
             variants={itemVariants}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 sm:mb-8"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 sm:mb-8"
           >
             Be the Change in Animal Healthcare – Start Helping Farmers Today
           </motion.h2>
 
           <motion.p
             variants={itemVariants}
-            className="text-lg sm:text-xl text-gray-300 mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto"
+            className="text-lg sm:text-xl text-gray-500 mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto"
           >
             Join our network of verified veterinarians and make a real
             difference in the lives of farmers and their animals.
@@ -545,10 +545,7 @@ export default function VeterinaryPlatform() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <button className="bg-white text-gray-900 hover:bg-gray-100 px-8 sm:px-10 py-4 sm:py-5 rounded-lg font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl w-full sm:w-auto">
-              Verify Now
-            </button>
-            <button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 sm:px-10 py-4 sm:py-5 rounded-lg font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 w-full sm:w-auto">
+            <button className="bg-blue-600 border-2 border-white text-white hover:bg-white hover:border-blue-600 hover:text-blue-600 px-8 sm:px-10 py-4 sm:py-5 rounded-lg font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 w-full sm:w-auto">
               Learn More
             </button>
           </motion.div>

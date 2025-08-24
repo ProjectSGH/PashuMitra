@@ -78,9 +78,19 @@ export default function FarmerPosts() {
   };
 
   return (
-    <div>
+    <div className="w-full">
       <h2 className="text-2xl font-bold mb-4">Posts</h2>
-      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+
+      {/* Pinterest-style grid */}
+      <div
+        className="
+      columns-1 
+      sm:columns-2 
+      lg:columns-3 
+      gap-4
+      space-y-4
+    "
+      >
         {posts.map((post) => {
           const isLiked = post.likes?.includes(userId);
           const isActive = activePostId === post._id;
@@ -90,7 +100,7 @@ export default function FarmerPosts() {
               key={post._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-md mx-auto overflow-hidden"
+              className="break-inside-avoid relative bg-white rounded-xl shadow-sm border border-gray-200 w-full max-w-md mb-4 overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center space-x-3 p-4">
@@ -124,7 +134,7 @@ export default function FarmerPosts() {
                   {post.hashtags?.map((tag, i) => (
                     <span
                       key={i}
-                      className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs"
+                      className=" text-blue-600 py-1 rounded-full text-sm"
                     >
                       {tag}
                     </span>

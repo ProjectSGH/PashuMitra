@@ -97,57 +97,65 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
         </div>
       </div>
       {/* Verification Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          Farmer Verification
-          {isVerified && (
-            <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
-              ✅ Verified
-            </span>
-          )}
-        </h3>
-        {verificationStatus === "not_submitted" ||
-        verificationStatus === "rejected" ? (
-          <form className="space-y-4" onSubmit={handleVerificationUpload}>
-            <input
-              type="file"
-              accept="image/*,.pdf"
-              className="block w-full text-sm text-gray-600 border border-gray-300 rounded-md p-2"
-              onChange={(e) => setFile(e.target.files[0])}
-            />
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {" "}
-              {isUploading ? (
-                <>
-                  <img src={resources.CustomLoader.src} alt="Loading" className="w-5 h-5" />
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                "Submit for Verification"
-              )}
-            </button>
-          </form>
+      <div className="bg-white p-6 rounded-lg shadow-md mt-8 w-full max-w-lg mx-auto">
+  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
+    Farmer Verification
+    {isVerified && (
+      <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
+        ✅ Verified
+      </span>
+    )}
+  </h3>
+
+  {verificationStatus === "not_submitted" ||
+  verificationStatus === "rejected" ? (
+    <form className="space-y-4" onSubmit={handleVerificationUpload}>
+      <label className="block w-full">
+        <span className="text-gray-700 text-sm mb-1 block">Upload Document</span>
+        <div className="flex items-center justify-between border border-gray-300 rounded-md px-4 py-2 cursor-pointer hover:border-blue-500 transition">
+          <span className="text-gray-600 text-sm truncate">
+            {file?.name || "Choose an image or PDF..."}
+          </span>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+        </div>
+      </label>
+
+      <button
+        type="submit"
+        disabled={isUploading}
+        className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 font-medium"
+      >
+        {isUploading ? (
+          <>
+            <img src={resources.CustomLoader.src} alt="Loading" className="w-5 h-5 animate-spin" />
+            Uploading...
+          </>
         ) : (
-          <div className="text-sm text-gray-700">
-            {verificationStatus === "pending" && (
-              <p className="text-yellow-600 font-medium">
-                📄 Your verification document has been submitted. It is
-                currently under review by our team. You’ll be notified once
-                verified.
-              </p>
-            )}
-            {verificationStatus === "approved" && (
-              <p className="text-green-600 text-base font-semibold">
-                ✅ You are verified.
-              </p>
-            )}
-          </div>
+          "Submit for Verification"
         )}
-      </div>
+      </button>
+    </form>
+  ) : (
+    <div className="text-sm text-gray-700 space-y-2">
+      {verificationStatus === "pending" && (
+        <p className="text-yellow-600 font-medium">
+          📄 Your verification document has been submitted. It is currently under review by our team. You’ll be notified once verified.
+        </p>
+      )}
+      {verificationStatus === "approved" && (
+        <p className="text-green-600 text-base font-semibold flex items-center gap-1">
+          ✅ You are verified.
+        </p>
+      )}
+    </div>
+  )}
+</div>
+
     </>
   );
 };

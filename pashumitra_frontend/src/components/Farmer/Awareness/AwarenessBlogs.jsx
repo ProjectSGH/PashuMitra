@@ -8,6 +8,9 @@ import toast from "react-hot-toast";
 export default function AwarenessBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
+  const [filterAuthor, setFilterAuthor] = useState("all");
+  const [filterTag, setFilterTag] = useState("all");
+  const [filterRecent, setFilterRecent] = useState(false);
 
   useEffect(() => {
     fetchBlogs();
@@ -55,25 +58,77 @@ export default function AwarenessBlogs() {
     }
   };
 
+  // Extract unique authors and tags for filter dropdowns
+  const authors = Array.from(new Set(blogs.map((b) => b.authorName || "Unknown")));
+  const tags = Array.from(new Set(blogs.flatMap((b) => b.tags || [])));
+
+  // Apply all filters
+  const filteredBlogs = blogs.filter((b) => {
+    const authorMatch = filterAuthor === "all" || b.authorName === filterAuthor;
+    const tagMatch = filterTag === "all" || (b.tags || []).includes(filterTag);
+    const recentMatch = !filterRecent || new Date(b.createdAt) > new Date(Date.now() - 7*24*60*60*1000);
+    return authorMatch && tagMatch && recentMatch;
+  });
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <FileText className="w-6 h-6 text-green-600" /> Blogs & Documents
-      </h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-6 gap-4">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <FileText className="w-6 h-6 text-green-600" /> Blogs & Documents
+        </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {blogs.map((blog) => (
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Author Filter */}
+          <select
+            value={filterAuthor}
+            onChange={(e) => setFilterAuthor(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1"
+          >
+            <option value="all">All Authors</option>
+            {authors.map((a, i) => (
+              <option key={i} value={a}>{a}</option>
+            ))}
+          </select>
+
+          {/* Tag Filter */}
+          <select
+            value={filterTag}
+            onChange={(e) => setFilterTag(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1"
+          >
+            <option value="all">All Tags</option>
+            {tags.map((t, i) => (
+              <option key={i} value={t}>{t}</option>
+            ))}
+          </select>
+
+          {/* Recent Filter */}
+          <label className="flex items-center gap-2 text-gray-700">
+            <input
+              type="checkbox"
+              checked={filterRecent}
+              onChange={(e) => setFilterRecent(e.target.checked)}
+            />
+            Recent (last 7 days)
+          </label>
+        </div>
+      </div>
+
+      {/* Blog Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredBlogs.map((blog) => (
           <motion.div
             key={blog._id}
             whileHover={{ scale: 1.02 }}
-            className="max-w-md bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition"
+            className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition"
           >
             {/* Header with PDF icon */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-red-500" />
               </div>
-              <span className="text-gray-700 font-medium">Pdf</span>
+              <span className="text-gray-700 font-medium">PDF</span>
             </div>
 
             {/* Title */}

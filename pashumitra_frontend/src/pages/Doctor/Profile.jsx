@@ -294,242 +294,222 @@ export default function ProfileSchedule() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="max-w-7xl mx-auto"
-      >
-        {/* Header */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Profile & Schedule
-          </h1>
-          <p className="text-gray-600">
-            Manage your personal information and availability
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+  <motion.div
+    initial="hidden"
+    animate="visible"
+    variants={containerVariants}
+    className="max-w-7xl mx-auto"
+  >
+    {/* Header */}
+    <motion.div variants={itemVariants} className="mb-8 text-center sm:text-left">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+        Profile & Schedule
+      </h1>
+      <p className="text-gray-600">
+        Manage your personal information and availability
+      </p>
+    </motion.div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-          {/* Personal Info */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center justify-between gap-2 mb-6">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <User className="text-gray-700" />
-                Personal Information
-              </h2>
-              <div className="">
-                {profile.verificationStatus === "approved" && (
-                  <div className="flex items-center gap-1">
-                    <img
-                      src={resources.customVerificationMark.src}
-                      alt="Verified"
-                      className="w-8 h-8"
-                    />
-                    <span>Verified</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="space-y-4">
-              {["fullName", "email", "phone", "experience"].map((field) => (
-                <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                    {field.replace(/([A-Z])/g, " $1")}
-                  </label>
-                  <input
-                    type="text"
-                    value={profile[field]}
-                    onChange={(e) => handleProfileChange(field, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              ))}
-            </div>
-            <label className="block text-sm font-medium text-gray-700">
-              Specialization
-            </label>
-            <select
-              value={profile.specialization}
-              onChange={(e) =>
-                handleProfileChange("specialization", e.target.value)
-              }
-              className="w-full px-3 py-2 border rounded-md"
-            >
-              <option value="">Select Specialization</option>
-              {vetSpecializations.map((specialization) => (
-                <option key={specialization} value={specialization}>
-                  {specialization}
-                </option>
-              ))}
-            </select>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleUpdateProfile}
-              className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors duration-200"
-            >
-              Update Profile
-            </motion.button>
-          </motion.div>
-
-          {/* Weekly Schedule */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <Calendar className="w-5 h-5 text-gray-700" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                Weekly Schedule
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              {Object.entries(schedule)
-                .filter(([day]) =>
-                  [
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                    "Sunday",
-                  ].includes(day)
-                )
-                .map(([day, daySchedule]) => (
-                  <motion.div
-                    key={day}
-                    variants={itemVariants}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border border-gray-200 rounded-md"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="font-medium text-gray-900 w-20 flex-shrink-0">
-                        {day}
-                      </span>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={daySchedule.available}
-                          onChange={(e) =>
-                            handleScheduleChange(
-                              day,
-                              "available",
-                              e.target.checked
-                            )
-                          }
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-blue-600 font-medium">
-                          Available
-                        </span>
-                      </label>
-                    </div>
-
-                    {daySchedule.available && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-gray-500" />
-                          <input
-                            type="time"
-                            value={daySchedule.startTime}
-                            onChange={(e) =>
-                              handleScheduleChange(
-                                day,
-                                "startTime",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <span className="text-gray-500">to</span>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-gray-500" />
-                          <input
-                            type="time"
-                            value={daySchedule.endTime}
-                            onChange={(e) =>
-                              handleScheduleChange(
-                                day,
-                                "endTime",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleUpdateSchedule}
-              className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200"
-            >
-              Update Schedule
-            </motion.button>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Doctor Varification */}
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+      {/* Personal Info */}
       <motion.div
         variants={itemVariants}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-8"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
       >
-        <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            Doctor Verification
-          </h3>
-
-          {["not_submitted", "rejected", ""].includes(
-            profile.verificationStatus
-          ) ? (
-            <form onSubmit={handleVerificationUpload} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Enter License Number"
-                value={license}
-                onChange={(e) => setLicense(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <User className="text-gray-700" />
+            Personal Information
+          </h2>
+          {profile.verificationStatus === "approved" && (
+            <div className="flex items-center gap-1 mt-2 sm:mt-0">
+              <img
+                src={resources.customVerificationMark.src}
+                alt="Verified"
+                className="w-8 h-8"
               />
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                className="w-full p-2 border rounded"
-                onChange={(e) => setFile(e.target.files[0])}
-                required
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                disabled={isUploading}
-              >
-                {isUploading ? "Uploading..." : "Submit for Verification"}
-              </button>
-            </form>
-          ) : (
-            <p className="text-gray-700">
-              {profile.verificationStatus === "pending" &&
-                "📄 Document uploaded. Awaiting admin review."}
-              {profile.verificationStatus === "approved" &&
-                "✅ You are verified."}
-            </p>
+              <span className="text-green-600 font-medium">Verified</span>
+            </div>
           )}
         </div>
+
+        <div className="space-y-4">
+          {["fullName", "email", "phone", "experience"].map((field) => (
+            <div key={field}>
+              <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2 capitalize">
+                {field.replace(/([A-Z])/g, " $1")}
+              </label>
+              <input
+                type="text"
+                value={profile[field]}
+                onChange={(e) => handleProfileChange(field, e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+            Specialization
+          </label>
+          <select
+            value={profile.specialization}
+            onChange={(e) =>
+              handleProfileChange("specialization", e.target.value)
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+          >
+            <option value="">Select Specialization</option>
+            {vetSpecializations.map((specialization) => (
+              <option key={specialization} value={specialization}>
+                {specialization}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleUpdateProfile}
+          className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors duration-200 text-sm sm:text-base"
+        >
+          Update Profile
+        </motion.button>
+      </motion.div>
+
+      {/* Weekly Schedule */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
+      >
+        <div className="flex items-center gap-2 mb-6">
+          <Calendar className="w-5 h-5 text-gray-700" />
+          <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
+        </div>
+
+        <div className="space-y-3">
+          {Object.entries(schedule)
+            .filter(([day]) =>
+              [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ].includes(day)
+            )
+            .map(([day, daySchedule]) => (
+              <motion.div
+                key={day}
+                variants={itemVariants}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border border-gray-200 rounded-md"
+              >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 flex-1">
+                  <span className="font-medium text-gray-900 w-full sm:w-28">{day}</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={daySchedule.available}
+                      onChange={(e) =>
+                        handleScheduleChange(day, "available", e.target.checked)
+                      }
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-blue-600 font-medium">Available</span>
+                  </label>
+                </div>
+
+                {daySchedule.available && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm sm:gap-4 mt-2 sm:mt-0">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <input
+                        type="time"
+                        value={daySchedule.startTime}
+                        onChange={(e) =>
+                          handleScheduleChange(day, "startTime", e.target.value)
+                        }
+                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <span className="text-gray-500">to</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <input
+                        type="time"
+                        value={daySchedule.endTime}
+                        onChange={(e) =>
+                          handleScheduleChange(day, "endTime", e.target.value)
+                        }
+                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleUpdateSchedule}
+          className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200 text-sm sm:text-base"
+        >
+          Update Schedule
+        </motion.button>
       </motion.div>
     </div>
+
+    {/* Doctor Verification */}
+    <motion.div
+      variants={itemVariants}
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mt-8 max-w-lg mx-auto"
+    >
+      <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        Doctor Verification
+      </h3>
+
+      {["not_submitted", "rejected", ""].includes(profile.verificationStatus) ? (
+        <form onSubmit={handleVerificationUpload} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Enter License Number"
+            value={license}
+            onChange={(e) => setLicense(e.target.value)}
+            className="w-full p-2 border rounded text-sm sm:text-base"
+            required
+          />
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="w-full p-2 border rounded text-sm sm:text-base"
+            onChange={(e) => setFile(e.target.files[0])}
+            required
+          />
+          <button
+            type="submit"
+            className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm sm:text-base"
+            disabled={isUploading}
+          >
+            {isUploading ? "Uploading..." : "Submit for Verification"}
+          </button>
+        </form>
+      ) : (
+        <p className="text-gray-700 text-sm sm:text-base">
+          {profile.verificationStatus === "pending" &&
+            "📄 Document uploaded. Awaiting admin review."}
+          {profile.verificationStatus === "approved" && "✅ You are verified."}
+        </p>
+      )}
+    </motion.div>
+  </motion.div>
+</div>
+
   );
 }

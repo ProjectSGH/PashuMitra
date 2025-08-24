@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,12 +11,15 @@ import {
   User,
   Home,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import resources from "../../resource";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
     { name: "Home", icon: Home, path: "/doctor/home" },
@@ -34,7 +39,7 @@ export default function Navbar() {
 
   return (
     <motion.header
-      className="bg-white shadow-sm border-b"
+      className="bg-white shadow-sm border-b  w-full z-50"
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -44,16 +49,15 @@ export default function Navbar() {
           {/* Logo */}
           <motion.div className="flex items-center" whileHover={{ scale: 1.05 }}>
             <h1
-              className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
+              className="text-xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
-              
-            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
+              <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
               Doctor Portal
             </h1>
           </motion.div>
 
-          {/* Navigation */}
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-1">
             {navItems.map((item, index) => (
               <motion.button
@@ -76,7 +80,7 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Notification + Logout */}
+          {/* Right Section */}
           <div className="flex items-center space-x-4">
             {/* Notification Bell */}
             <motion.button
@@ -88,11 +92,11 @@ export default function Navbar() {
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </motion.button>
 
-            {/* Logout Button */}
+            {/* Logout for Desktop */}
             <AnimatePresence>
               {!isLoggingOut && (
                 <motion.button
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100"
+                  className="hidden md:flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 1, x: 0 }}
@@ -105,8 +109,58 @@ export default function Navbar() {
                 </motion.button>
               )}
             </AnimatePresence>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.nav
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden bg-white border-t overflow-hidden"
+            >
+              <div className="flex flex-col p-4 space-y-2">
+                {navItems.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      window.location.pathname === item.path
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.name}
+                  </button>
+                ))}
+
+                {/* Logout */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100 mt-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </div>
     </motion.header>
   );
