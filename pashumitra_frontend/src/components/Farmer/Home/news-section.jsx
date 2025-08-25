@@ -1,113 +1,135 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Calendar, User, ArrowRight } from "lucide-react"
-
-const articles = [
-  {
-    title: "New Lumpy Skin Disease Outbreak Prevention Tips",
-    excerpt: "Learn how to protect your cattle from the recent LSD outbreak with proper vaccination and care.",
-    author: "Dr. Rajesh Sharma",
-    date: "2 days ago",
-    category: "Prevention",
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    title: "Monsoon Vaccination Schedule for Livestock",
-    excerpt: "Essential vaccination your animals need before the monsoon season arrives.",
-    author: "Dr. Priya Mehta",
-    date: "5 days ago",
-    category: "Prevention",
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    title: "Heat Stress Management in Dairy Cattle",
-    excerpt: "Effective strategies to keep your dairy cattle cool and productive during hot weather.",
-    author: "Dr. Sunil Kumar",
-    date: "1 week ago",
-    category: "Care",
-    image: "/placeholder.svg?height=200&width=300",
-  },
-]
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Calendar, User, FileText } from "lucide-react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import resource from "../../../resource";
 
 export default function NewsSection() {
+  const [blogs, setBlogs] = useState([]);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/docs");
+      setBlogs(res.data);
+    } catch (err) {
+      console.error("Error fetching blogs:", err);
+      toast.error("Failed to load blogs");
+    }
+  };
+
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4">
+    <section className="py-16 bg-gradient-to-br from-blue-50 to-green-50">
+      <div className="container mx-auto px-6 lg:px-12">
+        {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-14"
         >
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Latest Awareness & News</h2>
-          <p className="text-gray-600">
-            Stay updated with the latest in veterinary care, disease alerts, and expert tips
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-3">
+            Latest Awareness & News
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Stay informed with expert-written blogs and important veterinary
+            updates — helping you keep your livestock healthy and productive.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {articles.map((article, index) => (
-            <motion.article
-              key={article.title}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.6 }}
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Illustration */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+            className="flex justify-center"
+          >
+            <img
+              src={resource.Common_Hero_2.src}
+              alt="Awareness"
+              className="w-[250px] h-[250px] md:w-[40vh] md:h-[40vh] rounded-full object-cover shadow-2xl border-4 border-white"
+            />
+          </motion.div>
+
+          {/* Right Blogs Preview */}
+          {/* Right Blogs Preview */}
+          <div className="space-y-6">
+            {blogs.slice(0, 3).map((blog, index) => (
+              <motion.div
+                key={blog._id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.6 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-xl shadow-md hover:shadow-lg p-6 transition border-l-4 border-blue-500"
+              >
+                <div className="flex items-start gap-4">
+                  {/* Icon */}
+                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <FileText className="w-6 h-6" />
+                  </div>
+
+                  {/* Blog Info */}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-1 line-clamp-1">
+                      {blog.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {blog.caption}
+                    </p>
+
+                    {/* Meta Info */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
+                      <span className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        {blog.authorName || "Unknown"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(blog.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    {/* Read More link (optional) */}
+                    <a
+                      href="/farmer/awareness"
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Read More →
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Explore More Button */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
               viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+              className="text-center pt-4"
             >
-              <div className="relative overflow-hidden">
-                <img
-                  src={article.image || "/placeholder.svg"}
-                  alt={article.title}
-                  className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">{article.category}</span>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <h3 className="font-semibold text-gray-800 mb-3 line-clamp-2">{article.title}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{article.excerpt}</p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center">
-                    <User className="w-4 h-4 mr-1" />
-                    {article.author}
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {article.date}
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ x: 5 }}
-                  className="text-blue-500 hover:text-blue-600 font-medium flex items-center transition-colors duration-300"
-                >
-                  Read More
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </motion.button>
-              </div>
-            </motion.article>
-          ))}
+              <a
+                href="/farmer/awareness"
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow transition"
+              >
+                Explore More Blogs & Docs →
+              </a>
+            </motion.div>
+          </div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mt-12"
-        >
-          <button className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-colors duration-300">
-            Load More Articles
-          </button>
-        </motion.div>
       </div>
     </section>
-  )
+  );
 }

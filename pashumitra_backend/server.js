@@ -1,7 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import connectDB from "./config/db.js";
 import cors from "cors";
-import dotenv from "dotenv";
 
 import userRoutes from "./routes/userRoutes.js";
 import farmer_verification from "./routes/Farmer/farmerVarificationRoutes.js";
@@ -11,11 +12,8 @@ import postRoutes from "./routes/Common/PostRoutes.js";
 import docBlogRoutes from "./routes/Common/BlogRoutes.js";  
 import campaignRoutes from "./routes/Common/CampaignRoutes.js";
 import campaignRegistrationRoutes from "./routes/Farmer/campaignRegistrationRoutes.js";
-
-
+import queryRoutes from "./routes/Common/QueryRoutes.js";
 import "./services/campaignCron.js";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +31,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/docs", docBlogRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/campaign-registrations", campaignRegistrationRoutes);
+app.use("/api/query", queryRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

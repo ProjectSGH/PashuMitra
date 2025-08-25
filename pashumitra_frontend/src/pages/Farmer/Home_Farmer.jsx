@@ -16,29 +16,25 @@ import NewsSection from "../../components/Farmer/Home/news-section";
 import TestimonialsSection from "../../components/Farmer/Home/testomonial-section";
 import StatsSection from "../../components/Farmer/Home/state-section";
 import FarmerSteps from "../../components/Farmer/Home/farmer-demonstration-steps";
-import resources from "../../resource";
 
 const veterinarians = [
   {
     id: 1,
-    name: "Dr. Sarah Johnson",
+    name: "Dr. Selmon Johnson",
     specialty: "Large Animal Medicine",
     experience: "15+ years",
-    image: resources.Jeet.src,
   },
   {
     id: 2,
-    name: "Dr. Maria Rodriguez",
+    name: "Dr. Fernandiz",
     specialty: "Livestock Health",
     experience: "12+ years",
-    image: resources.Herin.src,
   },
   {
     id: 3,
-    name: "Dr. Ahmed Hassan",
+    name: "Dr. Ravi Gupta",
     specialty: "Rural Veterinary Care",
     experience: "10+ years",
-    image: resources.Dhruv.src,
   },
 ];
 
@@ -221,7 +217,7 @@ export default function FarmerCareHomepage() {
             </motion.h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {veterinarians.map((vet) => (
+              {veterinarians.map((vet, index) => (
                 <motion.div
                   key={vet.id}
                   variants={itemVariants}
@@ -232,13 +228,13 @@ export default function FarmerCareHomepage() {
                     variants={cardHoverVariants}
                     className="flex flex-col items-center"
                   >
-                    <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-4 border-blue-100">
-                      <img
-                        src={vet.image}
-                        alt={vet.name}
-                        className="w-full h-full object-cover"
-                      />
+                    {/* Number Badge instead of Image */}
+                    <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center mb-4 border-4 border-yellow-200">
+                      <span className="text-2xl font-bold text-blue-600">
+                        {index + 1}
+                      </span>
                     </div>
+
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
                       {vet.name}
                     </h3>

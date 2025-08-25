@@ -36,7 +36,7 @@ export default function FarmerStepsTimeline() {
   }, []);
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center bg-white px-4 md:px-10 py-10 md:h-[100vh]">
+    <div className="flex flex-col md:flex-row justify-between items-center bg-white px-4 md:px-10 py-10 md:h-[120vh]">
       {/* Timeline Section */}
       <div className="relative w-full md:w-1/2 flex justify-center mb-10 md:mb-0">
         {/* Vertical Line */}
@@ -49,65 +49,78 @@ export default function FarmerStepsTimeline() {
             return (
               <div
                 key={index}
-                className="relative flex items-center mb-8 md:mb-12"
+                className="relative flex items-center mb-10 md:mb-14"
               >
-                {/* Left side content */}
+                {/* Left Side */}
                 <div
-                  className={`w-1/2 pr-2 md:pr-3 ${isLeft ? "text-right" : ""}`}
+                  className={`w-1/2 pr-2 md:pr-4 ${isLeft ? "text-right" : ""}`}
                 >
                   {isLeft && (
-                    <div
-                      className={`max-w-xs p-4 rounded-lg shadow-md bg-white border
-        ${index <= activeStep ? "border-blue-600" : "border-gray-300"}`}
+                    <motion.div
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`inline-block p-4 md:p-5 text-left text-white shadow-lg transition-all
+                        ${index <= activeStep ? "bg-blue-600" : "bg-gray-400"}
+                      `}
+                      style={{
+                        borderRadius: "0px 25px 25px 25px", // asymmetric card
+                        maxWidth: "280px",
+                      }}
                     >
-                      <h3
-                        className={`text-base md:text-lg font-semibold ${
-                          index <= activeStep
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        }`}
-                      >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-sm md:text-base">
+                          Step {index + 1}
+                        </span>
+                      </div>
+                      <h3 className="text-base md:text-lg font-semibold mb-1">
                         {step.title}
                       </h3>
-                      <p className="text-sm text-gray-500">{step.desc}</p>
-                    </div>
+                      <p className="text-xs md:text-sm opacity-90">
+                        {step.desc}
+                      </p>
+                    </motion.div>
                   )}
                 </div>
 
                 {/* Node */}
                 <motion.div
                   className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-4 bg-white z-10 
-                    ${
-                      index <= activeStep
-                        ? "border-blue-600"
-                        : "border-blue-300"
-                    }`}
+                    ${index <= activeStep ? "border-blue-600" : "border-gray-400"}`}
                   animate={{
                     backgroundColor: index === activeStep ? "#2563EB" : "white",
                     scale: index === activeStep ? 1.2 : 1,
                   }}
                   transition={{ duration: 0.3 }}
                 />
-                {/* Right side content */}
+
+                {/* Right Side */}
                 <div
-                  className={`w-1/2 pl-2 md:pl-3 ${!isLeft ? "text-left" : ""}`}
+                  className={`w-1/2 pl-2 md:pl-4 ${!isLeft ? "text-left" : ""}`}
                 >
                   {!isLeft && (
-                    <div
-                      className={`max-w-xs p-4 rounded-lg shadow-md bg-white border
-        ${index <= activeStep ? "border-blue-600" : "border-gray-300"}`}
+                    <motion.div
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      className={`inline-block p-4 md:p-5 text-left text-white shadow-lg transition-all
+                        ${index <= activeStep ? "bg-blue-600" : "bg-gray-400"}
+                      `}
+                      style={{
+                        borderRadius: "25px 0px 25px 25px", // mirrored asymmetric
+                        maxWidth: "280px",
+                      }}
                     >
-                      <h3
-                        className={`text-base md:text-lg font-semibold ${
-                          index <= activeStep
-                            ? "text-blue-600"
-                            : "text-gray-600"
-                        }`}
-                      >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-sm md:text-base">
+                          Step {index + 1}
+                        </span>
+                      </div>
+                      <h3 className="text-base md:text-lg font-semibold mb-1">
                         {step.title}
                       </h3>
-                      <p className="text-sm text-gray-500">{step.desc}</p>
-                    </div>
+                      <p className="text-xs md:text-sm opacity-90">
+                        {step.desc}
+                      </p>
+                    </motion.div>
                   )}
                 </div>
               </div>
@@ -118,11 +131,13 @@ export default function FarmerStepsTimeline() {
 
       {/* Image Section */}
       <div className="w-full md:w-1/2 flex justify-center">
-        <img
-          src={resources.Farmer_Hero_1.src}
-          alt="Farmer Workflow"
-          className="h-[250px] md:h-[50vh] object-contain"
-        />
+        <div className="w-[220px] h-[220px] md:w-[65vh] md:h-[65vh] rounded-full overflow-hidden shadow-xl">
+          <img
+            src={resources.Farmer_Hero_1.src}
+            alt="Farmer Workflow"
+            className="w-full h-full object-cover"
+          />
+        </div>
       </div>
     </div>
   );

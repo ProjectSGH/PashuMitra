@@ -18,7 +18,7 @@ export default function Header() {
     setIsLoggingOut(true);
     setTimeout(() => {
       localStorage.removeItem("token");
-      navigate("/login");
+      navigate("/");
     }, 600); // Wait for animation
   };
 

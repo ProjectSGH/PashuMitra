@@ -1,17 +1,11 @@
 // src/pages/ContactUs.jsx
 "use client";
 
-import {
-  Phone,
-  Mail,
-  MapPin,
-  Send,
-  ArrowDown,
-  ChevronDown,
-} from "lucide-react";
+import { Phone, Mail, MapPin, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import axios from "axios";
 import Navbar from "../components/Common/Navbar";
 import Footer from "../components/Footer";
 import resources from "../resource";
@@ -37,7 +31,7 @@ const FAQ = ({ question, answer }) => {
   );
 };
 
-// Hero Section (Image Left, Text Right + FAQ)
+// Hero Section
 const HeroSection = () => {
   return (
     <div className="relative overflow-hidden">
@@ -138,12 +132,14 @@ const ContactUs = () => {
     subject: "",
     message: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (
@@ -157,14 +153,29 @@ const ContactUs = () => {
       return;
     }
 
-    toast.success("Message sent successfully!");
-    setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    setLoading(true);
+    try {
+      const res = await axios.post("http://localhost:5000/api/query", form);
+
+      if (res.data.success) {
+        // toast.success("Message sent successfully!");
+        setSubmitted(true);
+        setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+      } else {
+        toast.error(res.data.msg || "Something went wrong.");
+      }
+    } catch (err) {
+      toast.error("Server error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <Navbar />
-      <HeroSection /> {/* ✅ Hero + FAQ section added here */}
+      <HeroSection />
+
       <div className="bg-white text-blue-600">
         {/* Header */}
         <div className="text-center px-4 py-10">
@@ -176,49 +187,50 @@ const ContactUs = () => {
         </div>
 
         {/* Contact Cards */}
-        <div className="container m-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:px-20 mb-12">
+        {/* Contact Cards */}
+        <div className="container w-full h-full m-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:px-20 mb-12 justify-items-center">
           {/* Phone Support */}
-          <div className="bg-white shadow-lg p-6 rounded-md text-center">
+          <div className="bg-white shadow-lg p-6 rounded-md text-center w-full max-w-sm">
             <div className="mx-auto mb-3 w-16 h-16">
               <Phone className="w-full h-full p-3 rounded-full bg-blue-600 text-white" />
             </div>
             <h3 className="font-semibold">Phone Support</h3>
-            <p className="text-lg mt-1">
-              <p> +91-9316846548 </p>
-              <p> +91-7043569445 </p>
-              <p> +91-9023897448 </p>
-            </p>
+            <div className="text-lg mt-1">
+              <p>+91-9316846548</p>
+              <p>+91-7043569445</p>
+              <p>+91-9023897448</p>
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               Available 24/7 for emergency support
             </p>
           </div>
 
           {/* Email Support */}
-          <div className="bg-white shadow-lg p-6 rounded-md text-center">
+          <div className="bg-white shadow-lg p-6 rounded-md text-center w-full max-w-sm">
             <div className="mx-auto mb-3 w-16 h-16">
-              <Mail className="w-full h-full p-3 rounded-full bg-blue-600 text-white" />
+              <Mail className="w-full h-full p-3 rounded-full bg-green-600 text-white" />
             </div>
             <h3 className="font-semibold">Email Support</h3>
             <p className="text-lg mt-1">info.hexcodebreaker@gmail.com</p>
             <p className="text-sm text-gray-500 mt-1">
-              We'll respond within 24 hours
+              our team will reach out to you within 24 hours
             </p>
           </div>
 
           {/* Location */}
-          <div className="bg-white shadow-lg p-6 rounded-md text-center">
+          <div className="bg-white shadow-lg p-6 rounded-md text-center w-full max-w-sm">
             <div className="mx-auto mb-3 w-16 h-16">
-              <MapPin className="w-full h-full p-3 rounded-full bg-blue-600 text-white" />
+              <MapPin className="w-full h-full p-3 rounded-full bg-red-600 text-white" />
             </div>
-            <h3 className="font-semibold">Location</h3>
-            <p className="text-lg mt-1">U.V. Patel College of Engineering</p>
+            <h3 className="font-semibold">Our Location</h3>
+            <p className="text-lg mt-1">U.V. Patel Collage of Engineering<br/> Ganpat University, Mehsana</p>
             <p className="text-sm text-gray-500 mt-1">
-              Ganpat University, Mehsana, Gujarat
+              Visit us
             </p>
           </div>
         </div>
 
-        {/* Contact Form */}
+        {/* Contact Form + Map */}
         <div className="px-4 md:px-20 mb-20">
           <div className="grid md:grid-cols-2 gap-10 items-start">
             {/* Contact Form */}
@@ -226,79 +238,98 @@ const ContactUs = () => {
               <h2 className="text-2xl font-bold text-blue-600 mb-6 text-center">
                 Get in Touch
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-lg font-medium mb-2 text-black">
-                    Name
-                  </label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    type="text"
-                    placeholder="John Doe"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+              {!submitted ? (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-lg font-medium mb-2 text-black">
+                      Name
+                    </label>
+                    <input
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      type="text"
+                      placeholder="John Doe"
+                      className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2 text-black">
+                      Email
+                    </label>
+                    <input
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      type="email"
+                      placeholder="john@example.com"
+                      className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2 text-black">
+                      Phone
+                    </label>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      type="text"
+                      placeholder="+91 9876543210"
+                      className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2 text-black">
+                      Subject
+                    </label>
+                    <input
+                      name="subject"
+                      value={form.subject}
+                      onChange={handleChange}
+                      type="text"
+                      placeholder="I need help with..."
+                      className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2 text-black">
+                      Message
+                    </label>
+                    <textarea
+                      name="message"
+                      value={form.message}
+                      onChange={handleChange}
+                      placeholder="Write your message here..."
+                      rows={5}
+                      className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+                  >
+                    {loading ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              ) : (
+                <div className="flex flex-col items-center text-center py-10">
+                  <img
+                    src={resources.customVerificationMark.src}
+                    alt="Success"
+                    className="w-12 h-12 mb-4"
                   />
+                  <h3 className="text-lg font-semibold text-green-600">
+                    Thank You!
+                  </h3>
+                  <p className="text-gray-600 mt-2">
+                    Your message has been successfully sent. We’ll get back to
+                    you soon.
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-lg font-medium mb-2 text-black">
-                    Email
-                  </label>
-                  <input
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    type="email"
-                    placeholder="john@example.com"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-lg font-medium mb-2 text-black">
-                    Phone
-                  </label>
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    type="text"
-                    placeholder="+91 9876543210"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-lg font-medium mb-2 text-black">
-                    Subject
-                  </label>
-                  <input
-                    name="subject"
-                    value={form.subject}
-                    onChange={handleChange}
-                    type="text"
-                    placeholder="I need help with..."
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-lg font-medium mb-2 text-black">
-                    Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={form.message}
-                    onChange={handleChange}
-                    placeholder="Write your message here..."
-                    rows={5}
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  ></textarea>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition"
-                >
-                  Send Message
-                </button>
-              </form>
+              )}
             </div>
 
             {/* Google Map */}
