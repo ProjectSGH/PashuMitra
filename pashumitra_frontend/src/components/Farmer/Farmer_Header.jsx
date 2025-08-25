@@ -59,6 +59,7 @@ export default function Header() {
     { name: "Consult Doctor", href: "/farmer/doctor-consult" },
     { name: "Awareness", href: "/farmer/awareness" },
     { name: "Community Bank", href: "/farmer/community-bank" },
+    { name: "Contact Us", href: "/farmer/contact" },
   ];
 
   return (

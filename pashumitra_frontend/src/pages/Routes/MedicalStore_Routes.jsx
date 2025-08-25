@@ -8,6 +8,7 @@ import TransferManagement from "../MedicalStore/transfer-management";
 import TransportManagement from "../MedicalStore/transport-management";
 import CommunityMedicineBank from "../MedicalStore/community-medicine-bank";
 import StoreProfileSettings from "../MedicalStore/store-profile-settings";
+import ContactUs from "../ContactUsForm";
 
 const MedicalStoreRoutes = (
   <Route element={<ProtectedRoute role="MedicalStore" />}>
@@ -20,6 +21,7 @@ const MedicalStoreRoutes = (
       <Route path="Transport" element={<TransportManagement />} />
       <Route path="community-bank" element={<CommunityMedicineBank />} />
       <Route path="Profile" element={<StoreProfileSettings />} />
+      <Route path="Contact" element={<ContactUs />} />
     </Route>
   </Route>
 );

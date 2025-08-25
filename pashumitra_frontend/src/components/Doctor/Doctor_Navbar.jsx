@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Contact,
 } from "lucide-react";
 import resources from "../../resource";
 
@@ -26,6 +27,7 @@ export default function Navbar() {
     { name: "Consultations", icon: MessageCircle, path: "/doctor/consultations" },
     { name: "Patient History", icon: History, path: "/doctor/Patient_History" },
     { name: "Awareness", icon: AlertCircle, path: "/doctor/Awareness" },
+    { name: "Contact Us", icon: Contact, path: "/doctor/Contact" },
     { name: "Profile", icon: User, path: "/doctor/Profile" },
   ];
 
@@ -33,7 +35,7 @@ export default function Navbar() {
     setIsLoggingOut(true);
     setTimeout(() => {
       localStorage.removeItem("token");
-      navigate("/login");
+      navigate("/");
     }, 600); // Wait for animation
   };
 

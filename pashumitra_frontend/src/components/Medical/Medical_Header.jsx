@@ -18,7 +18,7 @@ export default function Header() {
     setIsLoggingOut(true);
     setTimeout(() => {
       localStorage.removeItem("token");
-      navigate("/login");
+      navigate("/");
     }, 600); // Wait for animation
   };
 
@@ -59,6 +59,7 @@ export default function Header() {
     { name: "Transfer", href: "/medicalstore/transfer" },
     { name: "Transport", href: "/medicalstore/transport" },
     { name: "Community Bank", href: "/medicalstore/communityBank" },
+    { name: "Contact Us", href: "/medicalstore/contact" },
   ];
 
   return (
