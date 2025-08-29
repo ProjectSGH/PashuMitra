@@ -13,6 +13,24 @@ router.post('/signup/doctor', userController.registerDoctor);
 router.post('/signup/store', userController.registerStore);
 router.post('/login', loginUser);
 
+// GET all doctors with their profile
+router.get('/doctors', async (req, res) => {
+  try {
+    const doctors = await User.find({ role: "Doctor" }).select("-password");
+
+    const doctorProfiles = await Promise.all(
+      doctors.map(async (user) => {
+        const doctorData = await Doctor.findOne({ userId: user._id });
+        return { ...user.toObject(), doctorProfile: doctorData };
+      })
+    );
+
+    res.json(doctorProfiles);
+  } catch (err) {
+    console.error("Error in GET /doctors:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -96,6 +114,5 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Update failed", error: err.message });
   }
 });
-
 
 module.exports = router;

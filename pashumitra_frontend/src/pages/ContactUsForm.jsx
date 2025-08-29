@@ -34,33 +34,42 @@ const HeroSection = () => {
   return (
     <div className="relative overflow-hidden">
       <div className="flex flex-col lg:flex-row bg-white items-center min-h-[80vh] w-full">
-        {/* Left: Image */}
-        <div className="w-full lg:w-3/5 h-[60vh] lg:h-[80vh] relative order-1 lg:order-none">
-          <div
-            className="absolute inset-0 bg-blue-600 bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${resources.ContactHero.src})`,
-              clipPath: "polygon(0 0, 85% 0, 100% 100%, 0% 100%)",
-            }}
-          ></div>
-        </div>
+  {/* Image Section */}
+  <div className="w-full lg:w-3/5 h-[40vh] sm:h-[50vh] lg:h-[80vh] relative">
+    {/* Mobile/Tablet → Full width image */}
+    <div
+      className="lg:hidden absolute inset-0 bg-blue-600 bg-cover bg-center"
+      style={{
+        backgroundImage: `url(${resources.ContactHero.src})`,
+      }}
+    ></div>
 
-        {/* Right: Text */}
-        <motion.div
-          className="w-full lg:w-2/5 px-6 lg:px-16 py-12 z-10 text-center lg:text-left"
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-            Any Query? <br /> Then why be Confused, Ask Us
-          </h1>
-          <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-xl mx-auto lg:mx-0">
-            We're here to answer your doubts and guide you with the right
-            information you need <b>24 x 7.</b>
-          </p>
-        </motion.div>
-      </div>
+    {/* Desktop → Clipped image */}
+    <div
+      className="hidden lg:block absolute inset-0 bg-blue-600 bg-cover bg-center"
+      style={{
+        backgroundImage: `url(${resources.ContactHero.src})`,
+        clipPath: "polygon(0 0, 85% 0, 100% 100%, 0% 100%)",
+      }}
+    ></div>
+  </div>
+
+  {/* Text Section */}
+  <motion.div
+    className="w-full lg:w-2/5 px-6 lg:px-16 py-12 z-10 text-center lg:text-left"
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8 }}
+  >
+    <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+      Any Query? <br /> Then why be Confused, Ask Us
+    </h1>
+    <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-xl mx-auto lg:mx-0">
+      We're here to answer your doubts and guide you with the right
+      information you need <b>24 x 7.</b>
+    </p>
+  </motion.div>
+</div>
 
       {/* FAQ Section */}
       <div className="px-6 md:px-20 py-12 max-w-7xl mx-auto">

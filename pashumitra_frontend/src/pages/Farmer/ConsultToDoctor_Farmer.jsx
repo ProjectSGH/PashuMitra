@@ -1,227 +1,421 @@
-"use client"
-
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Video, Phone, MessageCircle, User, Star, Clock, Globe, AlertTriangle, PhoneCall } from "lucide-react"
+"use client";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User2,
+  Phone,
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  Send,
+} from "lucide-react";
+import axios from "axios";
 
 export default function ConsultDoctor() {
-  const [selectedConsultationType, setSelectedConsultationType] = useState("text")
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeChat, setActiveChat] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState({});
 
-  const consultationTypes = [
-    {
-      id: "video",
-      title: "Video Call",
-      subtitle: "Face-to-face consultation",
-      icon: Video,
-      color: "bg-blue-50 border-blue-200",
-    },
-    {
-      id: "audio",
-      title: "Audio Call",
-      subtitle: "Voice consultation",
-      icon: Phone,
-      color: "bg-green-50 border-green-200",
-    },
-    {
-      id: "text",
-      title: "Text Chat",
-      subtitle: "Written consultation",
-      icon: MessageCircle,
-      color: "bg-purple-50 border-purple-200",
-    },
-  ]
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/users/doctors");
+        setDoctors(res.data);
 
-  const veterinarians = [
-    {
-      id: 1,
-      name: "Dr. Rajesh Sharma",
-      specialization: "Large Animal Medicine",
-      experience: 15,
-      rating: 4.9,
-      fee: 300,
-      languages: ["Hindi", "English"],
-      availability: "Available Now",
-      availabilityColor: "text-green-600",
-    },
-    {
-      id: 2,
-      name: "Dr. Priya Patel",
-      specialization: "Dairy Animal Health",
-      experience: 12,
-      rating: 4.8,
-      fee: 450,
-      languages: ["Hindi", "Gujarati", "English"],
-      availability: "Available in 30 mins",
-      availabilityColor: "text-orange-600",
-    },
-    {
-      id: 3,
-      name: "Dr. Suresh Kumar",
-      specialization: "Poultry & Small Animals",
-      experience: 10,
-      rating: 4.7,
-      fee: 400,
-      languages: ["Hindi", "Tamil", "English"],
-      availability: "Available Tomorrow",
-      availabilityColor: "text-gray-600",
-    },
-  ]
+        // Initialize empty messages for each doctor
+        const initialMessages = {};
+        res.data.forEach((doctor) => {
+          initialMessages[doctor._id] = [
+            {
+              id: 1,
+              text: "Hello Doctor!",
+              sender: "patient",
+              time: new Date(Date.now() - 100000),
+              status: "seen",
+            },
+            {
+              id: 2,
+              text: "Hi, how can I help you today?",
+              sender: "doctor",
+              time: new Date(Date.now() - 90000),
+              status: "seen",
+            },
+          ];
+        });
+        setMessages(initialMessages);
+      } catch (err) {
+        console.error("Error fetching doctors:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  }
+  // Removed auto-scroll-to-bottom
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  }
+  const handleSendMessage = () => {
+    if (!message.trim() || !activeChat) return;
+
+    const newMessage = {
+      id: Date.now(),
+      text: message,
+      sender: "patient",
+      time: new Date(),
+      status: "sent",
+    };
+
+    setMessages((prev) => ({
+      ...prev,
+      [activeChat._id]: [...(prev[activeChat._id] || []), newMessage],
+    }));
+
+    setMessage("");
+
+    // Simulate doctor typing + response
+    setIsTyping(true);
+    setTimeout(() => {
+      const doctorResponse = {
+        id: Date.now() + 1,
+        text: "Thanks for sharing. Let me think about the best approach for your situation...",
+        sender: "doctor",
+        time: new Date(),
+        status: "sent",
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [activeChat._id]: [...prev[activeChat._id], doctorResponse],
+      }));
+
+      setIsTyping(false);
+
+      // Mark patient messages as seen after delay
+      setTimeout(() => {
+        setMessages((prev) => {
+          const updatedMessages = { ...prev };
+          updatedMessages[activeChat._id] = updatedMessages[activeChat._id].map(
+            (msg) => {
+              if (msg.sender === "patient") {
+                return { ...msg, status: "seen" };
+              }
+              return msg;
+            }
+          );
+          return updatedMessages;
+        });
+      }, 2000);
+    }, 3000);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const StatusIcon = ({ status }) => {
+    if (status === "sent") return <Check className="w-3 h-3 text-gray-400" />;
+    if (status === "delivered")
+      return <CheckCheck className="w-3 h-3 text-gray-400" />;
+    if (status === "seen")
+      return <CheckCheck className="w-3 h-3 text-blue-600" />;
+    return null;
+  };
 
   return (
-    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
-      <motion.div className="max-w-7xl mx-auto" variants={containerVariants} initial="hidden" animate="visible">
-        {/* Header */}
-        <motion.h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8" variants={itemVariants}>
-          Consult Doctor
-        </motion.h1>
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6 lg:p-8">
+      <div className="container mx-auto">
+        <motion.div
+          className="flex h-[85vh] rounded-xl overflow-hidden bg-white"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Left: Doctors List */}
+          <motion.div
+            animate={{ width: activeChat ? "35%" : "100%" }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className={`
+              overflow-y-auto p-4 border-r bg-gray-50
+              ${activeChat ? "hidden md:block" : "block"} 
+              w-full md:w-auto
+            `}
+          >
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">
+              Consult a Doctor
+            </h1>
 
-        {/* Consultation Type Selection */}
-        <motion.div variants={itemVariants}>
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Choose Consultation Type</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {consultationTypes.map((type) => {
-              const IconComponent = type.icon
-              const isSelected = selectedConsultationType === type.id
-
-              return (
-                <motion.div
-                  key={type.id}
-                  className={`p-6 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                    isSelected ? "border-blue-500 bg-blue-50 shadow-md" : `${type.color} hover:shadow-md`
-                  }`}
-                  onClick={() => setSelectedConsultationType(type.id)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <IconComponent className={`w-8 h-8 mb-3 ${isSelected ? "text-blue-600" : "text-gray-600"}`} />
-                    <h3 className="font-semibold text-gray-900 mb-1">{type.title}</h3>
-                    <p className="text-sm text-gray-600">{type.subtitle}</p>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </motion.div>
-
-        {/* Available Veterinarians */}
-        <motion.div variants={itemVariants}>
-          <h2 className="text-lg font-semibold text-gray-800 mb-6">Available Veterinarians</h2>
-          <div className="space-y-4">
-            {veterinarians.map((vet, index) => (
-              <motion.div
-                key={vet.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-                variants={itemVariants}
-                whileHover={{ shadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-pulse flex flex-col space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-24 bg-gray-200 rounded-xl w-full"
+                    ></div>
+                  ))}
+                </div>
+              </div>
+            ) : doctors.length === 0 ? (
+              <p className="text-gray-500">No doctors available right now.</p>
+            ) : (
+              <div
+                className={`grid ${
+                  activeChat ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3"
+                } gap-6`}
               >
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  {/* Doctor Info */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-6 h-6 text-blue-600" />
+                {doctors.map((doctor) => (
+                  <motion.article
+                    key={doctor._id}
+                    whileHover={{
+                      y: -4,
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                    }}
+                    className="rounded-xl border bg-white p-4 shadow-sm cursor-pointer relative overflow-hidden"
+                    onClick={() => setActiveChat(doctor)}
+                  >
+                    {/* Online status indicator */}
+                    <div className="absolute top-4 right-4">
+                      <span className="flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 text-lg mb-1">{vet.name}</h3>
-                      <p className="text-blue-600 font-medium mb-2">{vet.specialization}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>Experience: {vet.experience} years</span>
+
+                    {/* Doctor Info */}
+                    <div className="flex items-center gap-3">
+                      {doctor.doctorProfile?.imageUrl ? (
+                        <motion.img
+                          whileHover={{ scale: 1.1 }}
+                          src={doctor.doctorProfile.imageUrl}
+                          alt={`Profile of ${doctor.doctorProfile.fullName}`}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-blue-100"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                          <User2 className="h-6 w-6 text-blue-600" />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-medium">{vet.rating}</span>
-                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold">
+                          {doctor.doctorProfile?.fullName}
+                        </h3>
+                        <p className="truncate text-sm text-gray-500">
+                          {doctor.doctorProfile?.specialization}
+                        </p>
                       </div>
-                      <div className={`text-sm font-medium ${vet.availabilityColor} mb-2`}>{vet.availability}</div>
                     </div>
+
+                    {/* Fee + Experience */}
+                    <div className="mt-3 text-sm text-gray-600">
+                      <div>{doctor.doctorProfile?.experience} yrs experience</div>
+                      <div>Fee: ₹{doctor.doctorProfile?.fee || 300}</div>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Right: Chat Panel */}
+          <AnimatePresence>
+            {activeChat && (
+              <motion.div
+                key="chat-panel"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 300, opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeInOut" }}
+                className="flex flex-col h-full w-full bg-white"
+              >
+                {/* Chat Header */}
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-blue-600 text-white relative">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer"
+                    onMouseEnter={() => setShowProfile(true)}
+                    onMouseLeave={() => setShowProfile(false)}
+                  >
+                    {activeChat.doctorProfile?.imageUrl ? (
+                      <img
+                        src={activeChat.doctorProfile.imageUrl}
+                        alt={`Profile of ${activeChat.doctorProfile.fullName}`}
+                        className="h-10 w-10 rounded-full object-cover border-2 border-blue-400"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500">
+                        <User2 className="h-6 w-6 text-white" />
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="font-semibold">
+                        {activeChat.doctorProfile?.fullName}
+                      </h2>
+                      <p className="text-sm text-white/80">
+                        {activeChat.doctorProfile?.specialization}
+                      </p>
+                    </div>
+
+                    {/* Profile Popup */}
+                    <AnimatePresence>
+                      {showProfile && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-14 left-4 w-64 p-4 bg-white text-gray-800 rounded-xl shadow-xl z-50"
+                        >
+                          <h3 className="font-semibold text-lg">
+                            {activeChat.doctorProfile?.fullName}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {activeChat.doctorProfile?.specialization}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Experience: {activeChat.doctorProfile?.experience} yrs
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Fee: ₹{activeChat.doctorProfile?.fee || 300}
+                          </p>
+                          <button className="mt-2 w-full bg-green-500 text-white py-1 rounded flex items-center justify-center gap-2">
+                            <Phone size={16} /> Audio Call
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Consultation Details & Actions */}
-                  <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-4 lg:items-end">
-                    <div className="text-sm">
-                      <div className="mb-2">
-                        <span className="text-gray-600">Consultation Fee</span>
-                        <div className="font-bold text-lg text-gray-900">₹{vet.fee}</div>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Globe className="w-4 h-4" />
-                        <span>Languages</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {vet.languages.map((lang, idx) => (
-                          <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                            {lang}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveChat(null)}
+                    className="flex items-center gap-1 text-sm bg-blue-700 px-3 py-2 rounded-lg hover:bg-blue-800 shadow-md"
+                  >
+                    <ArrowLeft className="w-4 h-4" />{" "}
+                    <span className="hidden md:inline">Back</span>
+                  </motion.button>
+                </div>
+
+                {/* Messages Container */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                  {messages[activeChat._id]?.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`flex ${
+                        msg.sender === "patient"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`flex flex-col max-w-[75%] ${
+                          msg.sender === "patient" ? "items-end" : "items-start"
+                        }`}
+                      >
+                        <div
+                          className={`p-3 rounded-2xl shadow-sm ${
+                            msg.sender === "patient"
+                              ? "bg-blue-100 rounded-br-none"
+                              : "bg-white rounded-bl-none border"
+                          }`}
+                        >
+                          <p className="text-sm">{msg.text}</p>
+                        </div>
+                        <div className="flex items-center mt-1 space-x-1">
+                          <span className="text-xs text-gray-500">
+                            {formatTime(msg.time)}
                           </span>
-                        ))}
+                          {msg.sender === "patient" && (
+                            <StatusIcon status={msg.status} />
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
+                  ))}
 
-                    <div className="flex flex-col gap-2 min-w-[140px]">
-                      <motion.button
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Book Consultation
-                      </motion.button>
-                      <motion.button
-                        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        View Profile
-                      </motion.button>
-                      <button className="text-blue-600 text-sm font-medium hover:underline">Read Reviews</button>
-                    </div>
-                  </div>
+                  {isTyping && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex justify-start"
+                    >
+                      <div className="bg-white p-3 rounded-2xl rounded-bl-none">
+                        <div className="flex space-x-1">
+                          {[0, 0.2, 0.4].map((delay, i) => (
+                            <motion.div
+                              key={i}
+                              className="w-2 h-2 bg-gray-500 rounded-full"
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{
+                                repeat: Infinity,
+                                duration: 1,
+                                delay,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Fixed Input Section */}
+                <div className="border-t bg-white p-3 flex items-center gap-2">
+                  {/* Audio Call button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-md"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </motion.button>
+
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type a message..."
+                    className="flex-1 rounded-full border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSendMessage}
+                    disabled={!message.trim()}
+                    className={`rounded-full p-3 ${
+                      message.trim()
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-200 text-gray-400"
+                    }`}
+                  >
+                    <Send className="w-5 h-5" />
+                  </motion.button>
                 </div>
               </motion.div>
-            ))}
-          </div>
+            )}
+          </AnimatePresence>
         </motion.div>
-
-        {/* Emergency Consultation */}
-        <motion.div className="mt-8 bg-red-50 border border-red-200 rounded-lg p-6" variants={itemVariants}>
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-red-900 mb-2">Emergency Consultation</h3>
-              <p className="text-red-800 mb-4">For immediate veterinary emergencies, call our 24/7 helpline</p>
-              <motion.button
-                className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <PhoneCall className="w-5 h-5" />
-                Call Emergency Helpline: 1800-VET-HELP
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
+      </div>
     </div>
-  )
+  );
 }

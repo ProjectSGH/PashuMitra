@@ -68,7 +68,7 @@ export default function AwarenessCampaigns() {
         return;
       }
 
-      // If with_animals campaign → validate animal info
+      // Validation for with_animals campaigns
       if (selectedCampaign.campaignType === "with_animals") {
         if (
           formData.selectedAnimals.length === 0 &&
@@ -98,6 +98,9 @@ export default function AwarenessCampaigns() {
         "http://localhost:5000/api/campaign-registrations/register",
         payload
       );
+
+      // ✅ Update state immediately so UI reflects
+      setRegistrations((prev) => [...prev, selectedCampaign._id]);
 
       toast.success("Registered successfully!", {
         duration: 4000,
