@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const Doctor = require('../models/Doctor/DoctorModel');
-const Store = require('../models/Medical/StoreModel');
+const Store = require('../models/MedicalStore/StoreModel');
 const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 
@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
       return res.json({ ...user.toObject(), doctorProfile: doctorData });
     }
 
-    if (user.role === 'Store') {
+    if (user.role === 'MedicalStore') {
       const storeData = await Store.findOne({ userId: user._id });
       return res.json({ ...user.toObject(), storeProfile: storeData });
     }
@@ -107,7 +107,7 @@ router.put("/:id", async (req, res) => {
       );
     }
 
-    if (updatedUser.role === "Store") {
+    if (updatedUser.role === "MedicalStore") {
       updatedProfile = await Store.findOneAndUpdate(
         { userId },
         {

@@ -156,40 +156,7 @@ export default function StoreProfileSettings() {
               </div>
             </motion.div>
 
-            {/* Store Location */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-            >
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Store Location</h2>
-
-              {/* Map Placeholder */}
-              <div className="bg-gray-200 rounded-lg h-64 flex flex-col items-center justify-center mb-4">
-                <MapPin size={48} className="text-gray-400 mb-2" />
-                <p className="text-gray-600 font-medium">Interactive Map</p>
-                <p className="text-gray-500 text-sm">Store location would be displayed here</p>
-              </div>
-
-              {/* Location Info */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MapPin size={16} className="text-blue-600" />
-                  <span className="text-sm">
-                    <span className="font-medium">Current Location:</span> {currentLocation}
-                  </span>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleUpdateLocation}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Update Location
-                </motion.button>
-              </div>
-            </motion.div>
+            
           </div>
 
           {/* Sidebar */}

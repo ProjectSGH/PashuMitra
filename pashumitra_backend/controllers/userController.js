@@ -3,7 +3,7 @@ const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const bcrypt = require('bcrypt');       // Adjust paths as necessary
 const Doctor = require("../models/Doctor/DoctorModel");
-const Store = require("../models/Medical/StoreModel");
+const Store = require("../models/MedicalStore/StoreModel");
 
 exports.registerDoctor = async (req, res) => {
   try {
