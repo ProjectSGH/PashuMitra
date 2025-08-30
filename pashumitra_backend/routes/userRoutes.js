@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require('../models/UserModel');
 const Farmer = require('../models/Farmer/FarmerModel');
 const Doctor = require('../models/Doctor/DoctorModel');
-const store = require('../models/Medical/StoreModel');
+const Store = require('../models/Medical/StoreModel');
 const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
 
