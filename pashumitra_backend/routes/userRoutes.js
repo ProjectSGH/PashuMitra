@@ -46,6 +46,11 @@ router.get('/:id', async (req, res) => {
       return res.json({ ...user.toObject(), doctorProfile: doctorData });
     }
 
+    if (user.role === 'Store') {
+      const storeData = await Store.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), storeProfile: storeData });
+    }
+
     res.json(user); // fallback
   } catch (err) {
     console.error("Error in GET /:id:", err);
@@ -102,6 +107,22 @@ router.put("/:id", async (req, res) => {
       );
     }
 
+    if (updatedUser.role === "Store") {
+      updatedProfile = await Store.findOneAndUpdate(
+        { userId },
+        {
+          storeName: req.body.storeName,
+          ownerName: req.body.ownerName,
+          specialization: req.body.specialization,
+          established: req.body.established,
+          address: req.body.address,
+          state: req.body.state,
+          city: req.body.city,
+          pincode: req.body.pincode,
+        },
+        { new: true, runValidators: true }
+      );
+    }
     // Combine for frontend
     const responseUser = {
       ...updatedUser.toObject(),
