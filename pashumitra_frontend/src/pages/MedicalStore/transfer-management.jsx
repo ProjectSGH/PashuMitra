@@ -94,7 +94,7 @@ export default function TransferManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <motion.h1
@@ -188,7 +188,7 @@ export default function TransferManagement() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Transfer Requests</h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-7xl m-auto">
           {filteredTransfers.map((transfer, index) => (
             <motion.div
               key={transfer.id}
@@ -197,7 +197,7 @@ export default function TransferManagement() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center flex-wrap justify-between">
                 <div className="flex items-center gap-4">
                   {/* Direction Arrow */}
                   <div

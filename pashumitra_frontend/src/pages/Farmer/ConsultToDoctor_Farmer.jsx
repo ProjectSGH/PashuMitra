@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import io from "socket.io-client";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User2,
@@ -8,6 +9,7 @@ import {
   Check,
   CheckCheck,
   Send,
+  MessageCircle,
 } from "lucide-react";
 import axios from "axios";
 
@@ -17,34 +19,47 @@ export default function ConsultDoctor() {
   const [activeChat, setActiveChat] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [message, setMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping] = useState(false); // placeholder typing indicator
   const [messages, setMessages] = useState({});
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
+  const socketRef = useRef(null);
+
+  // ✅ initialize socket only once
+  useEffect(() => {
+    const socket = io("http://localhost:5000", { transports: ["websocket"] });
+    socketRef.current = socket;
+
+    socket.on("receiveMessage", (newMessage) => {
+      setMessages((prev) => ({
+        ...prev,
+        [newMessage.doctorId]: [
+          ...(prev[newMessage.doctorId] || []),
+          newMessage,
+        ],
+      }));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  // ✅ get farmerId from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const farmerId = user?._id;
+
+  // ✅ Fetch doctors list
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/users/doctors");
         setDoctors(res.data);
 
-        // Initialize empty messages for each doctor
+        // initialize empty message threads
         const initialMessages = {};
-        res.data.forEach((doctor) => {
-          initialMessages[doctor._id] = [
-            {
-              id: 1,
-              text: "Hello Doctor!",
-              sender: "patient",
-              time: new Date(Date.now() - 100000),
-              status: "seen",
-            },
-            {
-              id: 2,
-              text: "Hi, how can I help you today?",
-              sender: "doctor",
-              time: new Date(Date.now() - 90000),
-              status: "seen",
-            },
-          ];
+        res.data.forEach((doc) => {
+          initialMessages[doc._id] = [];
         });
         setMessages(initialMessages);
       } catch (err) {
@@ -56,60 +71,68 @@ export default function ConsultDoctor() {
     fetchDoctors();
   }, []);
 
-  // Removed auto-scroll-to-bottom
+  // ✅ Open chat with a doctor
+  const openChat = (doctor) => {
+    setSelectedDoctor(doctor);
+    setActiveChat(doctor);
 
-  const handleSendMessage = () => {
-    if (!message.trim() || !activeChat) return;
+    if (socketRef.current) {
+      socketRef.current.emit("joinRoom", {
+        farmerId,
+        doctorId: doctor._id,
+      });
+    }
 
-    const newMessage = {
-      id: Date.now(),
-      text: message,
-      sender: "patient",
-      time: new Date(),
-      status: "sent",
-    };
+    fetchMessages(doctor._id);
+  };
 
-    setMessages((prev) => ({
-      ...prev,
-      [activeChat._id]: [...(prev[activeChat._id] || []), newMessage],
-    }));
+  // ✅ Fetch messages from backend
+  const fetchMessages = async (doctorId) => {
+    try {
+      const farmer = JSON.parse(localStorage.getItem("user"));
+      const farmerId = farmer?._id;
 
-    setMessage("");
-
-    // Simulate doctor typing + response
-    setIsTyping(true);
-    setTimeout(() => {
-      const doctorResponse = {
-        id: Date.now() + 1,
-        text: "Thanks for sharing. Let me think about the best approach for your situation...",
-        sender: "doctor",
-        time: new Date(),
-        status: "sent",
-      };
+      const res = await axios.get(
+        `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
+      );
 
       setMessages((prev) => ({
         ...prev,
-        [activeChat._id]: [...prev[activeChat._id], doctorResponse],
+        [doctorId]: res.data,
       }));
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+    }
+  };
 
-      setIsTyping(false);
+  // ✅ Send message
+  const handleSendMessage = async () => {
+    if (!selectedDoctor || !message.trim()) return;
 
-      // Mark patient messages as seen after delay
-      setTimeout(() => {
-        setMessages((prev) => {
-          const updatedMessages = { ...prev };
-          updatedMessages[activeChat._id] = updatedMessages[activeChat._id].map(
-            (msg) => {
-              if (msg.sender === "patient") {
-                return { ...msg, status: "seen" };
-              }
-              return msg;
-            }
-          );
-          return updatedMessages;
-        });
-      }, 2000);
-    }, 3000);
+    try {
+      const farmer = JSON.parse(localStorage.getItem("user"));
+      const farmerId = farmer?._id;
+
+      const newMessage = {
+        farmerId,
+        doctorId: selectedDoctor._id,
+        sender: "farmer",
+        message,
+      };
+
+      // save to DB
+      await axios.post("http://localhost:5000/api/chat/send", newMessage);
+
+      // emit through socket
+      if (socketRef.current) {
+        socketRef.current.emit("sendMessage", newMessage);
+      }
+
+      setMessage("");
+      fetchMessages(selectedDoctor._id);
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -125,13 +148,10 @@ export default function ConsultDoctor() {
       minute: "2-digit",
     });
 
-  const StatusIcon = ({ status }) => {
-    if (status === "sent") return <Check className="w-3 h-3 text-gray-400" />;
-    if (status === "delivered")
-      return <CheckCheck className="w-3 h-3 text-gray-400" />;
-    if (status === "seen")
-      return <CheckCheck className="w-3 h-3 text-blue-600" />;
-    return null;
+  // ✅ Seen / Delivered icon
+  const StatusIcon = ({ seen }) => {
+    if (!seen) return <Check className="w-3 h-3 text-gray-400" />;
+    return <CheckCheck className="w-3 h-3 text-blue-600" />;
   };
 
   return (
@@ -183,15 +203,10 @@ export default function ConsultDoctor() {
                       y: -4,
                       boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                     }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 20,
-                    }}
-                    className="rounded-xl border bg-white p-4 shadow-sm cursor-pointer relative overflow-hidden"
-                    onClick={() => setActiveChat(doctor)}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="rounded-xl border bg-white p-4 shadow-sm relative overflow-hidden"
                   >
-                    {/* Online status indicator */}
+                    {/* Online status */}
                     <div className="absolute top-4 right-4">
                       <span className="flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -205,7 +220,7 @@ export default function ConsultDoctor() {
                         <motion.img
                           whileHover={{ scale: 1.1 }}
                           src={doctor.doctorProfile.imageUrl}
-                          alt={`Profile of ${doctor.doctorProfile.fullName}`}
+                          alt={doctor.doctorProfile?.fullName}
                           className="h-12 w-12 rounded-full object-cover border-2 border-blue-100"
                         />
                       ) : (
@@ -221,12 +236,34 @@ export default function ConsultDoctor() {
                           {doctor.doctorProfile?.specialization}
                         </p>
                       </div>
+
+                      {/* Mobile Chat Button */}
+                      <button
+                        onClick={() => openChat(doctor)}
+                        className="md:hidden bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
+                      >
+                        <MessageCircle size={16} />
+                      </button>
                     </div>
 
                     {/* Fee + Experience */}
                     <div className="mt-3 text-sm text-gray-600">
-                      <div>{doctor.doctorProfile?.experience} yrs experience</div>
+                      <div>
+                        {doctor.doctorProfile?.experience} yrs experience
+                      </div>
                       <div>Fee: ₹{doctor.doctorProfile?.fee || 300}</div>
+                    </div>
+
+                    {/* Chat Button desktop */}
+                    <div className="mt-4 flex justify-end">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => openChat(doctor)}
+                        className="hidden md:flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700"
+                      >
+                        <MessageCircle size={16} /> Chat
+                      </motion.button>
                     </div>
                   </motion.article>
                 ))}
@@ -245,7 +282,7 @@ export default function ConsultDoctor() {
                 transition={{ duration: 0.4, ease: "easeInOut" }}
                 className="flex flex-col h-full w-full bg-white"
               >
-                {/* Chat Header */}
+                {/* Header */}
                 <div className="flex items-center justify-between border-b px-4 py-3 bg-blue-600 text-white relative">
                   <div
                     className="flex items-center gap-3 cursor-pointer"
@@ -255,7 +292,7 @@ export default function ConsultDoctor() {
                     {activeChat.doctorProfile?.imageUrl ? (
                       <img
                         src={activeChat.doctorProfile.imageUrl}
-                        alt={`Profile of ${activeChat.doctorProfile.fullName}`}
+                        alt={activeChat.doctorProfile?.fullName}
                         className="h-10 w-10 rounded-full object-cover border-2 border-blue-400"
                       />
                     ) : (
@@ -272,7 +309,7 @@ export default function ConsultDoctor() {
                       </p>
                     </div>
 
-                    {/* Profile Popup */}
+                    {/* Hover profile card */}
                     <AnimatePresence>
                       {showProfile && (
                         <motion.div
@@ -288,64 +325,74 @@ export default function ConsultDoctor() {
                             {activeChat.doctorProfile?.specialization}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Experience: {activeChat.doctorProfile?.experience} yrs
+                            Experience: {activeChat.doctorProfile?.experience}{" "}
+                            yrs
                           </p>
                           <p className="text-sm text-gray-600">
                             Fee: ₹{activeChat.doctorProfile?.fee || 300}
                           </p>
-                          <button className="mt-2 w-full bg-green-500 text-white py-1 rounded flex items-center justify-center gap-2">
-                            <Phone size={16} /> Audio Call
-                          </button>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setActiveChat(null)}
-                    className="flex items-center gap-1 text-sm bg-blue-700 px-3 py-2 rounded-lg hover:bg-blue-800 shadow-md"
-                  >
-                    <ArrowLeft className="w-4 h-4" />{" "}
-                    <span className="hidden md:inline">Back</span>
-                  </motion.button>
+                  <div className="flex items-center gap-2">
+                    {/* Call Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md"
+                    >
+                      <Phone className="w-5 h-5" />
+                    </motion.button>
+
+                    {/* Back Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setActiveChat(null)}
+                      className="flex items-center gap-1 text-sm bg-blue-700 px-3 py-2 rounded-lg hover:bg-blue-800 shadow-md"
+                    >
+                      <ArrowLeft className="w-4 h-4" />{" "}
+                      <span className="hidden md:inline">Back</span>
+                    </motion.button>
+                  </div>
                 </div>
 
-                {/* Messages Container */}
+                {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                  {messages[activeChat._id]?.map((msg) => (
+                  {messages[selectedDoctor?._id]?.map((msg) => (
                     <motion.div
-                      key={msg.id}
+                      key={msg._id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
                       className={`flex ${
-                        msg.sender === "patient"
+                        msg.sender === "farmer"
                           ? "justify-end"
                           : "justify-start"
                       }`}
                     >
                       <div
                         className={`flex flex-col max-w-[75%] ${
-                          msg.sender === "patient" ? "items-end" : "items-start"
+                          msg.sender === "farmer" ? "items-end" : "items-start"
                         }`}
                       >
                         <div
                           className={`p-3 rounded-2xl shadow-sm ${
-                            msg.sender === "patient"
+                            msg.sender === "farmer"
                               ? "bg-blue-100 rounded-br-none"
                               : "bg-white rounded-bl-none border"
                           }`}
                         >
-                          <p className="text-sm">{msg.text}</p>
+                          <p className="text-sm">{msg.message}</p>
                         </div>
                         <div className="flex items-center mt-1 space-x-1">
                           <span className="text-xs text-gray-500">
-                            {formatTime(msg.time)}
+                            {formatTime(msg.timestamp)}
                           </span>
-                          {msg.sender === "patient" && (
-                            <StatusIcon status={msg.status} />
+                          {msg.sender === "farmer" && (
+                            <StatusIcon seen={msg.seen} />
                           )}
                         </div>
                       </div>
@@ -378,17 +425,8 @@ export default function ConsultDoctor() {
                   )}
                 </div>
 
-                {/* Fixed Input Section */}
+                {/* Input */}
                 <div className="border-t bg-white p-3 flex items-center gap-2">
-                  {/* Audio Call button */}
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-md"
-                  >
-                    <Phone className="w-5 h-5" />
-                  </motion.button>
-
                   <input
                     type="text"
                     value={message}

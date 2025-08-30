@@ -139,7 +139,7 @@ export default function TransportManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <motion.h1

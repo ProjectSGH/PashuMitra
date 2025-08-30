@@ -106,7 +106,7 @@ export default function MedicineRequests() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <motion.h1
@@ -123,7 +123,7 @@ export default function MedicineRequests() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex gap-1 bg-white rounded-lg p-1 shadow-sm border"
+            className="flex gap-1 flex-wrap bg-white rounded-lg p-1 shadow-sm border"
           >
             {filterTabs.map((tab) => (
               <button
@@ -142,7 +142,7 @@ export default function MedicineRequests() {
         </div>
 
         {/* Requests Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {filteredRequests.map((request, index) => (
             <motion.div
               key={request.id}

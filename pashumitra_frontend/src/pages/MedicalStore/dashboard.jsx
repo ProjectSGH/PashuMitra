@@ -125,7 +125,7 @@ export default function Dashboard() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-7xl mx-auto space-y-6"
+        className=" mx-auto space-y-6"
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="bg-blue-600 text-white p-6 rounded-2xl">

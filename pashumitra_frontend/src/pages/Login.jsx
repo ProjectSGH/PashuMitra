@@ -26,6 +26,7 @@ const LoginPage = () => {
 
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("userId", data.user._id);
         const role = data.user.role.toLowerCase();
         console.log("Redirecting to: ", `/${role}/home`); // Log the redirection path
         navigate(`/${role}/home`); // Redirect after login

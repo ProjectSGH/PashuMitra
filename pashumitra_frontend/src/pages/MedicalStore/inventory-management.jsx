@@ -89,7 +89,7 @@ export default function InventoryManagement() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-7xl mx-auto bg-white rounded-lg shadow-sm"
+        className="mx-auto bg-white rounded-lg shadow-sm"
       >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-200">
