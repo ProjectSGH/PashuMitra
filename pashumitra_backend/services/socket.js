@@ -5,11 +5,12 @@ let io;
 
 export const initSocket = (server) => {
   io = new Server(server, {
-    cors: {
-      origin: "http://localhost:3000", // frontend URL
-      methods: ["GET", "POST"],
-    },
-  });
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:3000"], // allow both Vite & CRA
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
   io.on("connection", (socket) => {
     // console.log("User connected:", socket.id);

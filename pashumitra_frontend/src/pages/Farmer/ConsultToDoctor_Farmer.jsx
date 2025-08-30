@@ -27,7 +27,7 @@ export default function ConsultDoctor() {
 
   // ✅ initialize socket only once
   useEffect(() => {
-    const socket = io("http://localhost:5000", { transports: ["websocket"] });
+    const socket = io("http://localhost:5000"); // no transports
     socketRef.current = socket;
 
     socket.on("receiveMessage", (newMessage) => {
