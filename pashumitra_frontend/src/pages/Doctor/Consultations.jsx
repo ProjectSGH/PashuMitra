@@ -1,385 +1,412 @@
-"use client"
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+"use client";
+import io from "socket.io-client";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+  User2,
+  Phone,
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  Send,
   MessageCircle,
-  Video,
-  FileText,
-  ChevronDown,
-  Clock,
-  Calendar,
-  Users,
-} from "lucide-react"
-import axios from "axios"
+  Search,
+} from "lucide-react";
+import axios from "axios";
 
-// Reusable animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-}
+export default function DoctorChat() {
+  const [farmers, setFarmers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeChat, setActiveChat] = useState(null);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState({});
+  const [selectedFarmer, setSelectedFarmer] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.5 },
-  },
-}
+  const socketRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-const cardVariants = {
-  hidden: { scale: 0.9, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: { duration: 0.4 },
-  },
-  hover: {
-    scale: 1.02,
-    transition: { duration: 0.2 },
-  },
-}
+  // ✅ DoctorId from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const doctorId = user?._id;
 
-const consultationsData = [
-  {
-    id: 1,
-    patientName: "John Smith",
-    animalType: "Cow",
-    priority: "High",
-    status: "Pending",
-    issue: "Mastitis symptoms - swollen udder, reduced milk production",
-    timeAgo: "10 min ago",
-    actions: ["Start Chat", "Video Call"],
-  },
-  {
-    id: 2,
-    patientName: "Maria Garcia",
-    animalType: "Buffalo",
-    priority: "Medium",
-    status: "Pending",
-    issue: "Loss of appetite, lethargic behavior for 2 days",
-    timeAgo: "25 min ago",
-    actions: ["Start Chat", "Video Call"],
-  },
-  {
-    id: 3,
-    patientName: "Ahmed Hassan",
-    animalType: "Goat",
-    priority: "Low",
-    status: "In Progress",
-    issue: "Skin condition with patches and itching",
-    timeAgo: "1 hour ago",
-    actions: ["Continue Chat"],
-  },
-  {
-    id: 4,
-    patientName: "Sarah Johnson",
-    animalType: "Sheep",
-    priority: "Low",
-    status: "Completed",
-    issue: "Vaccination schedule consultation",
-    timeAgo: "2 hours ago",
-    actions: ["View Summary"],
-  },
-]
+  // ✅ initialize socket
+  useEffect(() => {
+    const socket = io("http://localhost:5000");
+    socketRef.current = socket;
 
-const priorityColors = {
-  High: "bg-red-100 text-red-800 border-red-200",
-  Medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  Low: "bg-green-100 text-green-800 border-green-200",
-}
+    socket.on("receiveMessage", (newMessage) => {
+      setMessages((prev) => ({
+        ...prev,
+        [newMessage.farmerId]: [
+          ...(prev[newMessage.farmerId] || []),
+          newMessage,
+        ],
+      }));
+    });
 
-const statusColors = {
-  Pending: "bg-blue-100 text-blue-800 border-blue-200",
-  "In Progress": "bg-orange-100 text-orange-800 border-orange-200",
-  Completed: "bg-gray-100 text-gray-800 border-gray-200",
-}
+    return () => socket.disconnect();
+  }, []);
 
-const buttonStyles = {
-  "Start Chat": "bg-blue-600 hover:bg-blue-700 text-white",
-  "Video Call": "bg-green-600 hover:bg-green-700 text-white",
-  "Continue Chat": "bg-orange-600 hover:bg-orange-700 text-white",
-  "View Summary": "bg-gray-600 hover:bg-gray-700 text-white",
-}
+  // ✅ Fetch farmers
+  useEffect(() => {
+    const fetchFarmers = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/chat/doctor/${doctorId}/farmers`
+        );
+        setFarmers(res.data);
 
-export default function Consultations() {
-  const [statusFilter, setStatusFilter] = useState("All Status")
+        const initialMessages = {};
+        res.data.forEach((f) => (initialMessages[f._id] = []));
+        setMessages(initialMessages);
+      } catch (err) {
+        console.error("Error fetching farmers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (doctorId) fetchFarmers();
+  }, [doctorId]);
 
+  // ✅ Open chat
+  const openChat = (farmer) => {
+    setSelectedFarmer(farmer);
+    setActiveChat(farmer);
+    setShowSidebar(false);
 
-// Display name state (update after mount)
-// displayName state (used in greeting)
-const [displayName, setDisplayName] = useState("Doctor");
+    if (socketRef.current) {
+      socketRef.current.emit("joinRoom", {
+        farmerId: farmer._id,
+        doctorId,
+      });
+    }
 
-useEffect(() => {
-  const loadDisplayName = async () => {
+    fetchMessages(farmer._id);
+  };
+
+  // ✅ Fetch messages
+  const fetchMessages = async (farmerId) => {
     try {
-      const raw = localStorage.getItem("user");
-      const localUser = raw ? JSON.parse(raw) : null;
-
-      // 1) If localStorage already has a good displayName/fullName, use it.
-      let name =
-        (localUser?.displayName || localUser?.fullName || "").toString().trim();
-
-      // 2) If that is missing or is just the literal "Doctor", prefer doctorProfile or backend
-      if (!name || name.toLowerCase() === "doctor") {
-        // prefer nested doctorProfile if present in local storage
-        if (localUser?.doctorProfile?.fullName) {
-          name = localUser.doctorProfile.fullName.toString().trim();
-        } else if (localUser?._id) {
-          // fetch fresh user from backend (same endpoint you use in ProfileSchedule)
-          try {
-            const res = await axios.get(`http://localhost:5000/api/users/${localUser._id}`);
-            const userData = res.data;
-            name =
-              (userData?.doctorProfile?.fullName ||
-               userData?.fullName ||
-               userData?.name ||
-               `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
-               ""
-              ).toString().trim();
-
-            // update localStorage so future loads are faster
-            const merged = { ...(localUser || {}), ...(userData || {}) };
-            if (name) merged.displayName = name;
-            localStorage.setItem("user", JSON.stringify(merged));
-          } catch (err) {
-            console.warn("Could not fetch user from backend:", err);
-          }
-        }
-      }
-
-      name = (name || "").trim();
-
-      // 3) Final fallback and prefix logic
-      const role = (localUser?.role || "").toString().toLowerCase().trim();
-      const isDoctor = role === "doctor";
-      const hasDrPrefix = /^dr\.?\s/i.test(name);
-
-      if (!name) {
-        setDisplayName(isDoctor ? "Doctor" : (localUser?.role || "User"));
-      } else if (isDoctor && !hasDrPrefix && name.toLowerCase() !== "doctor") {
-        setDisplayName(`Dr. ${name}`);
-      } else {
-        setDisplayName(name);
-      }
+      const res = await axios.get(
+        `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
+      );
+      setMessages((prev) => ({ ...prev, [farmerId]: res.data }));
     } catch (err) {
-      console.error("Error computing displayName:", err);
-      setDisplayName("Doctor");
+      console.error("Error fetching messages:", err);
     }
   };
 
-  loadDisplayName();
-}, []);
+  // ✅ Send message
+  const handleSendMessage = async () => {
+    if (!selectedFarmer || !message.trim()) return;
 
-  const filteredConsultations =
-    statusFilter === "All Status"
-      ? consultationsData
-      : consultationsData.filter((item) => item.status === statusFilter)
+    try {
+      const newMessage = {
+        farmerId: selectedFarmer._id,
+        doctorId,
+        sender: "doctor",
+        message,
+      };
 
-  const getButtonIcon = (action) => {
-    switch (action) {
-      case "Start Chat":
-      case "Continue Chat":
-        return <MessageCircle className="w-4 h-4" />
-      case "Video Call":
-        return <Video className="w-4 h-4" />
-      case "View Summary":
-        return <FileText className="w-4 h-4" />
-      default:
-        return null
+      await axios.post("http://localhost:5000/api/chat/send", newMessage);
+
+      if (socketRef.current) {
+        socketRef.current.emit("sendMessage", newMessage);
+      }
+
+      setMessage("");
+      fetchMessages(selectedFarmer._id);
+    } catch (err) {
+      console.error("Error sending message:", err);
     }
-  }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const formatTime = (date) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  const StatusIcon = ({ seen }) =>
+    !seen ? (
+      <Check className="w-3 h-3 text-gray-400" />
+    ) : (
+      <CheckCheck className="w-3 h-3 text-blue-600" />
+    );
+
+  // Filter farmers based on search term
+  const filteredFarmers = farmers.filter(
+    (farmer) =>
+      farmer.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      farmer.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/*  Stats Section Moved to Top */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Welcome */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {`Welcome back, ${displayName}!`}
-            </h2>
-            <p className="text-gray-600">
-              Here's what's happening with your practice today.
-            </p>
-          </motion.div>
+    <div className="min-h-screen bg-gray-100">
+      {/* Mobile header for chat view */}
+      {activeChat && (
+        <div className="md:hidden flex items-center justify-between p-3 bg-blue-600 text-white">
+          <button onClick={() => setActiveChat(null)} className="p-2">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500">
+              <User2 className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="font-semibold text-sm">{activeChat.fullName}</h2>
+          </div>
+          <button className="p-2">
+            <Phone className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
-          {/* Stats */}
-          <motion.div
-            variants={itemVariants}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-          >
-            {[
-              {
-                title: "Pending Consultations",
-                value: "8",
-                icon: MessageCircle,
-                color: "blue",
-              },
-              {
-                title: "Today's Appointments",
-                value: "12",
-                icon: Calendar,
-                color: "green",
-              },
-              { title: "Follow-ups Due", value: "5", icon: Users, color: "yellow" },
-            ].map((stat) => (
-              <motion.div
-                key={stat.title}
-                variants={cardVariants}
-                whileHover="hover"
-                className="bg-white rounded-lg p-6 shadow-sm border"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">
-                      {stat.title}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                  <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
-                    <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Header */}
-        <motion.div
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+      <div className="flex h-screen">
+        {/* Sidebar for farmers list */}
+        <div
+          className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
+            activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
+          } ${
+            showSidebar ? "translate-x-0" : "-translate-x-full"
+          } md:relative absolute inset-0 z-10`}
         >
-          <div className="mb-4 sm:mb-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Consultations
-            </h1>
-            <p className="text-gray-600 text-sm md:text-base">
-              Manage your consultation requests and ongoing sessions
-            </p>
+          {/* Sidebar header */}
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-bold text-gray-900">Your Farmers</h1>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="md:hidden text-gray-500"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search farmers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
-          <motion.div
-            className="relative"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-            >
-              <option>All Status</option>
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </motion.div>
-        </motion.div>
-
-        {/* Consultations Grid */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            visible: {
-              transition: {
-                staggerChildren: 0.1,
-              },
-            },
-          }}
+          {/* Farmers list */}
+          <div className="overflow-y-auto h-full pb-20">
+            {loading ? (
+              <div className="p-4 text-center">Loading...</div>
+            ) : filteredFarmers.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                {searchTerm ? "No farmers found" : "No farmers yet"}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {filteredFarmers.map((farmer) => (
+                  <div
+                    key={farmer._id}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedFarmer?._id === farmer._id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => openChat(farmer)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 flex-shrink-0">
+                        <User2 className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-base font-semibold text-gray-900">
+                          {farmer.fullName || farmer.email}
+                        </h3>
+                        <p className="truncate text-sm text-gray-500">
+                          {farmer.phone || "No phone"}
+                        </p>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {messages[farmer._id]?.length > 0 &&
+                          formatTime(
+                            messages[farmer._id][
+                              messages[farmer._id].length - 1
+                            ].timestamp
+                          )}
+                      </div>
+                    </div>
+                    {messages[farmer._id]?.length > 0 && (
+                      <p className="truncate text-sm text-gray-600 mt-1 ml-15">
+                        {
+                          messages[farmer._id][messages[farmer._id].length - 1]
+                            .message
+                        }
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Chat panel */}
+        <div
+          className={`flex-1 flex flex-col h-full ${
+            activeChat ? "block" : "hidden md:block"
+          }`}
         >
-          <AnimatePresence>
-            {filteredConsultations.map((consultation, index) => (
-              <motion.div
-                key={consultation.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-200"
-                variants={{
-                  hidden: { opacity: 0, y: 30, scale: 0.95 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    transition: {
-                      duration: 0.5,
-                      delay: index * 0.1,
-                    },
-                  },
-                  exit: {
-                    opacity: 0,
-                    scale: 0.9,
-                    transition: { duration: 0.3 },
-                  },
-                }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                whileHover={{ y: -4, scale: 1.02 }}
+          {activeChat ? (
+            <>
+              {/* Desktop header */}
+              <div className="hidden md:flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-white">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
+                    <User2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">
+                      {activeChat.fullName}
+                    </h2>
+                    <p className="text-sm text-gray-500">{activeChat.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveChat(null)}
+                    className="md:hidden flex items-center gap-1 text-sm bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 shadow-md text-white"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Messages area - Fixed height with proper flexbox constraints */}
+              <div
+                className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
+                style={{ maxHeight: "calc(100vh - 130px)" }}
               >
-                <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 text-lg mb-1">
-                    {consultation.patientName}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {consultation.animalType}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <motion.span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${priorityColors[consultation.priority]}`}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {consultation.priority} Priority
-                  </motion.span>
-                  <motion.span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[consultation.status]}`}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {consultation.status}
-                  </motion.span>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Issue:</p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {consultation.issue}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {consultation.timeAgo}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {consultation.actions.map((action, index) => (
-                      <motion.button
-                        key={index}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200 ${buttonStyles[action]}`}
-                        whileHover={{ scale: 1.07 }}
-                        whileTap={{ scale: 0.95 }}
+                {messages[selectedFarmer?._id]?.length > 0 ? (
+                  messages[selectedFarmer?._id]?.map((msg) => (
+                    <motion.div
+                      key={msg._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`flex ${
+                        msg.sender === "doctor"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`flex flex-col max-w-[75%] ${
+                          msg.sender === "doctor" ? "items-end" : "items-start"
+                        }`}
                       >
-                        {getButtonIcon(action)}
-                        {action}
-                      </motion.button>
-                    ))}
+                        <div
+                          className={`p-3 rounded-2xl shadow-sm ${
+                            msg.sender === "doctor"
+                              ? "bg-blue-100 rounded-br-none"
+                              : "bg-white rounded-bl-none border"
+                          }`}
+                        >
+                          <p className="text-sm">{msg.message}</p>
+                        </div>
+                        <div className="flex items-center mt-1 space-x-1">
+                          <span className="text-xs text-gray-500">
+                            {formatTime(msg.timestamp)}
+                          </span>
+                          {msg.sender === "doctor" && (
+                            <StatusIcon seen={msg.seen} />
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No messages yet</p>
+                      <p className="text-sm">
+                        Start a conversation with {activeChat.fullName}
+                      </p>
+                    </div>
                   </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message input - Fixed position at bottom */}
+              <div className="border-t border-gray-200 bg-white p-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type a message..."
+                    className="flex-1 rounded-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSendMessage}
+                    disabled={!message.trim()}
+                    className={`rounded-full p-3 ${
+                      message.trim()
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-200 text-gray-400"
+                    }`}
+                  >
+                    <Send className="w-5 h-5" />
+                  </motion.button>
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+              </div>
+            </>
+          ) : (
+            // Empty state when no chat is selected
+            <div className="hidden md:flex flex-col items-center justify-center h-full bg-gray-50 text-gray-500">
+              <MessageCircle className="w-24 h-24 mb-4 text-gray-300" />
+              <h3 className="text-xl font-medium">
+                Select a farmer to start chatting
+              </h3>
+              <p className="mt-2">Your conversations will appear here</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">
+        <button
+          onClick={() => setShowSidebar(true)}
+          className="flex flex-col items-center p-2 text-gray-600"
+        >
+          <MessageCircle className="w-6 h-6" />
+          <span className="text-xs mt-1">Chats</span>
+        </button>
+        <button className="flex flex-col items-center p-2 text-gray-600">
+          <User2 className="w-6 h-6" />
+          <span className="text-xs mt-1">Profile</span>
+        </button>
       </div>
     </div>
-  )
+  );
 }

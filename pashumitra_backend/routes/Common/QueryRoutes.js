@@ -6,6 +6,16 @@ import Contact from "../../models/Common/queryModel.js"; // your mongoose model
 dotenv.config();
 const router = express.Router();
 
+router.get("/", async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: contacts });
+  } catch (error) {
+    console.error("❌ Error fetching contacts:", error.message);
+    res.status(500).json({ success: false, message: "Failed to fetch contacts" });
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body; // ✅ add subject
