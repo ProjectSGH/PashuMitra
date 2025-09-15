@@ -185,3 +185,4 @@ export const getRecentCampaignsByDoctor = async (req, res) => {
     res.status(500).json({ message: "Error fetching recent campaigns", error: err.message });
   }
 };
+

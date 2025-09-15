@@ -147,7 +147,6 @@ exports.downloadDocBlog = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // ✅ Get total documents/blogs by doctor
 exports.getDocCountByDoctor = async (req, res) => {
   try {
@@ -171,4 +170,3 @@ exports.getRecentDocsByDoctor = async (req, res) => {
     res.status(500).json({ message: "Error fetching recent docs", error: error.message });
   }
 };
-

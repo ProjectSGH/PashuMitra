@@ -40,7 +40,6 @@ app.use("/api/query", queryRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/dashboard", DashboardRoutes);
 
-
 const server = http.createServer(app);
 initSocket(server);
 
