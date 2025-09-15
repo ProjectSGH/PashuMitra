@@ -147,3 +147,28 @@ exports.downloadDocBlog = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ✅ Get total documents/blogs by doctor
+exports.getDocCountByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const count = await DocBlog.countDocuments({ author: doctorId });
+    res.json({ total: count });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching doc count", error: error.message });
+  }
+};
+
+// ✅ Get recent docs/blogs by doctor
+exports.getRecentDocsByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const docs = await DocBlog.find({ author: doctorId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+    res.json(docs);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching recent docs", error: error.message });
+  }
+};
+

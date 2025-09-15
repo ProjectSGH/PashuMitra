@@ -17,6 +17,7 @@ import campaignRegistrationRoutes from "./routes/Farmer/campaignRegistrationRout
 import queryRoutes from "./routes/Common/QueryRoutes.js";
 import chatRoutes from "./routes/Common/ChatRoutes.js"
 import "./services/campaignCron.js";
+import DashboardRoutes from "./routes/Common/DashboardRoutes.js"
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,6 +38,8 @@ app.use("/api/campaigns", campaignRoutes);
 app.use("/api/campaign-registrations", campaignRegistrationRoutes);
 app.use("/api/query", queryRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/dashboard", DashboardRoutes);
+
 
 const server = http.createServer(app);
 initSocket(server);

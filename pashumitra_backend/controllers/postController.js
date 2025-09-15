@@ -149,3 +149,28 @@ exports.addComment = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ✅ Get total posts by doctor
+exports.getPostCountByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const count = await Post.countDocuments({ author: doctorId });
+    res.json({ total: count });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching post count", error: error.message });
+  }
+};
+
+// ✅ Get recent posts by doctor
+exports.getRecentPostsByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const posts = await Post.find({ author: doctorId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching posts", error: error.message });
+  }
+};
+

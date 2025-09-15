@@ -161,3 +161,27 @@ export const getCampaignRegistrations = async (req, res) => {
     });
   }
 };
+
+// ✅ Get total campaigns for a specific doctor
+export const getCampaignCountByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const count = await Campaign.countDocuments({ organizerDoctor: doctorId });
+    res.json({ total: count });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching campaign count", error: err.message });
+  }
+};
+
+// ✅ Get recent campaigns for doctor
+export const getRecentCampaignsByDoctor = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const campaigns = await Campaign.find({ organizerDoctor: doctorId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+    res.json(campaigns);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching recent campaigns", error: err.message });
+  }
+};
