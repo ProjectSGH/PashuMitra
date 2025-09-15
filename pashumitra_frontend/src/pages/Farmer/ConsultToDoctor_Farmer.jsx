@@ -10,6 +10,7 @@ import {
   CheckCheck,
   Send,
   MessageCircle,
+  Search,
 } from "lucide-react";
 import axios from "axios";
 
@@ -17,17 +18,18 @@ export default function ConsultDoctor() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeChat, setActiveChat] = useState(null);
-  const [showProfile, setShowProfile] = useState(false);
   const [message, setMessage] = useState("");
-  const [isTyping] = useState(false); // placeholder typing indicator
+  const [isTyping] = useState(false);
   const [messages, setMessages] = useState({});
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const socketRef = useRef(null);
 
   // ✅ initialize socket only once
   useEffect(() => {
-    const socket = io("http://localhost:5000"); // no transports
+    const socket = io("http://localhost:5000");
     socketRef.current = socket;
 
     socket.on("receiveMessage", (newMessage) => {
@@ -75,6 +77,7 @@ export default function ConsultDoctor() {
   const openChat = (doctor) => {
     setSelectedDoctor(doctor);
     setActiveChat(doctor);
+    setShowSidebar(false);
 
     if (socketRef.current) {
       socketRef.current.emit("joinRoom", {
@@ -154,214 +157,197 @@ export default function ConsultDoctor() {
     return <CheckCheck className="w-3 h-3 text-blue-600" />;
   };
 
+  // Filter doctors based on search term
+  const filteredDoctors = doctors.filter((doctor) =>
+    doctor.doctorProfile?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doctor.doctorProfile?.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6 lg:p-8">
-      <div className="container mx-auto">
-        <motion.div
-          className="flex h-[85vh] rounded-xl overflow-hidden bg-white"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Left: Doctors List */}
-          <motion.div
-            animate={{ width: activeChat ? "35%" : "100%" }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className={`
-              overflow-y-auto p-4 border-r bg-gray-50
-              ${activeChat ? "hidden md:block" : "block"} 
-              w-full md:w-auto
-            `}
-          >
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-              Consult a Doctor
-            </h1>
-
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-pulse flex flex-col space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-24 bg-gray-200 rounded-xl w-full"
-                    ></div>
-                  ))}
-                </div>
-              </div>
-            ) : doctors.length === 0 ? (
-              <p className="text-gray-500">No doctors available right now.</p>
+    <div className="min-h-screen bg-gray-100">
+      {/* Mobile header for chat view */}
+      {activeChat && (
+        <div className="md:hidden flex items-center justify-between p-3 bg-blue-600 text-white">
+          <button onClick={() => setActiveChat(null)} className="p-2">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            {activeChat.doctorProfile?.imageUrl ? (
+              <img
+                src={activeChat.doctorProfile.imageUrl}
+                alt={activeChat.doctorProfile?.fullName}
+                className="h-8 w-8 rounded-full object-cover border-2 border-blue-400"
+              />
             ) : (
-              <div
-                className={`grid ${
-                  activeChat ? "grid-cols-1" : "sm:grid-cols-2 lg:grid-cols-3"
-                } gap-6`}
-              >
-                {doctors.map((doctor) => (
-                  <motion.article
-                    key={doctor._id}
-                    whileHover={{
-                      y: -4,
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-                    }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="rounded-xl border bg-white p-4 shadow-sm relative overflow-hidden"
-                  >
-                    {/* Online status */}
-                    <div className="absolute top-4 right-4">
-                      <span className="flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                      </span>
-                    </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500">
+                <User2 className="h-4 w-4 text-white" />
+              </div>
+            )}
+            <h2 className="font-semibold text-sm">
+              {activeChat.doctorProfile?.fullName}
+            </h2>
+          </div>
+          <button className="p-2">
+            <Phone className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
-                    {/* Doctor Info */}
+      <div className="flex h-screen">
+        {/* Sidebar for doctors list */}
+        <div
+          className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
+            activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
+          } ${showSidebar ? "translate-x-0" : "-translate-x-full"} md:relative absolute inset-0 z-10`}
+        >
+          {/* Sidebar header */}
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-bold text-gray-900">Consult a Doctor</h1>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="md:hidden text-gray-500"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search doctors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Doctors list */}
+          <div className="overflow-y-auto h-full pb-20">
+            {loading ? (
+              <div className="p-4 text-center">Loading...</div>
+            ) : filteredDoctors.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                {searchTerm ? "No doctors found" : "No doctors available"}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {filteredDoctors.map((doctor) => (
+                  <div
+                    key={doctor._id}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      selectedDoctor?._id === doctor._id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => openChat(doctor)}
+                  >
                     <div className="flex items-center gap-3">
-                      {doctor.doctorProfile?.imageUrl ? (
-                        <motion.img
-                          whileHover={{ scale: 1.1 }}
-                          src={doctor.doctorProfile.imageUrl}
-                          alt={doctor.doctorProfile?.fullName}
-                          className="h-12 w-12 rounded-full object-cover border-2 border-blue-100"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                          <User2 className="h-6 w-6 text-blue-600" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold">
+                      {/* Online status */}
+                      <div className="relative">
+                        {doctor.doctorProfile?.imageUrl ? (
+                          <img
+                            src={doctor.doctorProfile.imageUrl}
+                            alt={doctor.doctorProfile?.fullName}
+                            className="h-12 w-12 rounded-full object-cover border-2 border-blue-100"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                            <User2 className="h-6 w-6 text-blue-600" />
+                          </div>
+                        )}
+                        <span className="absolute bottom-0 right-0 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                      </div>
+                      
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-base font-semibold text-gray-900">
                           {doctor.doctorProfile?.fullName}
                         </h3>
                         <p className="truncate text-sm text-gray-500">
                           {doctor.doctorProfile?.specialization}
                         </p>
+                        <p className="truncate text-sm text-gray-500">
+                          {doctor.doctorProfile?.experience} yrs experience • ₹{doctor.doctorProfile?.fee || 300} fee
+                        </p>
                       </div>
-
-                      {/* Mobile Chat Button */}
-                      <button
-                        onClick={() => openChat(doctor)}
-                        className="md:hidden bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600"
-                      >
-                        <MessageCircle size={16} />
-                      </button>
-                    </div>
-
-                    {/* Fee + Experience */}
-                    <div className="mt-3 text-sm text-gray-600">
-                      <div>
-                        {doctor.doctorProfile?.experience} yrs experience
+                      <div className="text-xs text-gray-400">
+                        {messages[doctor._id]?.length > 0 &&
+                          formatTime(
+                            messages[doctor._id][messages[doctor._id].length - 1]
+                              .timestamp
+                          )}
                       </div>
-                      <div>Fee: ₹{doctor.doctorProfile?.fee || 300}</div>
                     </div>
-
-                    {/* Chat Button desktop */}
-                    <div className="mt-4 flex justify-end">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => openChat(doctor)}
-                        className="hidden md:flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg shadow hover:bg-blue-700"
-                      >
-                        <MessageCircle size={16} /> Chat
-                      </motion.button>
-                    </div>
-                  </motion.article>
+                    {messages[doctor._id]?.length > 0 && (
+                      <p className="truncate text-sm text-gray-600 mt-1 ml-15">
+                        {messages[doctor._id][messages[doctor._id].length - 1]
+                          .message}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
-          </motion.div>
+          </div>
+        </div>
 
-          {/* Right: Chat Panel */}
-          <AnimatePresence>
-            {activeChat && (
-              <motion.div
-                key="chat-panel"
-                initial={{ x: 300, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: 300, opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="flex flex-col h-full w-full bg-white"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between border-b px-4 py-3 bg-blue-600 text-white relative">
-                  <div
-                    className="flex items-center gap-3 cursor-pointer"
-                    onMouseEnter={() => setShowProfile(true)}
-                    onMouseLeave={() => setShowProfile(false)}
-                  >
-                    {activeChat.doctorProfile?.imageUrl ? (
-                      <img
-                        src={activeChat.doctorProfile.imageUrl}
-                        alt={activeChat.doctorProfile?.fullName}
-                        className="h-10 w-10 rounded-full object-cover border-2 border-blue-400"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500">
-                        <User2 className="h-6 w-6 text-white" />
-                      </div>
-                    )}
-                    <div>
-                      <h2 className="font-semibold">
-                        {activeChat.doctorProfile?.fullName}
-                      </h2>
-                      <p className="text-sm text-white/80">
-                        {activeChat.doctorProfile?.specialization}
-                      </p>
+        {/* Chat panel */}
+        <div
+          className={`flex-1 flex flex-col h-full ${
+            activeChat ? "block" : "hidden md:block"
+          }`}
+        >
+          {activeChat ? (
+            <>
+              {/* Desktop header */}
+              <div className="hidden md:flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-white">
+                <div className="flex items-center gap-3">
+                  {activeChat.doctorProfile?.imageUrl ? (
+                    <img
+                      src={activeChat.doctorProfile.imageUrl}
+                      alt={activeChat.doctorProfile?.fullName}
+                      className="h-10 w-10 rounded-full object-cover border-2 border-blue-400"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500">
+                      <User2 className="h-6 w-6 text-white" />
                     </div>
-
-                    {/* Hover profile card */}
-                    <AnimatePresence>
-                      {showProfile && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute top-14 left-4 w-64 p-4 bg-white text-gray-800 rounded-xl shadow-xl z-50"
-                        >
-                          <h3 className="font-semibold text-lg">
-                            {activeChat.doctorProfile?.fullName}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {activeChat.doctorProfile?.specialization}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Experience: {activeChat.doctorProfile?.experience}{" "}
-                            yrs
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Fee: ₹{activeChat.doctorProfile?.fee || 300}
-                          </p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Call Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md"
-                    >
-                      <Phone className="w-5 h-5" />
-                    </motion.button>
-
-                    {/* Back Button */}
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setActiveChat(null)}
-                      className="flex items-center gap-1 text-sm bg-blue-700 px-3 py-2 rounded-lg hover:bg-blue-800 shadow-md"
-                    >
-                      <ArrowLeft className="w-4 h-4" />{" "}
-                      <span className="hidden md:inline">Back</span>
-                    </motion.button>
+                  )}
+                  <div>
+                    <h2 className="font-semibold text-gray-900">
+                      {activeChat.doctorProfile?.fullName}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {activeChat.doctorProfile?.specialization}
+                    </p>
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                  {messages[selectedDoctor?._id]?.map((msg) => (
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-md"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveChat(null)}
+                    className="md:hidden flex items-center gap-1 text-sm bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 shadow-md text-white"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Messages area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style={{ maxHeight: 'calc(100vh - 130px)' }}>
+                {messages[selectedDoctor?._id]?.length > 0 ? (
+                  messages[selectedDoctor?._id]?.map((msg) => (
                     <motion.div
                       key={msg._id}
                       initial={{ opacity: 0, y: 10 }}
@@ -397,43 +383,53 @@ export default function ConsultDoctor() {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>No messages yet</p>
+                      <p className="text-sm">Start a conversation with Dr. {activeChat.doctorProfile?.fullName}</p>
+                    </div>
+                  </div>
+                )}
 
-                  {isTyping && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex justify-start"
-                    >
-                      <div className="bg-white p-3 rounded-2xl rounded-bl-none">
-                        <div className="flex space-x-1">
-                          {[0, 0.2, 0.4].map((delay, i) => (
-                            <motion.div
-                              key={i}
-                              className="w-2 h-2 bg-gray-500 rounded-full"
-                              animate={{ y: [0, -5, 0] }}
-                              transition={{
-                                repeat: Infinity,
-                                duration: 1,
-                                delay,
-                              }}
-                            />
-                          ))}
-                        </div>
+                {isTyping && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-white p-3 rounded-2xl rounded-bl-none">
+                      <div className="flex space-x-1">
+                        {[0, 0.2, 0.4].map((delay, i) => (
+                          <motion.div
+                            key={i}
+                            className="w-2 h-2 bg-gray-500 rounded-full"
+                            animate={{ y: [0, -5, 0] }}
+                            transition={{
+                              repeat: Infinity,
+                              duration: 1,
+                              delay,
+                            }}
+                          />
+                        ))}
                       </div>
-                    </motion.div>
-                  )}
-                </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
 
-                {/* Input */}
-                <div className="border-t bg-white p-3 flex items-center gap-2">
+              {/* Message input */}
+              <div className="border-t border-gray-200 bg-white p-3">
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-full border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 rounded-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -449,10 +445,32 @@ export default function ConsultDoctor() {
                     <Send className="w-5 h-5" />
                   </motion.button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              </div>
+            </>
+          ) : (
+            // Empty state when no chat is selected
+            <div className="hidden md:flex flex-col items-center justify-center h-full bg-gray-50 text-gray-500">
+              <MessageCircle className="w-24 h-24 mb-4 text-gray-300" />
+              <h3 className="text-xl font-medium">Select a doctor to start chatting</h3>
+              <p className="mt-2">Your conversations will appear here</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">
+        <button
+          onClick={() => setShowSidebar(true)}
+          className="flex flex-col items-center p-2 text-gray-600"
+        >
+          <MessageCircle className="w-6 h-6" />
+          <span className="text-xs mt-1">Doctors</span>
+        </button>
+        <button className="flex flex-col items-center p-2 text-gray-600">
+          <User2 className="w-6 h-6" />
+          <span className="text-xs mt-1">Profile</span>
+        </button>
       </div>
     </div>
   );

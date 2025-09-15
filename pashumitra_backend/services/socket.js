@@ -1,54 +1,38 @@
 import { Server } from "socket.io";
-import ChatMessage from "../models/Common/chatModel.js"; // adjust path if needed
 
 let io;
 
 export const initSocket = (server) => {
   io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"], // allow both Vite & CRA
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+    cors: {
+      origin: ["http://localhost:5173", "http://localhost:3000"], // allow Vite & CRA
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+  });
 
   io.on("connection", (socket) => {
-    // console.log("User connected:", socket.id);
+    console.log("New socket connected:", socket.id);
 
-    // join room
+    // Join chat room for doctor & farmer
     socket.on("joinRoom", ({ farmerId, doctorId }) => {
-      const roomId = [farmerId, doctorId].sort().join("_");
-      socket.join(roomId);
-    //   console.log(`User joined room: ${roomId}`);
-    });
-
-    // send + save message
-    socket.on("sendMessage", async (data) => {
-      const { farmerId, doctorId, sender, message } = data;
-
-      const newMessage = new ChatMessage({
-        farmerId,
-        doctorId,
-        sender,
-        message,
-      });
-      await newMessage.save();
-
-      const roomId = [farmerId, doctorId].sort().join("_");
-      io.to(roomId).emit("receiveMessage", newMessage);
+      if (farmerId && doctorId) {
+        const room = `${doctorId}_${farmerId}`;
+        socket.join(room);
+        console.log(`Socket ${socket.id} joined room: ${room}`);
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      console.log("Socket disconnected:", socket.id);
     });
   });
 
   return io;
 };
 
+// Getter to use io elsewhere
 export const getIO = () => {
-  if (!io) {
-    throw new Error("Socket.io not initialized!");
-  }
+  if (!io) throw new Error("Socket.io not initialized!");
   return io;
 };
