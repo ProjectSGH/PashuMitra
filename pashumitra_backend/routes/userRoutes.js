@@ -102,6 +102,7 @@ router.put("/:id", async (req, res) => {
           state: req.body.state,
           city: req.body.city,
           schedule: req.body.schedule, // <- add this line if not already present
+          fee: req.body.fee,
         },
         { new: true, runValidators: true }
       );

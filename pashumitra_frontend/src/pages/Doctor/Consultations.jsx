@@ -1,7 +1,7 @@
 "use client";
 import io from "socket.io-client";
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   User2,
   Phone,
@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 export default function DoctorChat() {
   const [farmers, setFarmers] = useState([]);
@@ -23,70 +24,114 @@ export default function DoctorChat() {
   const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [consultations, setConsultations] = useState({});
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // ✅ DoctorId from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
   const doctorId = user?._id;
 
-  // ✅ initialize socket
+  // Initialize socket
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
 
     socket.on("receiveMessage", (newMessage) => {
+      const farmerKey = newMessage.farmerId?.toString();
       setMessages((prev) => ({
         ...prev,
-        [newMessage.farmerId]: [
-          ...(prev[newMessage.farmerId] || []),
-          newMessage,
-        ],
+        [farmerKey]: [...(prev[farmerKey] || []), newMessage],
       }));
     });
 
     return () => socket.disconnect();
   }, []);
 
-  // ✅ Fetch farmers
+  // Fetch farmers & consultations
   useEffect(() => {
-    const fetchFarmers = async () => {
+    const fetchFarmersAndConsultations = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/chat/doctor/${doctorId}/farmers`
+        const consultRes = await axios.get(
+          `http://localhost:5000/api/consultations/doctor/${doctorId}/requests`
         );
-        setFarmers(res.data);
 
-        const initialMessages = {};
-        res.data.forEach((f) => (initialMessages[f._id] = []));
-        setMessages(initialMessages);
+        const farmersList = consultRes.data.map((c) => ({
+          _id: c._id, // Farmer _id
+          requestId: c.requestId, // ConsultationRequest _id
+          fullName: c.fullName,
+          email: c.email,
+          phone: c.phone,
+          status: c.status,
+        }));
+
+        // When fetching
+        const consultMap = {};
+        farmersList.forEach((f) => {
+          consultMap[f.requestId] = f.status; // pending / approved / rejected
+        });
+        setConsultations(consultMap);
+
+        setFarmers(farmersList);
       } catch (err) {
-        console.error("Error fetching farmers:", err);
+        console.error("Error fetching consultations/farmers:", err);
       } finally {
         setLoading(false);
       }
     };
-    if (doctorId) fetchFarmers();
+
+    if (doctorId) fetchFarmersAndConsultations();
   }, [doctorId]);
 
-  // ✅ Open chat
+  // Check if chat is allowed based on consultation time
+  const isChatAvailable = (farmer) => {
+    if (consultations[farmer.requestId] !== "approved") return false;
+
+    // Use consultation data if available
+    const consultation = farmer.consultationDetails; // make sure to fetch startTime/endTime from backend
+    if (!consultation) return false;
+
+    const consultationDate = new Date(consultation.date);
+    const [startHour, startMin] = consultation.startTime.split(":").map(Number);
+    const [endHour, endMin] = consultation.endTime.split(":").map(Number);
+
+    const startDateTime = new Date(consultationDate);
+    startDateTime.setHours(startHour, startMin, 0, 0);
+
+    const endDateTime = new Date(consultationDate);
+    endDateTime.setHours(endHour, endMin, 0, 0);
+
+    const now = new Date();
+    return now >= startDateTime && now <= endDateTime;
+  };
+
+  // Open chat
   const openChat = (farmer) => {
+    // Check if chat is available
+    if (!isChatAvailable(farmer)) {
+      toast.error(
+        "Chat is available only during the scheduled consultation time.",
+        { duration: 4000, position: "bottom-right" }
+      );
+      return;
+    }
+
+    const farmerId = farmer._id.toString();
     setSelectedFarmer(farmer);
     setActiveChat(farmer);
     setShowSidebar(false);
 
     if (socketRef.current) {
       socketRef.current.emit("joinRoom", {
-        farmerId: farmer._id,
+        farmerId,
         doctorId,
       });
     }
 
-    fetchMessages(farmer._id);
+    fetchMessages(farmerId);
   };
 
-  // ✅ Fetch messages
+  // Fetch messages
   const fetchMessages = async (farmerId) => {
     try {
       const res = await axios.get(
@@ -98,13 +143,13 @@ export default function DoctorChat() {
     }
   };
 
-  // ✅ Send message
+  // Send message
   const handleSendMessage = async () => {
     if (!selectedFarmer || !message.trim()) return;
 
     try {
       const newMessage = {
-        farmerId: selectedFarmer._id,
+        farmerId: selectedFarmer._id.toString(),
         doctorId,
         sender: "doctor",
         message,
@@ -117,9 +162,56 @@ export default function DoctorChat() {
       }
 
       setMessage("");
-      fetchMessages(selectedFarmer._id);
+      fetchMessages(selectedFarmer._id.toString());
     } catch (err) {
       console.error("Error sending message:", err);
+    }
+  };
+
+  // Confirm / Approve consultation
+  const handleConfirmConsultation = async (requestId) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/consultations/${requestId}/approve`
+      );
+      // Update status by requestId
+      setConsultations((prev) => ({ ...prev, [requestId]: "approved" }));
+
+      toast.success("Consultation approved successfully", {
+        duration: 4000,
+        position: "bottom-right",
+        style: {
+          backgroundColor: "#059669", // green for approval
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRejectConsultation = async (requestId) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/consultations/${requestId}/reject`
+      );
+      // Update status by requestId
+      setConsultations((prev) => ({ ...prev, [requestId]: "rejected" }));
+
+      toast.error("Consultation rejected", {
+        duration: 4000,
+        position: "bottom-right",
+        style: {
+          backgroundColor: "#dc2626", // red for rejection
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -143,7 +235,6 @@ export default function DoctorChat() {
       <CheckCheck className="w-3 h-3 text-blue-600" />
     );
 
-  // Filter farmers based on search term
   const filteredFarmers = farmers.filter(
     (farmer) =>
       farmer.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,7 +243,7 @@ export default function DoctorChat() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Mobile header for chat view */}
+      {/* Mobile header */}
       {activeChat && (
         <div className="md:hidden flex items-center justify-between p-3 bg-blue-600 text-white">
           <button onClick={() => setActiveChat(null)} className="p-2">
@@ -171,7 +262,7 @@ export default function DoctorChat() {
       )}
 
       <div className="flex h-screen">
-        {/* Sidebar for farmers list */}
+        {/* Sidebar */}
         <div
           className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
             activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
@@ -179,7 +270,6 @@ export default function DoctorChat() {
             showSidebar ? "translate-x-0" : "-translate-x-full"
           } md:relative absolute inset-0 z-10`}
         >
-          {/* Sidebar header */}
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-bold text-gray-900">Your Farmers</h1>
@@ -212,49 +302,94 @@ export default function DoctorChat() {
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {filteredFarmers.map((farmer) => (
-                  <div
-                    key={farmer._id}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      selectedFarmer?._id === farmer._id ? "bg-blue-50" : ""
-                    }`}
-                    onClick={() => openChat(farmer)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 flex-shrink-0">
-                        <User2 className="h-6 w-6 text-green-600" />
+                {filteredFarmers.map((farmer) => {
+                  const uniqueKey = `${farmer._id}-${farmer.requestId}`;
+                  return (
+                    <div
+                      key={uniqueKey}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                        selectedFarmer?._id === farmer._id ? "bg-blue-50" : ""
+                      }`}
+                      onClick={() => openChat(farmer)}
+                    >
+                      {" "}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 flex-shrink-0">
+                          <User2 className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-base font-semibold text-gray-900">
+                            {farmer.fullName || farmer.email}
+                          </h3>
+                          <p className="truncate text-sm text-gray-500">
+                            {farmer.phone || "No phone"}
+                          </p>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {messages[farmer._id]?.length > 0 &&
+                            formatTime(
+                              messages[farmer._id][
+                                messages[farmer._id].length - 1
+                              ].timestamp
+                            )}
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-base font-semibold text-gray-900">
-                          {farmer.fullName || farmer.email}
-                        </h3>
-                        <p className="truncate text-sm text-gray-500">
-                          {farmer.phone || "No phone"}
-                        </p>
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {messages[farmer._id]?.length > 0 &&
-                          formatTime(
+                      {messages[farmer._id]?.length > 0 && (
+                        <p className="truncate text-sm text-gray-600 mt-1 ml-15">
+                          {
                             messages[farmer._id][
                               messages[farmer._id].length - 1
-                            ].timestamp
-                          )}
+                            ].message
+                          }
+                        </p>
+                      )}
+                      {/* Consultation buttons */}
+                      <div className="mt-2 flex items-center gap-2">
+                        {consultations[farmer.requestId] === "pending" && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConfirmConsultation(
+                                  farmer.requestId,
+                                  farmer._id
+                                );
+                              }}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRejectConsultation(
+                                  farmer.requestId,
+                                  farmer._id
+                                );
+                              }}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {consultations[farmer.requestId] === "approved" && (
+                          <span className="text-xs text-green-600 font-medium">
+                            Consultation Approved
+                          </span>
+                        )}
+                        {consultations[farmer.requestId] === "rejected" && (
+                          <span className="text-xs text-red-600 font-medium">
+                            Consultation Rejected
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {messages[farmer._id]?.length > 0 && (
-                      <p className="truncate text-sm text-gray-600 mt-1 ml-15">
-                        {
-                          messages[farmer._id][messages[farmer._id].length - 1]
-                            .message
-                        }
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
+
         {/* Chat panel */}
         <div
           className={`flex-1 flex flex-col h-full ${
@@ -263,7 +398,6 @@ export default function DoctorChat() {
         >
           {activeChat ? (
             <>
-              {/* Desktop header */}
               <div className="hidden md:flex items-center justify-between border-b border-gray-200 px-4 py-3 bg-white">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
@@ -296,13 +430,12 @@ export default function DoctorChat() {
                 </div>
               </div>
 
-              {/* Messages area - Fixed height with proper flexbox constraints */}
               <div
                 className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
                 style={{ maxHeight: "calc(100vh - 130px)" }}
               >
-                {messages[selectedFarmer?._id]?.length > 0 ? (
-                  messages[selectedFarmer?._id]?.map((msg) => (
+                {messages[selectedFarmer?._id?.toString()]?.length > 0 ? (
+                  messages[selectedFarmer._id.toString()]?.map((msg) => (
                     <motion.div
                       key={msg._id}
                       initial={{ opacity: 0, y: 10 }}
@@ -353,7 +486,6 @@ export default function DoctorChat() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message input - Fixed position at bottom */}
               <div className="border-t border-gray-200 bg-white p-3">
                 <div className="flex items-center gap-2">
                   <input
@@ -381,7 +513,6 @@ export default function DoctorChat() {
               </div>
             </>
           ) : (
-            // Empty state when no chat is selected
             <div className="hidden md:flex flex-col items-center justify-center h-full bg-gray-50 text-gray-500">
               <MessageCircle className="w-24 h-24 mb-4 text-gray-300" />
               <h3 className="text-xl font-medium">
@@ -393,7 +524,6 @@ export default function DoctorChat() {
         </div>
       </div>
 
-      {/* Mobile navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">
         <button
           onClick={() => setShowSidebar(true)}

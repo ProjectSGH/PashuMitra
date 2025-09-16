@@ -7,6 +7,7 @@ import PatientHistory from "../Doctor/Patient_History";
 import AwarenessContributions from "../Doctor/Awareness";
 import ProfileSchedule from "../Doctor/Profile";
 import ContactUs from "../ContactUsForm";
+import Notification from "../../pages/Doctor/Notification";
 
 const DoctorRoutes = (
   <Route element={<ProtectedRoute role="Doctor" />}>
@@ -18,6 +19,7 @@ const DoctorRoutes = (
       <Route path="Awareness" element={<AwarenessContributions />} />
       <Route path="Profile" element={<ProfileSchedule />} />
       <Route path="Contact" element={<ContactUs />} />
+      <Route path="notifications" element={<Notification />} />
     </Route>
   </Route>
 );

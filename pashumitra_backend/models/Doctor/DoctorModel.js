@@ -47,6 +47,7 @@ const DoctorSchema = new mongoose.Schema({
   experience: { type: Number, required: true },
   state: { type: String, required: true },
   city: { type: String, required: true },
+  fee: { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Doctor_User', DoctorSchema);

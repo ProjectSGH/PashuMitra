@@ -1,7 +1,7 @@
 "use client";
 import io from "socket.io-client";
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   User2,
   Phone,
@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function ConsultDoctor() {
   const [doctors, setDoctors] = useState([]);
@@ -24,10 +25,11 @@ export default function ConsultDoctor() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalData, setModalData] = useState(null); // for custom confirmation modal
 
   const socketRef = useRef(null);
 
-  // ✅ initialize socket only once
+  // Initialize socket
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
@@ -42,25 +44,37 @@ export default function ConsultDoctor() {
       }));
     });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, []);
 
-  // ✅ get farmerId from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
   const farmerId = user?._id;
 
-  // ✅ Fetch doctors list
+  // Fetch doctors
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/users/doctors");
-        setDoctors(res.data);
+        const docs = res.data;
+
+        const docsWithSchedule = await Promise.all(
+          docs.map(async (doc) => {
+            try {
+              const schedRes = await axios.get(
+                `http://localhost:5000/api/schedules/${doc._id}`
+              );
+              return { ...doc, schedule: schedRes.data };
+            } catch (err) {
+              return { ...doc, schedule: null };
+            }
+          })
+        );
+
+        setDoctors(docsWithSchedule);
 
         // initialize empty message threads
         const initialMessages = {};
-        res.data.forEach((doc) => {
+        docsWithSchedule.forEach((doc) => {
           initialMessages[doc._id] = [];
         });
         setMessages(initialMessages);
@@ -73,32 +87,137 @@ export default function ConsultDoctor() {
     fetchDoctors();
   }, []);
 
-  // ✅ Open chat with a doctor
-  const openChat = (doctor) => {
-    setSelectedDoctor(doctor);
-    setActiveChat(doctor);
-    setShowSidebar(false);
+  const parseTimeToMinutes = (t) => {
+    if (!t) return null;
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
 
-    if (socketRef.current) {
-      socketRef.current.emit("joinRoom", {
-        farmerId,
-        doctorId: doctor._id,
+  const weekdayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  const isDoctorAvailableNow = (schedule) => {
+    if (!schedule) return false;
+    const now = new Date();
+    const day = weekdayNames[now.getDay()];
+    const ds = schedule[day];
+    if (!ds || !ds.available) return false;
+    const start = parseTimeToMinutes(ds.startTime);
+    const end = parseTimeToMinutes(ds.endTime);
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (start === null || end === null) return false;
+    return nowMin >= start && nowMin <= end;
+  };
+
+  const findNextAvailableSlot = (schedule) => {
+    if (!schedule) return null;
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const check = new Date();
+      check.setDate(today.getDate() + i);
+      const dayName = weekdayNames[check.getDay()];
+      const ds = schedule[dayName];
+      if (ds && ds.available && ds.startTime) {
+        const [h, m] = ds.startTime.split(":").map(Number);
+        const slotDate = new Date(
+          check.getFullYear(),
+          check.getMonth(),
+          check.getDate(),
+          h,
+          m
+        );
+        return {
+          day: dayName,
+          dateISO: slotDate.toISOString(),
+          startTime: ds.startTime,
+          endTime: ds.endTime || ds.startTime,
+        };
+      }
+    }
+    return null;
+  };
+
+  const openChat = async (doctor) => {
+    setSelectedDoctor(doctor);
+
+    const availableNow = isDoctorAvailableNow(doctor.schedule);
+    if (!availableNow) {
+      const nextSlot = findNextAvailableSlot(doctor.schedule);
+      if (!nextSlot) {
+        toast.error(
+          "Doctor is not available and no slots configured. You can still send a message, or try another doctor."
+        );
+        setActiveChat(doctor);
+        setShowSidebar(false);
+        return;
+      }
+
+      // Show custom modal instead of window.confirm
+      setModalData({
+        doctor,
+        slot: nextSlot,
       });
+      return;
     }
 
+    setActiveChat(doctor);
+    setShowSidebar(false);
+    if (socketRef.current) {
+      socketRef.current.emit("joinRoom", { farmerId, doctorId: doctor._id });
+    }
     fetchMessages(doctor._id);
   };
 
-  // ✅ Fetch messages from backend
+  const confirmConsultation = async () => {
+    const { doctor, slot } = modalData;
+    try {
+      const payload = {
+        doctorId: doctor._id,
+        farmerId,
+        date: slot.dateISO,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      };
+      await axios.post("http://localhost:5000/api/consultations", payload);
+      toast.success(
+        `Consultation requested for ${slot.day} ${new Date(
+          slot.dateISO
+        ).toLocaleDateString()} at ${slot.startTime}. You will be notified when the doctor responds.`
+      );
+    } catch (err) {
+      if (err.response?.status === 409) {
+        toast.error(err.response.data.message);
+      } else {
+        console.error(err);
+        toast.error(
+          "Failed to request consultation. You can still send a message, or try another doctor."
+        );
+      }
+    }
+    setModalData(null);
+    setActiveChat(modalData.doctor);
+    setShowSidebar(false);
+    fetchMessages(modalData.doctor._id);
+  };
+
+  const cancelConsultation = () => {
+    setModalData(null);
+    setActiveChat(modalData.doctor);
+    setShowSidebar(false);
+  };
+
   const fetchMessages = async (doctorId) => {
     try {
-      const farmer = JSON.parse(localStorage.getItem("user"));
-      const farmerId = farmer?._id;
-
       const res = await axios.get(
         `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
       );
-
       setMessages((prev) => ({
         ...prev,
         [doctorId]: res.data,
@@ -108,31 +227,34 @@ export default function ConsultDoctor() {
     }
   };
 
-  // ✅ Send message
   const handleSendMessage = async () => {
     if (!selectedDoctor || !message.trim()) return;
 
     try {
-      const farmer = JSON.parse(localStorage.getItem("user"));
-      const farmerId = farmer?._id;
-
       const newMessage = {
         farmerId,
         doctorId: selectedDoctor._id,
         sender: "farmer",
         message,
+        timestamp: new Date(),
+        seen: false,
       };
 
-      // save to DB
-      await axios.post("http://localhost:5000/api/chat/send", newMessage);
+      setMessages((prev) => ({
+        ...prev,
+        [selectedDoctor._id]: [
+          ...(prev[selectedDoctor._id] || []),
+          { ...newMessage, _id: Date.now() },
+        ],
+      }));
 
-      // emit through socket
+      setMessage("");
+
       if (socketRef.current) {
         socketRef.current.emit("sendMessage", newMessage);
       }
 
-      setMessage("");
-      fetchMessages(selectedDoctor._id);
+      await axios.post("http://localhost:5000/api/chat/send", newMessage);
     } catch (err) {
       console.error("Error sending message:", err);
     }
@@ -149,23 +271,59 @@ export default function ConsultDoctor() {
     new Date(date).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
 
-  // ✅ Seen / Delivered icon
   const StatusIcon = ({ seen }) => {
     if (!seen) return <Check className="w-3 h-3 text-gray-400" />;
     return <CheckCheck className="w-3 h-3 text-blue-600" />;
   };
 
-  // Filter doctors based on search term
-  const filteredDoctors = doctors.filter((doctor) =>
-    doctor.doctorProfile?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.doctorProfile?.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredDoctors = doctors.filter(
+    (doctor) =>
+      doctor.doctorProfile?.fullName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      doctor.doctorProfile?.specialization
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Mobile header for chat view */}
+        <div className="min-h-screen bg-gray-100">
+      <Toaster position="top-right" />
+
+      {/* Custom confirmation modal */}
+      {modalData && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80 text-center">
+            <h2 className="text-lg font-semibold mb-3">
+              Doctor not available now
+            </h2>
+            <p className="mb-4">
+              Next available: {modalData.slot.day}{" "}
+              {new Date(modalData.slot.dateISO).toLocaleDateString()} at{" "}
+              {modalData.slot.startTime}
+            </p>
+            <div className="flex justify-between gap-3">
+              <button
+                onClick={cancelConsultation}
+                className="flex-1 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmConsultation}
+                className="flex-1 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile header */}
       {activeChat && (
         <div className="md:hidden flex items-center justify-between p-3 bg-blue-600 text-white">
           <button onClick={() => setActiveChat(null)} className="p-2">
@@ -192,18 +350,21 @@ export default function ConsultDoctor() {
           </button>
         </div>
       )}
-
-      <div className="flex h-screen">
-        {/* Sidebar for doctors list */}
+      
+        <div className="flex h-screen">
+        {/* Sidebar */}
         <div
           className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
             activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
-          } ${showSidebar ? "translate-x-0" : "-translate-x-full"} md:relative absolute inset-0 z-10`}
+          } ${
+            showSidebar ? "translate-x-0" : "-translate-x-full"
+          } md:relative absolute inset-0 z-10`}
         >
-          {/* Sidebar header */}
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold text-gray-900">Consult a Doctor</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Consult a Doctor
+              </h1>
               <button
                 onClick={() => setShowSidebar(false)}
                 className="md:hidden text-gray-500"
@@ -242,7 +403,6 @@ export default function ConsultDoctor() {
                     onClick={() => openChat(doctor)}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Online status */}
                       <div className="relative">
                         {doctor.doctorProfile?.imageUrl ? (
                           <img
@@ -260,7 +420,7 @@ export default function ConsultDoctor() {
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                         </span>
                       </div>
-                      
+
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate text-base font-semibold text-gray-900">
                           {doctor.doctorProfile?.fullName}
@@ -269,21 +429,54 @@ export default function ConsultDoctor() {
                           {doctor.doctorProfile?.specialization}
                         </p>
                         <p className="truncate text-sm text-gray-500">
-                          {doctor.doctorProfile?.experience} yrs experience • ₹{doctor.doctorProfile?.fee || 300} fee
+                          {doctor.doctorProfile?.experience} yrs experience • ₹
+                          {doctor.doctorProfile?.fee || 0} fee
                         </p>
+
+                        {doctor.schedule ? (
+                          isDoctorAvailableNow(doctor.schedule) ? (
+                            <p className="text-sm text-green-600 font-medium mt-1">
+                              Available now
+                            </p>
+                          ) : (
+                            (() => {
+                              const nxt = findNextAvailableSlot(
+                                doctor.schedule
+                              );
+                              return nxt ? (
+                                <p className="text-sm text-yellow-600 mt-1">
+                                  Next: {nxt.day}{" "}
+                                  {new Date(nxt.dateISO).toLocaleDateString()}{" "}
+                                  {nxt.startTime}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  No slots set
+                                </p>
+                              );
+                            })()
+                          )
+                        ) : (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Schedule not set
+                          </p>
+                        )}
                       </div>
                       <div className="text-xs text-gray-400">
                         {messages[doctor._id]?.length > 0 &&
                           formatTime(
-                            messages[doctor._id][messages[doctor._id].length - 1]
-                              .timestamp
+                            messages[doctor._id][
+                              messages[doctor._id].length - 1
+                            ].timestamp
                           )}
                       </div>
                     </div>
                     {messages[doctor._id]?.length > 0 && (
                       <p className="truncate text-sm text-gray-600 mt-1 ml-15">
-                        {messages[doctor._id][messages[doctor._id].length - 1]
-                          .message}
+                        {
+                          messages[doctor._id][messages[doctor._id].length - 1]
+                            .message
+                        }
                       </p>
                     )}
                   </div>
@@ -344,8 +537,11 @@ export default function ConsultDoctor() {
                 </div>
               </div>
 
-              {/* Messages area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style={{ maxHeight: 'calc(100vh - 130px)' }}>
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"
+                style={{ maxHeight: "calc(100vh - 130px)" }}
+              >
                 {messages[selectedDoctor?._id]?.length > 0 ? (
                   messages[selectedDoctor?._id]?.map((msg) => (
                     <motion.div
@@ -385,92 +581,37 @@ export default function ConsultDoctor() {
                     </motion.div>
                   ))
                 ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-gray-500">
-                      <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                      <p>No messages yet</p>
-                      <p className="text-sm">Start a conversation with Dr. {activeChat.doctorProfile?.fullName}</p>
-                    </div>
+                  <div className="text-center text-gray-400 mt-10">
+                    No messages yet.
                   </div>
-                )}
-
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex justify-start"
-                  >
-                    <div className="bg-white p-3 rounded-2xl rounded-bl-none">
-                      <div className="flex space-x-1">
-                        {[0, 0.2, 0.4].map((delay, i) => (
-                          <motion.div
-                            key={i}
-                            className="w-2 h-2 bg-gray-500 rounded-full"
-                            animate={{ y: [0, -5, 0] }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 1,
-                              delay,
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
                 )}
               </div>
 
-              {/* Message input */}
-              <div className="border-t border-gray-200 bg-white p-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
+              {/* Input */}
+              <div className="p-4 bg-white border-t border-gray-200">
+                <div className="flex items-center gap-3">
+                  <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyPress}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-full border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
-                    className={`rounded-full p-3 ${
-                      message.trim()
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "bg-gray-200 text-gray-400"
-                    }`}
+                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     <Send className="w-5 h-5" />
-                  </motion.button>
+                  </button>
                 </div>
               </div>
             </>
           ) : (
-            // Empty state when no chat is selected
-            <div className="hidden md:flex flex-col items-center justify-center h-full bg-gray-50 text-gray-500">
-              <MessageCircle className="w-24 h-24 mb-4 text-gray-300" />
-              <h3 className="text-xl font-medium">Select a doctor to start chatting</h3>
-              <p className="mt-2">Your conversations will appear here</p>
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-lg">
+              Select a doctor to start chatting
             </div>
           )}
         </div>
-      </div>
-
-      {/* Mobile navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around">
-        <button
-          onClick={() => setShowSidebar(true)}
-          className="flex flex-col items-center p-2 text-gray-600"
-        >
-          <MessageCircle className="w-6 h-6" />
-          <span className="text-xs mt-1">Doctors</span>
-        </button>
-        <button className="flex flex-col items-center p-2 text-gray-600">
-          <User2 className="w-6 h-6" />
-          <span className="text-xs mt-1">Profile</span>
-        </button>
       </div>
     </div>
   );
