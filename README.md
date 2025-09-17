@@ -66,11 +66,20 @@
    4. Doctor → consultation & awareness posts. </br>
    5. Admin → verification & monitoring. </br>
 
+<h2>👥 Demo User Accounts</h2>
+<p>Use the following demo credentials for testing:</p>
+
+<ul>
+  <li>👨‍🌾 <b>Farmer</b> — Email: <code>farmer@example.com</code> | Password: <code>123</code></li>
+  <li>👨‍⚕️ <b>Doctor</b> — Email: <code>doctor@example.com</code> | Password: <code>123</code></li>
+  <li>🏪 <b>Medical Store</b> — Email: <code>store@example.com</code> | Password: <code>123</code></li>
+</ul>
+
    <h2>📜 License</h2>
    <p>
       This project is part of our college initiative and is intended for academic and educational use.
    </p>
-
+    
    <p><h3>Created with ❤️ by Team-26 | <a href="https://github.com/ProjectSGH/PashuMitra">GitHub Repo</a></h3></p>
 
 </body>
