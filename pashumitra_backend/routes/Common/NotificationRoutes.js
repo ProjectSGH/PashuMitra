@@ -1,9 +1,29 @@
 import express from "express";
 import Notification from "../../models/Common/notificationModel.js";
 import Farmer from "../../models/Farmer/FarmerModel.js";
-
+import User from "../../models/UserModel.js";
 const router = express.Router();
+router.post("/send", async (req, res) => {
+  const { title, message, type, role } = req.body;
 
+  try {
+    const users = await User.find(role ? { role } : {});
+    if (!users.length) return res.status(404).json({ message: "No users found" });
+
+    const notifications = users.map((u) => ({
+      userId: u._id,
+      title,
+      message,
+      type: type || "info",
+    }));
+
+    await Notification.insertMany(notifications);
+
+    res.json({ message: `Notification sent to ${users.length} users` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // Get unread count
 router.get("/unreadCount/:userId", async (req, res) => {
   try {
