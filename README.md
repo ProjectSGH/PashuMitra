@@ -1,182 +1,77 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PashuMitra — Smart Veterinary Healthcare System</title>
-  <style>
-    :root{
-      --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#10b981;
-      --glass: rgba(255,255,255,0.03);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%; margin:0; background:linear-gradient(180deg,#071023 0%, #071132 100%); color:#e6eef8;}
-    .container{max-width:980px; margin:40px auto; padding:28px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; box-shadow: 0 6px 30px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03);}
-    header{display:flex; align-items:center; gap:16px;}
-    .logo{
-      width:72px; height:72px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-      background:linear-gradient(135deg, #06b6d4, #7c3aed); font-weight:700;
-      font-size:22px; color:white; box-shadow: 0 6px 18px rgba(124,58,237,0.2);
-    }
-    h1{margin:0; font-size:24px;}
-    p.lead{margin:8px 0 18px; color:var(--muted);}
-    .badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
-    .badge{background:var(--glass); padding:6px 10px; border-radius:999px; color:var(--muted); font-size:13px; border:1px solid rgba(255,255,255,0.02);}
-    section{margin-top:20px;}
-    h2{font-size:16px; margin-bottom:10px;}
-    .grid{display:grid; gap:12px;}
-    .columns{display:grid; grid-template-columns: 1fr 320px; gap:18px;}
-    .card{background:rgba(255,255,255,0.02); padding:14px; border-radius:10px; border:1px solid rgba(255,255,255,0.03);}
-    ul{margin:0; padding-left:18px; color:var(--muted);}
-    code{background:#071627; padding:4px 6px; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:13px;}
-    .tech-list{display:flex; flex-wrap:wrap; gap:8px;}
-    .tech{background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:8px; color:var(--muted); font-size:13px; border:1px solid rgba(255,255,255,0.02);}
-    .footer{margin-top:20px; color:var(--muted); font-size:13px; text-align:center;}
-    .repo-link{display:inline-block; margin-top:8px; padding:8px 12px; background:linear-gradient(90deg,#0ea5a4,#60a5fa); color:#021124; border-radius:8px; font-weight:700; text-decoration:none;}
-    pre{background:#021025; padding:12px; border-radius:8px; overflow:auto; color:#cfe8ff;}
-    .note{color:#ffd580; font-weight:600;}
-    @media (max-width:920px){
-      .columns{grid-template-columns: 1fr; }
-      .logo{width:56px; height:56px; font-size:18px;}
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-  <div class="container" role="main">
-    <header>
-      <div class="logo">PM</div>
-      <div>
-        <h1>PashuMitra — Smart Veterinary Healthcare System</h1>
-        <p class="lead">A unified digital platform connecting Farmers, Veterinary Doctors, Medical Stores and Admins to deliver timely veterinary care, medicine supply and awareness content.</p>
-        <div class="badges">
-          <span class="badge">React • Node • MongoDB</span>
-          <span class="badge">Chat & Consultation</span>
-          <span class="badge">Medicine Ordering</span>
-          <span class="badge">Transport Requests</span>
-        </div>
-      </div>
-    </header>
+    <img src="https://github.com/user-attachments/assets/de32d425-9ef9-4407-ad6f-c4362f9d2512" alt="Logo PashuMitra" width="150" height="150">    
 
-    <section class="columns">
-      <div>
-        <section class="card">
-          <h2>📌 Project Purpose</h2>
-          <p style="color:var(--muted); margin:0 0 10px;">
-            PashuMitra aims to reduce the gap between livestock owners and veterinary services by providing easy access to doctors, medicine availability, transport options, and awareness materials — all in a single platform. (Detailed in the project SRS.) :contentReference[oaicite:1]{index=1}
-          </p>
+   <h1>🐄 PashuMitra — Smart Veterinary Healthcare System</h1>
+   <p>
+       PashuMitra is a unified platform designed to connect <b>Farmers, Veterinary Doctors, Medical Stores, and Admins</b> to provide timely veterinary care, medicine supply, and awareness content.  
+       This project, developed as part of our academic initiative, addresses the challenges farmers face in accessing proper livestock healthcare services.
+   </p>
 
-          <h2 style="margin-top:14px;">🚀 Key Features</h2>
-          <ul>
-            <li>Farmer portal — registration, medicine search & ordering, consultations and notifications.</li>
-            <li>Doctor portal — provide consultations, prescriptions, and create awareness posts/campaigns.</li>
-            <li>Medical store portal — inventory management, accept orders, respond to transport requests.</li>
-            <li>Admin — user verification, monitoring, and system notifications.</li>
-            <li>Transport request flow for out-of-stock medicines and geolocation-based nearby store selection.</li>
-          </ul>
+   🧑‍🌾 <b>Farmer Portal:</b> Medicine ordering, veterinary consultation, notifications. </br>
+   👨‍⚕️ <b>Doctor Portal:</b> Provide consultations, prescriptions, and awareness campaigns. </br>
+   🏪 <b>Medical Store:</b> Inventory management, order handling, transport request management. </br>
+   🛠️ <b>Admin:</b> User verification, monitoring, and system notifications. </br>
+   🚚 <b>Transport Requests:</b> Out-of-stock medicines trigger transport flow with urgency check. </br>
+   📢 <b>Awareness Portal:</b> Doctors can create posts and resources for farmers. </br>
 
-          <h2 style="margin-top:12px">🧭 Project Scope & Impact</h2>
-          <p style="color:var(--muted); margin:0;">
-            The system targets rural and semi-urban livestock owners to deliver faster veterinary support, reduce delays in medicine supply, and increase awareness about animal health. :contentReference[oaicite:2]{index=2}
-          </p>
-        </section>
+   <h2>📂 Project Structure</h2>
+   PashuMitra/</br>
+   ├── pashumitra_frontend/ (React App)</br>
+   │   ├── src/</br>
+   │   ├── public/</br>
+   │   └── package.json</br>
+   ├── pashumitra_backend/ (Node.js Server)</br>
+   │   ├── controllers/</br>
+   │   ├── models/</br>
+   │   ├── routes/</br>
+   │   └── server.js</br>
+   └── README.md</br>
 
-        <section class="card" style="margin-top:14px;">
-          <h2>⚙️ Tech Stack</h2>
-          <div class="tech-list" style="margin-bottom:8px;">
-            <span class="tech">React (Vite)</span>
-            <span class="tech">Node.js / Express</span>
-            <span class="tech">MongoDB (Atlas)</span>
-            <span class="tech">Socket.IO (real-time)</span>
-            <span class="tech">Tailwind CSS</span>
-            <span class="tech">Vercel / Render</span>
-          </div>
+   <h2>💻 Technologies</h2>
+   <b>Frontend:</b> React (Vite), Tailwind CSS, Framer Motion </br>
+   <b>Backend:</b> Node.js, Express, Socket.IO </br>
+   <b>Database:</b> MongoDB (Atlas) </br>
+   <b>Other Tools:</b> React Router, Vercel, Render </br>
 
-          <h2 style="margin-top:10px;">📁 Folder Structure (high-level)</h2>
-          <pre>
-pashumitra_frontend/
-  ├─ src/
-  │  ├─ components/
-  │  ├─ pages/
-  │  └─ app.jsx
-pashumitra_backend/
-  ├─ controllers/
-  ├─ models/
-  ├─ routes/
-  └─ server.js
-          </pre>
-        </section>
+   <h2>🔧 Getting Started</h2>
+   <h3>Cloning the Repository</h3>
+   git clone https://github.com/ProjectSGH/PashuMitra.git </br>
+   cd PashuMitra </br>
 
-        <section class="card" style="margin-top:14px;">
-          <h2>💾 Installation — Local (Quick)</h2>
-          <ol style="color:var(--muted); margin:0 0 10px 18px;">
-            <li>Clone the repo: <code>git clone https://github.com/ProjectSGH/PashuMitra</code>. :contentReference[oaicite:3]{index=3}</li>
-            <li>Frontend: <code>cd pashumitra_frontend &amp;&amp; npm install &amp;&amp; npm run dev</code></li>
-            <li>Backend: <code>cd pashumitra_backend &amp;&amp; npm install</code>, set <code>.env</code> (MONGODB_URI, PORT, etc.) and run <code>node server.js</code></li>
-            <li>Open frontend (Vite) URL (e.g. <code>http://localhost:5173</code>) and ensure backend runs on the configured port.</li>
-          </ol>
+   <h3>Setup Instructions</h3> 
+   <p><strong>Frontend:</strong></p>
+   cd pashumitra_frontend </br>
+   npm install </br>
+   npm run dev </br></br>
 
-          <p style="margin-top:8px; color:var(--muted);"><span class="note">Tip:</span> Use Postman for API testing and to validate routes while developing. See SRS for API list and test cases. :contentReference[oaicite:4]{index=4}</p>
-        </section>
+   <p><strong>Backend:</strong></p>
+   cd pashumitra_backend </br>
+   npm install </br>
+   node server.js OR npm run dev </br>
 
-        <section class="card" style="margin-top:14px;">
-          <h2>🧪 Testing & Deployment</h2>
-          <ul style="color:var(--muted);">
-            <li>Manual & Postman API testing for core flows (login, orders, transport requests, chat).</li>
-            <li>Frontend can be deployed on Vercel; backend on Render/AWS. Example deployment instructions are documented in the SRS. :contentReference[oaicite:5]{index=5}</li>
-          </ul>
-        </section>
+   <h2>🧪 Testing & Deployment</h2>
+   - API testing with Postman (login, orders, consultations, transport flow). </br>
+   - Frontend deployable on Vercel, backend on Render/AWS. </br>
 
-        <section class="card" style="margin-top:14px;">
-          <h2>📌 How to Demo (suggested flow for faculty)</h2>
-          <ol style="color:var(--muted); margin:0 0 10px 18px;">
-            <li>Open Home page → show role selector (Farmer / Doctor / Store).</li>
-            <li>Demonstrate farmer signup & verification flow (or use seeded accounts).</li>
-            <li>Search medicine → show in-stock order flow and out-of-stock transport request flow.</li>
-            <li>Open chat/consultation with a doctor and show awareness posts & admin verification panel.</li>
-          </ol>
-        </section>
-      </div>
+   <h2>📌 Suggested Demo Flow</h2>
+   1. Show login/role selection (Farmer, Doctor, Store). </br>
+   2. Farmer → search medicine → in-stock order flow. </br>
+   3. Out-of-stock → transport request flow. </br>
+   4. Doctor → consultation & awareness posts. </br>
+   5. Admin → verification & monitoring. </br>
 
-      <aside>
-        <div class="card">
-          <h2>Repository</h2>
-          <p style="color:var(--muted); margin:0 0 8px;">Main repo &amp; SRS are available here:</p>
-          <a class="repo-link" href="https://github.com/ProjectSGH/PashuMitra" target="_blank" rel="noopener">github.com/ProjectSGH/PashuMitra</a>
-          <p style="color:var(--muted); margin-top:10px; font-size:13px;">(SRS PDF with full design, diagrams &amp; test cases.) :contentReference[oaicite:6]{index=6}</p>
-        </div>
+   <h2>📜 License</h2>
+   <p>
+      This project is part of our college initiative and is intended for academic and educational use.
+   </p>
 
-        <div class="card" style="margin-top:12px;">
-          <h2>Contributors</h2>
-          <ul style="color:var(--muted); margin-top:6px;">
-            <li>Team-26 — PashuMitra</li>
-            <li>Frontend: React &amp; UI — Dhruv &amp; team</li>
-            <li>Backend: Node &amp; API — Backend team</li>
-            <li>Documentation &amp; SRS — Team-26</li>
-          </ul>
-        </div>
+   <p><h3>Created with ❤️ by Team-26 | <a href="https://github.com/ProjectSGH/PashuMitra">GitHub Repo</a></h3></p>
 
-        <div class="card" style="margin-top:12px;">
-          <h2>Future Enhancements</h2>
-          <ul style="color:var(--muted); margin-top:6px;">
-            <li>Mobile apps (Android / iOS)</li>
-            <li>AI-based medicine recommender &amp; chatbot</li>
-            <li>Offline mode &amp; multi-language support</li>
-            <li>Payment gateway &amp; analytics dashboard</li>
-          </ul>
-        </div>
-
-        <div class="card" style="margin-top:12px;">
-          <h2>Contact</h2>
-          <p style="color:var(--muted); margin:0;">For questions or demo requests:</p>
-          <p style="margin:6px 0 0;"><strong>Team-26 / PashuMitra</strong><br/>Email: <code>your-team-email@example.com</code></p>
-        </div>
-      </aside>
-    </section>
-
-    <div class="footer">
-      <div>Read the full SRS &amp; diagrams for detailed requirements and testing. :contentReference[oaicite:7]{index=7}</div>
-      <div style="margin-top:8px;">Made with ♥ for livestock healthcare</div>
-    </div>
-  </div>
 </body>
 </html>
