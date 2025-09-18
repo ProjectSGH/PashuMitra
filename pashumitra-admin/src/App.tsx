@@ -4,6 +4,8 @@ import authProvider from "./authProvider";
 import dataProvider from "./dataProvider";
 import AllUsersPage from "./allUserList";
 import NotificationPage from "./sendNotification";
+import DoctorVerificationShow from "./doctorVerification";
+import FarmerVerificationShow from "./farmerVerification";
 
 export const App = () => (
     <Admin
@@ -13,5 +15,15 @@ export const App = () => (
     >
         <Resource name="users" list={AllUsersPage} />
         <Resource name="notifications" list={NotificationPage} />
+        <Resource
+            name="doctor/varify"  // must match the backend mounting
+            show={DoctorVerificationShow}
+            list={ListGuesser}
+        />
+        <Resource
+            name="farmer/varify"
+            show={FarmerVerificationShow}
+            list={ListGuesser}
+        />
     </Admin>
 );

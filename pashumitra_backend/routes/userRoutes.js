@@ -32,6 +32,7 @@ router.get('/doctors', async (req, res) => {
   }
 });
 // GET all users with their profiles
+// Fetch all users (admin panel)
 router.get("/", async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -54,7 +55,7 @@ router.get("/", async (req, res) => {
 
         return {
           ...user.toObject(),
-          id: user._id, // 👈 React-Admin expects this
+          id: user._id, // 👈 needed for React-Admin
           ...(profileKey ? { [profileKey]: profileData } : {}),
         };
       })
@@ -66,6 +67,35 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+// Fetch single user by ID (user profile)
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.role === "Farmer") {
+      const farmerData = await Farmer.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), farmerProfile: farmerData });
+    }
+
+    if (user.role === "Doctor") {
+      const doctorData = await Doctor.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), doctorProfile: doctorData });
+    }
+
+    if (user.role === "MedicalStore") {
+      const storeData = await Store.findOne({ userId: user._id });
+      return res.json({ ...user.toObject(), storeProfile: storeData });
+    }
+
+    res.json(user); // fallback
+  } catch (err) {
+    console.error("Error in GET /:id:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // routes/userRoutes.js
 router.put("/:id", async (req, res) => {
   try {

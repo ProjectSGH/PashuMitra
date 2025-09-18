@@ -3,6 +3,7 @@ import Notification from "../../models/Common/notificationModel.js";
 import Farmer from "../../models/Farmer/FarmerModel.js";
 import User from "../../models/UserModel.js";
 const router = express.Router();
+
 router.post("/send", async (req, res) => {
   const { title, message, type, role } = req.body;
 
@@ -24,6 +25,7 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // Get unread count
 router.get("/unreadCount/:userId", async (req, res) => {
   try {
@@ -90,6 +92,16 @@ router.get("/farmer/:userId", async (req, res) => {
     const farmer = await Farmer.findOne({ userId: req.params.userId });
     if (!farmer) return res.status(404).json({ message: "Farmer not found" });
     res.json(farmer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// routes/notificationRoutes.js
+router.get("/", async (req, res) => {
+  try {
+    const notes = await Notification.find().sort({ createdAt: -1 });
+    res.json(notes);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

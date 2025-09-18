@@ -104,4 +104,62 @@ router.get("/status/:farmerId", async (req, res) => {
   }
 });
 
+// Add to your farmer verification routes
+router.get("/", async (req, res) => {
+    try {
+        const verifications = await FarmerVerification.find()
+            .populate({
+                path: "farmerId",
+                select: "fullName village city state"
+            });
+        res.json(verifications);
+    } catch (error) {
+        console.error("Fetch all farmer verifications error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+// Add to your farmer verification routes
+router.patch("/verify/:farmerId", async (req, res) => {
+    try {
+        const { action } = req.body; // "approve" or "reject"
+
+        const verification = await FarmerVerification.findOne({ farmerId: req.params.farmerId });
+        if (!verification) {
+            return res.status(404).json({ message: "Verification not found" });
+        }
+
+        if (action === "approve") {
+            verification.verificationStatus = "approved";
+            verification.isVerified = true;
+            
+            // Also update the farmer model
+            await Farmer.findByIdAndUpdate(req.params.farmerId, {
+                isVerified: true,
+                verificationStatus: "approved"
+            });
+        } else if (action === "reject") {
+            verification.verificationStatus = "rejected";
+            verification.isVerified = false;
+            
+            // Also update the farmer model
+            await Farmer.findByIdAndUpdate(req.params.farmerId, {
+                isVerified: false,
+                verificationStatus: "rejected"
+            });
+        } else {
+            return res.status(400).json({ message: "Invalid action" });
+        }
+
+        await verification.save();
+
+        res.json({
+            message: `Farmer verification ${action}d successfully`,
+            verification,
+        });
+    } catch (error) {
+        console.error("Farmer verification update error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 module.exports = router;

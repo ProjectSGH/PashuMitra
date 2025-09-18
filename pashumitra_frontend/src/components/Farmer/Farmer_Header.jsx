@@ -20,29 +20,25 @@ export default function Header() {
   const userId = localStorage.getItem("userId"); // assuming you store userId in localStorage
 
   // Fetch notifications & unread count
-  const fetchNotifications = async () => {
-    try {
-      const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (!storedUser?._id) return;
+  // ✅ Fetch notifications & unread count
+const fetchNotifications = async () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser?._id) return;
 
-      const farmerRes = await axios.get(
-        `http://localhost:5000/api/notifications/farmer/${storedUser._id}`
-      );
-      const farmerId = farmerRes.data._id;
+    const [countRes, notesRes] = await Promise.all([
+      axios.get(
+        `http://localhost:5000/api/notifications/unreadCount/${storedUser._id}`
+      ),
+      axios.get(`http://localhost:5000/api/notifications/${storedUser._id}`),
+    ]);
 
-      const [countRes, notesRes] = await Promise.all([
-        axios.get(
-          `http://localhost:5000/api/notifications/unreadCount/${farmerId}`
-        ),
-        axios.get(`http://localhost:5000/api/notifications/${farmerId}`),
-      ]);
-
-      setUnreadCount(countRes.data.count || 0);
-      setNotifications(notesRes.data || []);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
-    }
-  };
+    setUnreadCount(countRes.data.count || 0);
+    setNotifications(notesRes.data || []);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+  }
+};
 
   useEffect(() => {
     fetchNotifications();

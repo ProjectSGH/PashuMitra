@@ -23,30 +23,23 @@ export default function FarmerNotificationsPage() {
 
   // ✅ Load userId from localStorage and fetch notifications
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser?._id) return;
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  if (!storedUser?._id) return;
 
-    const fetchFarmerNotifications = async () => {
-      try {
-        // 1️⃣ Get farmer details by main User _id
-        const farmerRes = await axios.get(
-          `http://localhost:5000/api/notifications/farmer/${storedUser._id}`
-        );
-        const farmerDetailId = farmerRes.data._id;
+  const fetchNotifications = async () => {
+    try {
+      const notesRes = await axios.get(
+        `http://localhost:5000/api/notifications/${storedUser._id}`
+      );
+      setNotifications(notesRes.data || []);
+      setUserId(storedUser._id);
+    } catch (err) {
+      console.error("❌ Error fetching notifications:", err);
+    }
+  };
 
-        // 2️⃣ Fetch notifications using farmer detail ID
-        const notesRes = await axios.get(
-          `http://localhost:5000/api/notifications/${farmerDetailId}`
-        );
-        setNotifications(notesRes.data || []);
-        setUserId(farmerDetailId); // save for mark read etc
-      } catch (err) {
-        console.error("❌ Error fetching farmer notifications:", err);
-      }
-    };
-
-    fetchFarmerNotifications();
-  }, []);
+  fetchNotifications();
+}, []);
 
   // ✅ Mark one as read
   // ✅ Mark one as read
