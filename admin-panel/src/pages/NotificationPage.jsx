@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Bell, Send, Users, ChevronDown } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
+import axios from "axios"
 
 const NotificationsPage = () => {
   const [formData, setFormData] = useState({
@@ -33,18 +34,21 @@ const NotificationsPage = () => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.role || !formData.title || !formData.message || !formData.type) {
       toast.error("Please fill in all fields")
       return
     }
 
-    const roleLabel = roleOptions.find((r) => r.value === formData.role)?.label
-    toast.success(`Notification sent to ${roleLabel}!`)
-
-    // Reset form
-    setFormData({ role: "", title: "", message: "", type: "" })
+    try {
+      const res = await axios.post("http://localhost:5000/api/admin/notifications/send", formData)
+      toast.success(res.data.message)
+      setFormData({ role: "", title: "", message: "", type: "" })
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to send notification")
+    }
   }
 
   const getTypeColor = (type) => {

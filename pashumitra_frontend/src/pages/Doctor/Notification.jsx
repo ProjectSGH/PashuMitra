@@ -17,10 +17,10 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const storedId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   // ✅ Fetch notifications from backend
   useEffect(() => {
-    const storedId = localStorage.getItem("userId"); // ✅ doctor/farmer id from localStorage
     if (!storedId) return;
 
     const fetchNotifications = async () => {
@@ -37,14 +37,22 @@ export default function NotificationsPage() {
       }
     };
     fetchNotifications();
-  }, []);
+  }, [storedId]);
 
   // ✅ Mark one notification as read
   const markAsRead = async (id) => {
+    if (!storedId) return;
+
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${id}/read`);
+      await axios.put(
+        `http://localhost:5000/api/notifications/${id}/read/${storedId}`
+      );
       setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+        prev.map((n) =>
+          n._id === id
+            ? { ...n, isReadBy: [...(n.isReadBy || []), storedId] }
+            : n
+        )
       );
     } catch (err) {
       console.error(
@@ -56,14 +64,19 @@ export default function NotificationsPage() {
 
   // ✅ Mark all as read
   const markAllRead = async () => {
-    const storedId = localStorage.getItem("userId");
     if (!storedId) return;
 
     try {
       await axios.put(
         `http://localhost:5000/api/notifications/user/${storedId}/readall`
       );
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.isReadBy?.includes(storedId)
+            ? n
+            : { ...n, isReadBy: [...(n.isReadBy || []), storedId] }
+        )
+      );
     } catch (err) {
       console.error(
         "❌ Error marking all as read:",
@@ -223,66 +236,69 @@ export default function NotificationsPage() {
                     <p className="text-xs">You are all caught up 🎉</p>
                   </motion.div>
                 ) : (
-                  filtered.map((n) => (
-                    <motion.article
-                      key={n._id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      layout
-                      className={`flex items-start gap-4 p-4 rounded-lg mb-3 border ${
-                        n.isRead
-                          ? "border-gray-100 bg-white"
-                          : "border-blue-100 bg-blue-50"
-                      }`}
-                    >
-                      <div className="shrink-0 mt-1">
-                        <div
-                          className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                            n.isRead
-                              ? "bg-white text-blue-600 border border-gray-100"
-                              : "bg-blue-600 text-white"
-                          }`}
-                        >
-                          <Bell className="w-5 h-5" />
+                  filtered.map((n) => {
+                    const hasRead = n.isReadBy?.includes(storedId);
+                    return (
+                      <motion.article
+                        key={n._id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        layout
+                        className={`flex items-start gap-4 p-4 rounded-lg mb-3 border ${
+                          hasRead
+                            ? "border-gray-100 bg-white"
+                            : "border-blue-100 bg-blue-50"
+                        }`}
+                      >
+                        <div className="shrink-0 mt-1">
+                          <div
+                            className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                              hasRead
+                                ? "bg-white text-blue-600 border border-gray-100"
+                                : "bg-blue-600 text-white"
+                            }`}
+                          >
+                            <Bell className="w-5 h-5" />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-900">
-                              {n.title}
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {n.message}
-                            </p>
-                          </div>
-                          <div className="text-xs text-gray-400 text-right">
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between gap-4">
                             <div>
-                              {new Date(n.createdAt).toLocaleString()}
+                              <h4 className="text-sm font-semibold text-gray-900">
+                                {n.title}
+                              </h4>
+                              <p className="text-xs text-gray-600 mt-1">
+                                {n.message}
+                              </p>
                             </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              {!n.isRead && (
+                            <div className="text-xs text-gray-400 text-right">
+                              <div>
+                                {new Date(n.createdAt).toLocaleString()}
+                              </div>
+                              <div className="mt-2 flex items-center gap-2">
+                                {!hasRead && (
+                                  <button
+                                    onClick={() => markAsRead(n._id)}
+                                    className="text-xs px-2 py-1 rounded bg-white border border-blue-200 text-blue-700"
+                                  >
+                                    Mark read
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => markAsRead(n._id)}
-                                  className="text-xs px-2 py-1 rounded bg-white border border-blue-200 text-blue-700"
+                                  onClick={() => deleteNotification(n._id)}
+                                  className="text-xs px-2 py-1 rounded bg-white border border-gray-200 text-gray-600"
                                 >
-                                  Mark read
+                                  Delete
                                 </button>
-                              )}
-                              <button
-                                onClick={() => deleteNotification(n._id)}
-                                className="text-xs px-2 py-1 rounded bg-white border border-gray-200 text-gray-600"
-                              >
-                                Delete
-                              </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.article>
-                  ))
+                      </motion.article>
+                    );
+                  })
                 )}
               </AnimatePresence>
             </div>

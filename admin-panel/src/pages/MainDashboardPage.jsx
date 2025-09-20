@@ -176,7 +176,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
 
       {/* Sidebar */}
       <AnimatePresence>

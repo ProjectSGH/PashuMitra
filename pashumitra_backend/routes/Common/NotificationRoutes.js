@@ -1,125 +1,84 @@
+// routes/user/notifications.js
 import express from "express";
 import Notification from "../../models/Common/notificationModel.js";
-import Farmer from "../../models/Farmer/FarmerModel.js";
-import User from "../../models/UserModel.js";
 const router = express.Router();
 
-router.post("/send", async (req, res) => {
-  const { title, message, type, role } = req.body;
+// ✅ Get all notifications for a specific user
+router.get("/:userId", async (req, res) => {
+  const { userId } = req.params;
 
   try {
-    const users = await User.find(role ? { role } : {});
-    if (!users.length) return res.status(404).json({ message: "No users found" });
+    const notifications = await Notification.find({
+      userIds: userId,
+    }).sort({ createdAt: -1 });
 
-    const notifications = users.map((u) => ({
-      userId: u._id,
-      title,
-      message,
-      type: type || "info",
-    }));
-
-    await Notification.insertMany(notifications);
-
-    res.json({ message: `Notification sent to ${users.length} users` });
+    res.json(notifications);
   } catch (err) {
+    console.error("Error fetching user notifications:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get unread count
+// ✅ Get unread count for a user
 router.get("/unreadCount/:userId", async (req, res) => {
+  const { userId } = req.params;
+
   try {
     const count = await Notification.countDocuments({
-      userId: req.params.userId,
-      isRead: false,
+      userIds: userId,
+      isReadBy: { $ne: userId }, // not read by this user
     });
     res.json({ count });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch count" });
-  }
-});
-
-// Mark all as read for a user
-router.put("/user/:userId/readall", async (req, res) => {
-  try {
-    await Notification.updateMany(
-      { userId: req.params.userId },
-      { $set: { isRead: true } }
-    );
-    res.json({ message: "All marked as read" });
-  } catch (err) {
+    console.error("Error fetching unread count:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get all notifications for a doctor (or user)
-router.get("/:userId", async (req, res) => {
-  try {
-    const notes = await Notification.find({ userId: req.params.userId })
-      .sort({ createdAt: -1 });
-    res.json(notes);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// ✅ Mark a notification as read (frontend can call /:id/read without userId)
+// ✅ Mark a notification as read (with userId in URL)
+router.put("/:id/read/:userId", async (req, res) => {
+  const { id, userId } = req.params;
 
-// Mark one notification as read
-router.put("/:id/read", async (req, res) => {
   try {
     const note = await Notification.findByIdAndUpdate(
-      req.params.id,
-      { isRead: true },
+      id,
+      { $addToSet: { isReadBy: userId } }, // add userId to isReadBy array
       { new: true }
     );
+    if (!note) return res.status(404).json({ error: "Notification not found" });
     res.json(note);
   } catch (err) {
+    console.error("Error marking notification as read:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete a notification
+// ✅ Mark all notifications as read for a user
+router.put("/user/:userId/readall", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    await Notification.updateMany(
+      { userIds: userId },
+      { $addToSet: { isReadBy: userId } }
+    );
+    res.json({ message: "All notifications marked as read" });
+  } catch (err) {
+    console.error("Error marking all notifications as read:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Delete a notification
 router.delete("/:id", async (req, res) => {
   try {
     await Notification.findByIdAndDelete(req.params.id);
     res.json({ message: "Notification deleted" });
   } catch (err) {
+    console.error("Error deleting notification:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
-router.get("/farmer/:userId", async (req, res) => {
-  try {
-    const farmer = await Farmer.findOne({ userId: req.params.userId });
-    if (!farmer) return res.status(404).json({ message: "Farmer not found" });
-    res.json(farmer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// routes/notificationRoutes.js
-router.get("/", async (req, res) => {
-  try {
-    const notes = await Notification.find().sort({ createdAt: -1 });
-    res.json(notes);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Mark one notification as read (call this from Notification page)
-export const markNotificationAsRead = async (id) => {
-  try {
-    await axios.put(`http://localhost:5000/api/notifications/${id}/read`);
-    // Remove one from unread count
-    setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0));
-    // Optional: remove from notifications list in header if you store them
-    setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-    );
-  } catch (err) {
-    console.error("Error marking notification as read:", err);
-  }
-};
 
 export default router;

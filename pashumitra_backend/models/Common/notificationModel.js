@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  userIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // list of recipients
   title: { type: String, required: true },
   message: { type: String, required: true },
   type: { type: String, enum: ["consultation", "info", "alert", "important"], default: "consultation" },
-  isRead: { type: Boolean, default: false },
+  isReadBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // users who have read
 }, { timestamps: true });
 
 export default mongoose.model("Notification", notificationSchema);

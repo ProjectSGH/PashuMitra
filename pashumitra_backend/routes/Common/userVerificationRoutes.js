@@ -81,40 +81,4 @@ router.get("/status/:userId", async (req, res) => {
   }
 });
 
-// ✅ Admin approve/reject
-router.patch("/verify/:verificationId", async (req, res) => {
-  try {
-    const { action } = req.body;
-    const verification = await UserVerification.findById(req.params.verificationId).populate("userId", "role email");
-
-    if (!verification) return res.status(404).json({ message: "Verification not found" });
-
-    if (action === "approve") {
-      verification.verificationStatus = "approved";
-      verification.isVerified = true;
-    } else if (action === "reject") {
-      verification.verificationStatus = "rejected";
-      verification.isVerified = false;
-    } else {
-      return res.status(400).json({ message: "Invalid action" });
-    }
-
-    await verification.save();
-
-    res.json({ message: `${verification.userId.role} verification ${action}d`, verification });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", err });
-  }
-});
-
-// ✅ Admin get all
-router.get("/", async (req, res) => {
-  try {
-    const verifications = await UserVerification.find().populate("userId", "email phone role");
-    res.json(verifications);
-  } catch (err) {
-    res.status(500).json({ message: "Server error", err });
-  }
-});
-
 module.exports = router;
