@@ -1,209 +1,443 @@
 "use client"
-
 import { motion } from "framer-motion"
-import { Package, Users, TrendingUp, AlertTriangle, Eye, ArrowUpDown, AlertCircle } from "lucide-react"
+import {
+  LogIn,
+  ShoppingCart,
+  Truck,
+  TrendingUp,
+  Package,
+  CheckCircle,
+  FileText,
+  AlertTriangle,
+  Zap,
+  Users,
+  Heart,
+  Brain,
+  Mail,
+  Phone,
+  MapPin,
+  ArrowRight,
+  Play,
+} from "lucide-react"
 
-export default function Dashboard() {
-  const metrics = [
-    {
-      icon: Package,
-      value: "1,247",
-      label: "Total Medicines",
-      change: "+12%",
-      changeColor: "text-green-600",
-      bgColor: "bg-blue-500",
-    },
-    {
-      icon: Users,
-      value: "89",
-      label: "Active Farmers",
-      change: "+8%",
-      changeColor: "text-green-600",
-      bgColor: "bg-green-500",
-    },
-    {
-      icon: TrendingUp,
-      value: "$24,500",
-      label: "Monthly Revenue",
-      change: "+15%",
-      changeColor: "text-green-600",
-      bgColor: "bg-purple-500",
-    },
-    {
-      icon: AlertTriangle,
-      value: "23",
-      label: "Low Stock Items",
-      change: "5%",
-      changeColor: "text-red-600",
-      bgColor: "bg-red-500",
-    },
-  ]
+const VeterinaryPortal = () => {
+  const fadeInUp = {
+    initial: { opacity: 0, y: 60 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 },
+  }
 
-  const recentActivities = [
-    {
-      text: "New request from Green Valley Farm",
-      time: "5 minutes ago",
-      color: "bg-blue-500",
-    },
-    {
-      text: "Medicine delivered to Sunrise Farm",
-      time: "12 minutes ago",
-      color: "bg-green-500",
-    },
-    {
-      text: "Stock updated for Paracetamol",
-      time: "25 minutes ago",
-      color: "bg-yellow-500",
-    },
-    {
-      text: "New farmer registration",
-      time: "1 hour ago",
-      color: "bg-purple-500",
-    },
-    {
-      text: "Community bank donation received",
-      time: "2 hours ago",
-      color: "bg-pink-500",
-    },
-  ]
-
-  const quickActions = [
-    {
-      icon: Package,
-      title: "Add Medicine",
-      subtitle: "Update inventory",
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-    {
-      icon: Eye,
-      title: "View Requests",
-      subtitle: "Check farmer requests",
-      bgColor: "bg-green-50",
-      iconColor: "text-green-600",
-    },
-    {
-      icon: ArrowUpDown,
-      title: "Transfer",
-      subtitle: "Manage transfers",
-      bgColor: "bg-purple-50",
-      iconColor: "text-purple-600",
-    },
-    {
-      icon: AlertCircle,
-      title: "Low Stock",
-      subtitle: "Review alerts",
-      bgColor: "bg-red-50",
-      iconColor: "text-red-600",
-    },
-  ]
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
+  const staggerContainer = {
+    animate: {
       transition: {
         staggerChildren: 0.1,
       },
     },
   }
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
+  const scaleOnHover = {
+    whileHover: { scale: 1.05 },
+    transition: { type: "spring", stiffness: 300 },
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className=" mx-auto space-y-6"
-      >
-        {/* Header */}
-        <motion.div variants={itemVariants} className="bg-blue-600 text-white p-6 rounded-2xl">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, Store Owner!</h1>
-          <p className="text-blue-100 text-sm md:text-base">
-            {"Here's what's happening with your medical store today."}
-          </p>
-        </motion.div>
-
-        {/* Metrics Grid */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {metrics.map((metric, index) => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
-              key={index}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
+              className="space-y-8"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl ${metric.bgColor}`}>
-                  <metric.icon className="w-6 h-6 text-white" />
-                </div>
-                <span className={`text-sm font-medium ${metric.changeColor}`}>{metric.change}</span>
-              </div>
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{metric.value}</div>
-                <div className="text-sm text-gray-600">{metric.label}</div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activity */}
-          <motion.div variants={itemVariants} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start space-x-3"
-                >
-                  <div className={`w-2 h-2 rounded-full ${activity.color} mt-2 flex-shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 font-medium">{activity.text}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div variants={itemVariants} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action, index) => (
-                <motion.div
-                  key={index}
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">Expert Veterinary Consultation Portal</h1>
+              <p className="text-xl text-blue-100 leading-relaxed">
+                Connect farmers with expert veterinarians for immediate consultation and treatment guidance for their
+                livestock.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.button
+                  className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="p-4 rounded-xl border border-gray-100 hover:border-gray-200 cursor-pointer transition-colors"
                 >
-                  <div className={`w-12 h-12 rounded-xl ${action.bgColor} flex items-center justify-center mb-3`}>
-                    <action.icon className={`w-6 h-6 ${action.iconColor}`} />
+                  Get Started
+                </motion.button>
+                <motion.button
+                  className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Learn More
+                </motion.button>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <div className="bg-white rounded-2xl p-6 shadow-2xl">
+                <div className="bg-gray-900 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{action.title}</h3>
-                  <p className="text-xs text-gray-600">{action.subtitle}</p>
+                  <div className="bg-blue-600 rounded-lg p-4 text-white">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                        <Users className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Virtual Veterinarian?</h3>
+                        <p className="text-sm text-blue-200">Dr. Sarah Johnson</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="bg-green-500 p-2 rounded-full">
+                        <Phone className="w-4 h-4" />
+                      </button>
+                      <button className="bg-red-500 p-2 rounded-full">
+                        <Phone className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div className="text-center mb-16" {...fadeInUp}>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Follow our streamlined 4-step process to efficiently serve farmers and manage veterinary medicine
+              distribution in your community.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                step: 1,
+                icon: LogIn,
+                title: "Login & Update Medicine Inventory",
+                description:
+                  "Access your store dashboard and update available medicine inventory, pricing, and availability status.",
+              },
+              {
+                step: 2,
+                icon: ShoppingCart,
+                title: "Receive Medicine Orders from Farmers",
+                description: "Get medicine orders from local farmers and livestock owners in your area.",
+              },
+              {
+                step: 3,
+                icon: Truck,
+                title: "Arrange Transport if Not Available Locally",
+                description:
+                  "Coordinate with nearby livestock medicine stores if required medicines are not available locally.",
+              },
+              {
+                step: 4,
+                icon: TrendingUp,
+                title: "Manage and Track Supply Chain",
+                description:
+                  "Monitor all supply chain activities, track deliveries, and ensure timely fulfillment of urgent veterinary needs.",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+                variants={fadeInUp}
+                {...scaleOnHover}
+              >
+                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                  <span className="text-2xl font-bold text-blue-600">{item.step}</span>
+                </div>
+                <div className="bg-blue-600 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                  <item.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Your Role & Available Features */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div className="text-center mb-16" {...fadeInUp}>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Your Role & Available Features</h2>
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              As a veterinary medicine store owner, access all the tools you need to serve farmers and ensure livestock
+              health in your community.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: Package,
+                title: "Manage Stock",
+                description:
+                  "Update medicine availability, track inventory levels, and manage stock alerts for veterinary medicines.",
+              },
+              {
+                icon: CheckCircle,
+                title: "Approve / Process Orders",
+                description:
+                  "Review and approve farmer orders, verify prescriptions, and ensure proper dosage guidance for livestock.",
+              },
+              {
+                icon: FileText,
+                title: "Create Transport Requests",
+                description:
+                  "Initiate transport requests to other stores when medicines are unavailable locally, ensuring no farmer is left without needed supplies.",
+              },
+              {
+                icon: AlertTriangle,
+                title: "Access Awareness Portal",
+                description:
+                  "Stay informed about seasonal disease alerts, vaccination schedules, and preventive care recommendations for your region.",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                className="bg-gray-50 rounded-2xl p-8 hover:bg-blue-50 transition-colors group"
+                variants={fadeInUp}
+                {...scaleOnHover}
+              >
+                <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-700 transition-colors">
+                  <item.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div className="text-center mb-16" {...fadeInUp}>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Benefits for Your Medical Store</h2>
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              Join our network and transform how you serve farmers while growing your business sustainably.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid md:grid-cols-2 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: Zap,
+                title: "Faster Medicine Distribution",
+                percentage: "60% Faster",
+                description:
+                  "Real-time inventory sharing and streamlined logistics and real-time coordination between stores.",
+              },
+              {
+                icon: Users,
+                title: "Seamless Store Coordination",
+                percentage: "100% Coverage",
+                description:
+                  "Collaborate with nearby veterinary stores, share inventory and ensure no farmer goes without medicine.",
+              },
+              {
+                icon: Heart,
+                title: "Reduced Livestock Mortality",
+                percentage: "45% Reduction",
+                description:
+                  "Our disease detection and early medicine access help prevent livestock deaths and boost farmer income.",
+              },
+              {
+                icon: Brain,
+                title: "Predictive Planning for High-Demand Medicines",
+                percentage: "Smart Planning",
+                description:
+                  "AI-powered forecasting helps you stock up on medicines during seasonal demand and disease outbreaks.",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+                variants={fadeInUp}
+                {...scaleOnHover}
+              >
+                <div className="flex items-start gap-6">
+                  <div className="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-xl font-bold text-gray-900">{item.title}</h3>
+                      <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        {item.percentage}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Statistics Section */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              { number: "500+", label: "Medical Stores" },
+              { number: "10K+", label: "Farmers Served" },
+              { number: "24/7", label: "Support Available" },
+              { number: "99.9%", label: "Uptime Guarantee" },
+            ].map((stat, index) => (
+              <motion.div key={index} className="text-center" variants={fadeInUp}>
+                <motion.div
+                  className="text-4xl lg:text-5xl font-bold text-blue-600 mb-2"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  {stat.number}
                 </motion.div>
-              ))}
+                <div className="text-gray-600 font-semibold">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Ready to Transform Your Veterinary Store?</h2>
+            <p className="text-xl text-blue-100 mb-10 leading-relaxed">
+              Join our network of veterinary medicine stores and start serving farmers more efficiently while growing
+              your business.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button
+                className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Go to Dashboard <ArrowRight className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Play className="w-5 h-5" /> Watch Demo
+              </motion.button>
             </div>
           </motion.div>
         </div>
-      </motion.div>
+      </section>
+
+      {/* Support Section */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <motion.div className="text-center mb-12" {...fadeInUp}>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">24/7 Support for Your Store</h2>
+            <p className="text-lg text-gray-600">We're here to help you succeed every step of the way.</p>
+          </motion.div>
+
+          <motion.div
+            className="grid md:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: Mail,
+                title: "Email Support",
+                contact: "support@vetportal.com",
+                description: "Get help via email",
+              },
+              {
+                icon: Phone,
+                title: "Phone Support",
+                contact: "+1 555 VET HELP",
+                description: "(+1 555 838 4357)",
+              },
+              {
+                icon: MapPin,
+                title: "Regional Offices",
+                contact: "50+ locations nationwide",
+                description: "Find local support",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                className="bg-white rounded-xl p-6 text-center shadow-md hover:shadow-lg transition-shadow"
+                variants={fadeInUp}
+                {...scaleOnHover}
+              >
+                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-blue-600 font-semibold mb-1">{item.contact}</p>
+                <p className="text-gray-600 text-sm">{item.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      
     </div>
   )
 }
+
+export default VeterinaryPortal
