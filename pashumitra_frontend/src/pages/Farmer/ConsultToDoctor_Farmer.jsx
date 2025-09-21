@@ -9,7 +9,6 @@ import {
   Check,
   CheckCheck,
   Send,
-  MessageCircle,
   Search,
 } from "lucide-react";
 import axios from "axios";
@@ -20,16 +19,14 @@ export default function ConsultDoctor() {
   const [loading, setLoading] = useState(true);
   const [activeChat, setActiveChat] = useState(null);
   const [message, setMessage] = useState("");
-  const [isTyping] = useState(false);
   const [messages, setMessages] = useState({});
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [modalData, setModalData] = useState(null); // for custom confirmation modal
+  const [modalData, setModalData] = useState(null);
 
   const socketRef = useRef(null);
 
-  // Initialize socket
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
@@ -64,7 +61,7 @@ export default function ConsultDoctor() {
                 `http://localhost:5000/api/schedules/${doc._id}`
               );
               return { ...doc, schedule: schedRes.data };
-            } catch (err) {
+            } catch {
               return { ...doc, schedule: null };
             }
           })
@@ -72,7 +69,6 @@ export default function ConsultDoctor() {
 
         setDoctors(docsWithSchedule);
 
-        // initialize empty message threads
         const initialMessages = {};
         docsWithSchedule.forEach((doc) => {
           initialMessages[doc._id] = [];
@@ -94,13 +90,7 @@ export default function ConsultDoctor() {
   };
 
   const weekdayNames = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
+    "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",
   ];
 
   const isDoctorAvailableNow = (schedule) => {
@@ -127,11 +117,7 @@ export default function ConsultDoctor() {
       if (ds && ds.available && ds.startTime) {
         const [h, m] = ds.startTime.split(":").map(Number);
         const slotDate = new Date(
-          check.getFullYear(),
-          check.getMonth(),
-          check.getDate(),
-          h,
-          m
+          check.getFullYear(), check.getMonth(), check.getDate(), h, m
         );
         return {
           day: dayName,
@@ -146,24 +132,17 @@ export default function ConsultDoctor() {
 
   const openChat = async (doctor) => {
     setSelectedDoctor(doctor);
-
     const availableNow = isDoctorAvailableNow(doctor.schedule);
+
     if (!availableNow) {
       const nextSlot = findNextAvailableSlot(doctor.schedule);
       if (!nextSlot) {
-        toast.error(
-          "Doctor is not available and no slots configured. You can still send a message, or try another doctor."
-        );
+        toast.error("Doctor is not available and no slots configured.");
         setActiveChat(doctor);
         setShowSidebar(false);
         return;
       }
-
-      // Show custom modal instead of window.confirm
-      setModalData({
-        doctor,
-        slot: nextSlot,
-      });
+      setModalData({ doctor, slot: nextSlot });
       return;
     }
 
@@ -186,31 +165,30 @@ export default function ConsultDoctor() {
         endTime: slot.endTime,
       };
       await axios.post("http://localhost:5000/api/consultations", payload);
+
       toast.success(
         `Consultation requested for ${slot.day} ${new Date(
           slot.dateISO
-        ).toLocaleDateString()} at ${slot.startTime}. You will be notified when the doctor responds.`
+        ).toLocaleDateString()} at ${slot.startTime}.`
       );
+
+      setActiveChat(doctor);
+      fetchMessages(doctor._id);
     } catch (err) {
       if (err.response?.status === 409) {
         toast.error(err.response.data.message);
       } else {
         console.error(err);
-        toast.error(
-          "Failed to request consultation. You can still send a message, or try another doctor."
-        );
+        toast.error("Failed to request consultation.");
       }
     }
     setModalData(null);
-    setActiveChat(modalData.doctor);
     setShowSidebar(false);
-    fetchMessages(modalData.doctor._id);
   };
 
   const cancelConsultation = () => {
     setModalData(null);
-    setActiveChat(modalData.doctor);
-    setShowSidebar(false);
+    setShowSidebar(false); // ✅ no chat opening
   };
 
   const fetchMessages = async (doctorId) => {
@@ -218,10 +196,7 @@ export default function ConsultDoctor() {
       const res = await axios.get(
         `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
       );
-      setMessages((prev) => ({
-        ...prev,
-        [doctorId]: res.data,
-      }));
+      setMessages((prev) => ({ ...prev, [doctorId]: res.data }));
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
@@ -269,15 +244,15 @@ export default function ConsultDoctor() {
 
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
+      hour: "2-digit", minute: "2-digit", hour12: true,
     });
 
-  const StatusIcon = ({ seen }) => {
-    if (!seen) return <Check className="w-3 h-3 text-gray-400" />;
-    return <CheckCheck className="w-3 h-3 text-blue-600" />;
-  };
+  const StatusIcon = ({ seen }) =>
+    !seen ? (
+      <Check className="w-3 h-3 text-gray-400" />
+    ) : (
+      <CheckCheck className="w-3 h-3 text-blue-600" />
+    );
 
   const filteredDoctors = doctors.filter(
     (doctor) =>
@@ -291,7 +266,7 @@ export default function ConsultDoctor() {
 
   return (
         <div className="min-h-screen bg-gray-100">
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
 
       {/* Custom confirmation modal */}
       {modalData && (

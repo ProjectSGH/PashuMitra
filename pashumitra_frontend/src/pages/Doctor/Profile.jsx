@@ -53,76 +53,74 @@ export default function ProfileSchedule() {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  useEffect(() => {
-    const fetchProfileAndSchedule = async () => {
+  const fetchProfileAndSchedule = async () => {
+    try {
+      const userRes = await axios.get(
+        `http://localhost:5000/api/users/${user._id}`
+      );
+      const userData = userRes.data;
+
+      // ✅ Fetch live verification status
+      let verificationStatus = "not_submitted";
       try {
-        const userRes = await axios.get(
-          `http://localhost:5000/api/users/${user._id}`
+        const verificationRes = await axios.get(
+          `http://localhost:5000/api/verification/status/${user._id}?role=Doctor`
         );
-        const userData = userRes.data;
-
-        // ✅ Fetch live verification status
-        let verificationStatus = "not_submitted";
-        try {
-          const verificationRes = await axios.get(
-            `http://localhost:5000/api/doctor/varify/status/${user._id}`
-          );
-          verificationStatus = verificationRes.data.status || "pending";
-        } catch (err) {
-          console.warn(
-            "Verification status not found, defaulting to not_submitted"
-          );
-        }
-
-        setProfile({
-          fullName: userData.doctorProfile?.fullName || "",
-          specialization: userData.doctorProfile?.specialization || "",
-          hospitalname: userData.doctorProfile?.hospitalname || "",
-          experience: userData.doctorProfile?.experience || "",
-          state: userData.doctorProfile?.state || "",
-          city: userData.doctorProfile?.city || "",
-          phone: userData.phone || "",
-          email: userData.email || "",
-          fee: userData.doctorProfile?.fee || 0,
-          verificationStatus, // ✅ this now uses real-time value
-        });
-
-        let scheduleData;
-        try {
-          const scheduleRes = await axios.get(
-            `http://localhost:5000/api/schedules/${user._id}`
-          );
-          scheduleData = scheduleRes.data;
-        } catch (err) {
-          if (err.response && err.response.status === 404) {
-            // This is expected for new users, don't log it as an error
-            console.warn("No existing schedule found, using fallback.");
-            scheduleData = null;
-          } else {
-            // Only log unexpected errors
-            console.error("Error fetching schedule:", err);
-          }
-        }
-
-        const fallbackSchedule = {
-          Monday: { available: true, startTime: "09:00", endTime: "17:00" },
-          Tuesday: { available: true, startTime: "09:00", endTime: "17:00" },
-          Wednesday: { available: true, startTime: "09:00", endTime: "17:00" },
-          Thursday: { available: true, startTime: "09:00", endTime: "17:00" },
-          Friday: { available: true, startTime: "09:00", endTime: "17:00" },
-          Saturday: { available: true, startTime: "10:00", endTime: "14:00" },
-          Sunday: { available: false, startTime: "", endTime: "" },
-        };
-
-        setSchedule({ ...fallbackSchedule, ...scheduleData });
+        verificationStatus =
+          verificationRes.data.verificationStatus || "pending";
       } catch (err) {
-        console.error("Error fetching data", err);
-        setSchedule(null);
-      } finally {
-        setLoading(false);
+        console.warn(
+          "Verification status not found, defaulting to not_submitted"
+        );
       }
-    };
 
+      setProfile({
+        fullName: userData.doctorProfile?.fullName || "",
+        specialization: userData.doctorProfile?.specialization || "",
+        hospitalname: userData.doctorProfile?.hospitalname || "",
+        experience: userData.doctorProfile?.experience || "",
+        state: userData.doctorProfile?.state || "",
+        city: userData.doctorProfile?.city || "",
+        phone: userData.phone || "",
+        email: userData.email || "",
+        fee: userData.doctorProfile?.fee || 0,
+        verificationStatus, // ✅ this now uses real-time value
+      });
+
+      let scheduleData;
+      try {
+        const scheduleRes = await axios.get(
+          `http://localhost:5000/api/schedules/${user._id}`
+        );
+        scheduleData = scheduleRes.data;
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          scheduleData = null;
+        } else {
+          console.error("Error fetching schedule:", err);
+        }
+      }
+
+      const fallbackSchedule = {
+        Monday: { available: true, startTime: "09:00", endTime: "17:00" },
+        Tuesday: { available: true, startTime: "09:00", endTime: "17:00" },
+        Wednesday: { available: true, startTime: "09:00", endTime: "17:00" },
+        Thursday: { available: true, startTime: "09:00", endTime: "17:00" },
+        Friday: { available: true, startTime: "09:00", endTime: "17:00" },
+        Saturday: { available: true, startTime: "10:00", endTime: "14:00" },
+        Sunday: { available: false, startTime: "", endTime: "" },
+      };
+
+      setSchedule({ ...fallbackSchedule, ...scheduleData });
+    } catch (err) {
+      console.error("Error fetching data", err);
+      setSchedule(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfileAndSchedule();
   }, [user._id]);
 
@@ -139,21 +137,12 @@ export default function ProfileSchedule() {
 
   const handleUpdateSchedule = async () => {
     try {
-      const response = await axios.put(
+      await axios.put(
         `http://localhost:5000/api/schedules/${user._id}`,
         schedule
       );
 
-      toast.success("Schedule updated successfully", {
-        duration: 4000,
-        position: "bottom-right",
-        style: {
-          backgroundColor: "#059669",
-          color: "#fff",
-          fontWeight: "bold",
-          borderRadius: "8px",
-        },
-      });
+      toast.success("Schedule updated successfully");
     } catch (err) {
       console.error("Error updating schedule", err);
       toast.error("Schedule update failed. Try again.");
@@ -175,12 +164,8 @@ export default function ProfileSchedule() {
         schedule,
       };
 
-      const response = await axios.put(
-        `http://localhost:5000/api/users/${user._id}`,
-        payload
-      );
+      await axios.put(`http://localhost:5000/api/users/${user._id}`, payload);
 
-      // ✅ Update localStorage so Consultations.jsx sees new name instantly
       const updatedUser = {
         ...user,
         doctorProfile: {
@@ -193,20 +178,11 @@ export default function ProfileSchedule() {
           city: profile.city,
           fee: profile.fee,
         },
-        displayName: profile.fullName, // for fallback
+        displayName: profile.fullName,
       };
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      toast.success("Profile updated successfully", {
-        duration: 4000,
-        position: "bottom-right",
-        style: {
-          backgroundColor: "#4CAF50",
-          color: "#fff",
-          fontWeight: "bold",
-          borderRadius: "8px",
-        },
-      });
+      toast.success("Profile updated successfully");
     } catch (err) {
       console.error("Error updating profile", err);
       toast.error("Update failed. Try again later.");
@@ -215,61 +191,36 @@ export default function ProfileSchedule() {
 
   const handleVerificationUpload = async (e) => {
     e.preventDefault();
+    if (!file || !license) return toast.error("Fill all fields");
     setIsUploading(true);
 
-    const formData = new FormData();
-    formData.append("document", file);
-    formData.append("licenseNumber", license);
-
     try {
-      const userRes = await axios.get(
-        `http://localhost:5000/api/users/${user._id}`
-      );
-      const userData = userRes.data;
-      const doctorId = userData.doctorProfile?._id;
-      if (!doctorId) return toast.error("Doctor profile not found");
+      const formData = new FormData();
+      formData.append("document", file);
+      formData.append("role", "Doctor");
+      formData.append("licenseNumber", license);
 
-      const response = await fetch(
-        `http://localhost:5000/api/doctor/varify/upload/${user._id}`,
-        {
-          method: "POST",
-          body: formData,
-        }
+      await axios.post(
+        `http://localhost:5000/api/verification/upload/${user._id}`,
+        formData
       );
 
+      toast.success("Verification uploaded successfully!");
+      setFile(null);
+      setLicense("");
+
+      // ✅ Immediately fetch updated verification status
       const verificationRes = await axios.get(
-        `http://localhost:5000/api/doctor/varify/status/${user._id}`
+        `http://localhost:5000/api/verification/status/${user._id}?role=Doctor`
       );
       setProfile((prev) => ({
         ...prev,
-        verificationStatus: verificationRes.data.verificationStatus,
+        verificationStatus:
+          verificationRes.data.verificationStatus || "pending",
       }));
-      const data = await response.json();
-      if (response.ok) {
-        toast.success("Verification uploaded successfully!", {
-          duration: 4000,
-          position: "top-right",
-          style: {
-            backgroundColor: "#2563eb",
-            color: "#fff",
-            fontWeight: "bold",
-            borderRadius: "8px",
-          },
-        });
-
-        // 👇 Instantly update UI without reload
-        setProfile((prev) => ({
-          ...prev,
-          verificationStatus: "pending",
-        }));
-      } else {
-        toast.error(data.message || "Upload failed", {
-          position: "top-right",
-        });
-      }
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Server error during upload");
+      toast.error("Upload failed. Try again later.");
     } finally {
       setIsUploading(false);
     }

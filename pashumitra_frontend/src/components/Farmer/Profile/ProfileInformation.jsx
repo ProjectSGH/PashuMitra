@@ -12,43 +12,46 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
   const [isVerified, setIsVerified] = useState(false);
 
+  // ✅ Fetch verification status based on User._id (and role comes from userData.role)
+  const fetchVerificationStatus = async () => {
+    if (!userData?._id || !userData?.role) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/verification/status/${userData._id}?role=${userData.role}`
+      );
+      setVerificationStatus(res.data.verificationStatus);
+      setIsVerified(res.data.isVerified);
+    } catch (err) {
+      console.error("Failed to fetch verification status", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchVerificationStatus = async () => {
-      const farmerId = userData.farmerProfile?._id;
-      if (!farmerId) return;
+    fetchVerificationStatus(); // runs once on mount
+  }, [userData?._id, userData?.role]);
 
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/farmer/varify/status/${farmerId}`
-        );
-        setVerificationStatus(res.data.verificationStatus);
-        setIsVerified(res.data.isVerified);
-      } catch (err) {
-        console.error("Failed to fetch verification status", err);
-      }
-    };
-
-    fetchVerificationStatus(); // ✅ only inside useEffect
-  }, [userData.farmerProfile?._id]);
-
+  // ✅ Upload verification document
   const handleVerificationUpload = async (e) => {
     e.preventDefault();
     if (!file) return toast.error("Please select a file");
 
     const formData = new FormData();
     formData.append("document", file);
+    formData.append("role", userData.role);
 
     try {
       setIsUploading(true);
       await axios.post(
-        `http://localhost:5000/api/farmer/varify/upload/${userData.farmerProfile?._id}`,
+        `http://localhost:5000/api/verification/upload/${userData._id}`,
         formData
       );
       toast.success("Verification document submitted!");
 
-      await onUserUpdate(); // ⬅️ refresh profile in parent
-      await fetchVerificationStatus(); // ⬅️ refresh status locally
       setFile(null); // clear file input
+
+      await fetchVerificationStatus(); // ✅ fetch updated status immediately
+      await onUserUpdate(); // refresh parent if needed
     } catch (err) {
       console.error(err);
       toast.error("Failed to upload document");
@@ -96,66 +99,70 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
           <InfoField label="Pin-Code" value={userData.farmerProfile?.pincode} />
         </div>
       </div>
+
       {/* Verification Section */}
       <div className="bg-white p-6 rounded-lg shadow-md mt-8 w-full max-w-lg mx-auto">
-  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
-    Farmer Verification
-    {isVerified && (
-      <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
-        ✅ Verified
-      </span>
-    )}
-  </h3>
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
+          {userData.role} Verification
+          {isVerified && (
+            <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
+              ✅ Verified
+            </span>
+          )}
+        </h3>
 
-  {verificationStatus === "not_submitted" ||
-  verificationStatus === "rejected" ? (
-    <form className="space-y-4" onSubmit={handleVerificationUpload}>
-      <label className="block w-full">
-        <span className="text-gray-700 text-sm mb-1 block">Upload Document</span>
-        <div className="flex items-center justify-between border border-gray-300 rounded-md px-4 py-2 cursor-pointer hover:border-blue-500 transition">
-          <span className="text-gray-600 text-sm truncate">
-            {file?.name || "Choose an image or PDF..."}
-          </span>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files[0])}
-          />
-        </div>
-      </label>
+        {verificationStatus === "not_submitted" ||
+        verificationStatus === "rejected" ? (
+          <form className="space-y-4" onSubmit={handleVerificationUpload}>
+            <label className="block w-full">
+              <span className="text-gray-700 text-sm mb-1 block">Upload Document</span>
+              <div className="flex items-center justify-between border border-gray-300 rounded-md px-4 py-2 cursor-pointer hover:border-blue-500 transition">
+                <span className="text-gray-600 text-sm truncate">
+                  {file?.name || "Choose an image or PDF..."}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setFile(e.target.files[0])}
+                />
+              </div>
+            </label>
 
-      <button
-        type="submit"
-        disabled={isUploading}
-        className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 font-medium"
-      >
-        {isUploading ? (
-          <>
-            <img src={resources.CustomLoader.src} alt="Loading" className="w-5 h-5 animate-spin" />
-            Uploading...
-          </>
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 font-medium"
+            >
+              {isUploading ? (
+                <>
+                  <img
+                    src={resources.CustomLoader.src}
+                    alt="Loading"
+                    className="w-5 h-5 animate-spin"
+                  />
+                  Uploading...
+                </>
+              ) : (
+                "Submit for Verification"
+              )}
+            </button>
+          </form>
         ) : (
-          "Submit for Verification"
+          <div className="text-sm text-gray-700 space-y-2">
+            {verificationStatus === "pending" && (
+              <p className="text-yellow-600 font-medium">
+                📄 Your verification document has been submitted. It is currently under review by our team. You’ll be notified once verified.
+              </p>
+            )}
+            {verificationStatus === "approved" && (
+              <p className="text-green-600 text-base font-semibold flex items-center gap-1">
+                ✅ You are verified.
+              </p>
+            )}
+          </div>
         )}
-      </button>
-    </form>
-  ) : (
-    <div className="text-sm text-gray-700 space-y-2">
-      {verificationStatus === "pending" && (
-        <p className="text-yellow-600 font-medium">
-          📄 Your verification document has been submitted. It is currently under review by our team. You’ll be notified once verified.
-        </p>
-      )}
-      {verificationStatus === "approved" && (
-        <p className="text-green-600 text-base font-semibold flex items-center gap-1">
-          ✅ You are verified.
-        </p>
-      )}
-    </div>
-  )}
-</div>
-
+      </div>
     </>
   );
 };

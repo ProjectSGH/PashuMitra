@@ -9,6 +9,7 @@ import Awareness from "../Farmer/Awareness_Farmer";
 import CommunityMedicineBank from "../Farmer/ComunityMedicineBank_Farmer";
 import UserProfile from "../Farmer/UserProfile_Farmer";
 import Contact from "../ContactUsForm";
+import FarmerNotificationsPage from "../Farmer/Notification_Farmer";
 
 const FarmerRoutes = (
   <Route element={<ProtectedRoute role="Farmer" />}>
@@ -22,6 +23,7 @@ const FarmerRoutes = (
       <Route path="community-bank" element={<CommunityMedicineBank />} />
       <Route path="contact" element={<Contact />} />
       <Route path="profile" element={<UserProfile />} />
+      <Route path="notifications" element={<FarmerNotificationsPage />} />
     </Route>
   </Route>
 );

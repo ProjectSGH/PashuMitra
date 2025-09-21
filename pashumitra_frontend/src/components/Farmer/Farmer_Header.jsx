@@ -5,53 +5,86 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, User, Menu, X, LogOut } from "lucide-react";
 import resources from "../../resource";
+import axios from "axios";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const dropdownRef = useRef();
-  const [showNotifications, setShowNotifications] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const userId = localStorage.getItem("userId"); // assuming you store userId in localStorage
+
+  // Fetch notifications & unread count
+  // ✅ Fetch notifications & unread count
+const fetchNotifications = async () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (!storedUser?._id) return;
+
+    const [countRes, notesRes] = await Promise.all([
+      axios.get(
+        `http://localhost:5000/api/notifications/unreadCount/${storedUser._id}`
+      ),
+      axios.get(`http://localhost:5000/api/notifications/${storedUser._id}`),
+    ]);
+
+    setUnreadCount(countRes.data.count || 0);
+    setNotifications(notesRes.data || []);
+  } catch (err) {
+    console.error("Error fetching notifications:", err);
+  }
+};
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [userId]);
+
+  // ✅ Mark single notification as read
+  // ✅ Mark single notification as read
+  const markNotificationAsRead = async (id) => {
+    try {
+      await axios.put(`http://localhost:5000/api/notifications/${id}/read`);
+      // Update UI immediately without refresh
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ✅ Mark all notifications as read
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      if (!storedUser?._id) return;
+      await axios.put(
+        `http://localhost:5000/api/notifications/user/${storedUser._id}/readall`
+      );
+
+      // Update UI immediately
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogout = () => {
     setIsLoggingOut(true);
     setTimeout(() => {
       localStorage.removeItem("token");
+      localStorage.removeItem("userId");
       navigate("/");
-    }, 600); // Wait for animation
+    }, 600);
   };
 
-  const notifications = [
-    {
-      title: "Medicine Available",
-      message: "Antibiotics for cattle now available at nearby store",
-      time: "2 hours ago",
-      unread: true,
-    },
-    {
-      title: "Consultation Reminder",
-      message: "Dr. Sharma consultation scheduled for 3 PM today",
-      time: "4 hours ago",
-      unread: true,
-    },
-    {
-      title: "Community Update",
-      message: "New medicine donations added to community bank",
-      time: "1 day ago",
-      unread: true,
-    },
-  ];
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowNotifications(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
   const navItems = [
     { name: "Home", href: "/farmer/home" },
     { name: "Search Medicine", href: "/farmer/medicine-search" },
@@ -77,7 +110,11 @@ export default function Header() {
               className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
-            <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
+              <img
+                src={resources.Logo.src}
+                alt="FarmerCare Logo"
+                className="h-8"
+              />
               FarmerCare
             </h1>
           </motion.div>
@@ -115,61 +152,18 @@ export default function Header() {
               <motion.div
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => navigate("/farmer/notifications")}
                 className="relative"
               >
                 <Bell className="h-6 w-6 text-gray-600 cursor-pointer" />
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {notifications.filter((n) => n.unread).length}
-                </span>
-              </motion.div>
-
-              {/* Notification Dropdown */}
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-96 bg-white shadow-lg rounded-md border border-gray-100 z-50"
-                  >
-                    <div className="p-4 border-b">
-                      <h2 className="font-semibold text-lg">Notifications</h2>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.map((note, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-3 hover:bg-gray-50 transition flex items-start space-x-2 border-b"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{note.title}</p>
-                            <p className="text-sm text-gray-600">
-                              {note.message}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {note.time}
-                            </p>
-                          </div>
-                          {note.unread && (
-                            <span className="mt-1 w-2 h-2 bg-blue-500 rounded-full"></span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-3 border-t text-center">
-                      <button
-                        onClick={() => navigate("/farmer/notifications")}
-                        className="text-blue-600 text-sm font-medium hover:underline"
-                      >
-                        View All Notifications
-                      </button>
-                    </div>
-                  </motion.div>
+                {unreadCount > 0 && (
+                  <span className="header-bell-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadCount}
+                  </span>
                 )}
-              </AnimatePresence>
+              </motion.div>
             </div>
+
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -248,24 +242,30 @@ export default function Header() {
             })}
             {/* Icons in mobile view */}
             <div className="flex items-center space-x-4 px-3 py-2">
-              {/* Bell Icon with toggle */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  navigate("/farmer/notifications");
+                  setIsMenuOpen(false);
+                }}
                 className="relative p-1"
               >
                 <Bell className="h-6 w-6 text-gray-600 cursor-pointer" />
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {notifications.filter((n) => n.unread).length}
-                </span>
+                {unreadCount > 0 && (
+                  <span className="header-bell-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
               </motion.button>
 
-              {/* User Icon with navigation */}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/farmer/profile")}
+                onClick={() => {
+                  navigate("/farmer/profile");
+                  setIsMenuOpen(false);
+                }}
                 className="p-1"
               >
                 <User className="h-6 w-6 text-gray-600 cursor-pointer" />

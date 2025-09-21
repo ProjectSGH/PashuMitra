@@ -31,22 +31,60 @@ router.get('/doctors', async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-router.get('/:id', async (req, res) => {
+// GET all users with their profiles
+// Fetch all users (admin panel)
+router.get("/", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const users = await User.find().select("-password");
 
-    if (user.role === 'Farmer') {
+    const usersWithProfiles = await Promise.all(
+      users.map(async (user) => {
+        let profileData = null;
+        let profileKey = null;
+
+        if (user.role === "Farmer") {
+          profileData = await Farmer.findOne({ userId: user._id });
+          profileKey = "farmerProfile";
+        } else if (user.role === "Doctor") {
+          profileData = await Doctor.findOne({ userId: user._id });
+          profileKey = "doctorProfile";
+        } else if (user.role === "MedicalStore") {
+          profileData = await Store.findOne({ userId: user._id });
+          profileKey = "storeProfile";
+        }
+
+        return {
+          ...user.toObject(),
+          id: user._id, // 👈 needed for React-Admin
+          ...(profileKey ? { [profileKey]: profileData } : {}),
+        };
+      })
+    );
+
+    res.json(usersWithProfiles);
+  } catch (err) {
+    console.error("Error in GET /users:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// Fetch single user by ID (user profile)
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.role === "Farmer") {
       const farmerData = await Farmer.findOne({ userId: user._id });
       return res.json({ ...user.toObject(), farmerProfile: farmerData });
     }
 
-    if (user.role === 'Doctor') {
+    if (user.role === "Doctor") {
       const doctorData = await Doctor.findOne({ userId: user._id });
       return res.json({ ...user.toObject(), doctorProfile: doctorData });
     }
 
-    if (user.role === 'MedicalStore') {
+    if (user.role === "MedicalStore") {
       const storeData = await Store.findOne({ userId: user._id });
       return res.json({ ...user.toObject(), storeProfile: storeData });
     }
@@ -54,9 +92,10 @@ router.get('/:id', async (req, res) => {
     res.json(user); // fallback
   } catch (err) {
     console.error("Error in GET /:id:", err);
-    res.status(500).json({ message: 'Server error', error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 // routes/userRoutes.js
 router.put("/:id", async (req, res) => {
   try {

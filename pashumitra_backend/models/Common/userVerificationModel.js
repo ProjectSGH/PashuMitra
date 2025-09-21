@@ -1,21 +1,21 @@
-// models/DoctorVerification.js
+// models/UserVerification.js
 const mongoose = require("mongoose");
 
-const DoctorVerificationSchema = new mongoose.Schema(
+const UserVerificationSchema = new mongoose.Schema(
   {
-    doctorId: {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Doctor_User",
+      ref: "User",
       required: true,
       unique: true,
     },
     licenseNumber: {
       type: String,
-      required: true,
+      required: false, // only enforced for doctors/medical stores
     },
     verificationDocument: {
-      url: String,
-      public_id: String,
+      url: { type: String },
+      public_id: { type: String },
     },
     verificationStatus: {
       type: String,
@@ -30,4 +30,4 @@ const DoctorVerificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("DoctorVerification", DoctorVerificationSchema);
+module.exports = mongoose.model("UserVerification", UserVerificationSchema);
