@@ -18,6 +18,10 @@ import "./services/campaignCron.js";
 import DashboardRoutes from "./routes/Common/DashboardRoutes.js"
 import consultationRoutes from "./routes/Common/ConsultationRoutes.js";
 import Notification from "./routes/Common/NotificationRoutes.js";
+import medicineRoutes from "./routes/MedicalStore/medicineRoutes.js";
+import MedicalscheduleRoutes from "./routes/MedicalStore/scheduleRoutes.js";
+import UserVerificationRoutes from "./routes/Common/userVerificationRoutes.js";
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +44,9 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/dashboard", DashboardRoutes);
 app.use("/api/consultations", consultationRoutes);
 app.use("/api/notifications", Notification);
+app.use("/api/medicineRoutes", medicineRoutes);
+app.use("/api/MedicalscheduleRoutes", MedicalscheduleRoutes);
+
 
 const server = http.createServer(app);
 initSocket(server);
