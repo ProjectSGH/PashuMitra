@@ -22,6 +22,11 @@ import medicineRoutes from "./routes/MedicalStore/medicineRoutes.js";
 import MedicalscheduleRoutes from "./routes/MedicalStore/scheduleRoutes.js";
 import UserVerificationRoutes from "./routes/Common/userVerificationRoutes.js";
 
+// Admin Routes
+import adminUserVerificationRoutes from "./routes/Admin/UserVerification_Admin.js";
+import AdminUserRoute from "./routes/Admin/AdminUserRoute.js";
+import adminNotificationRoutes from "./routes/Admin/NotificationRoute_Admin.js";
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +52,10 @@ app.use("/api/notifications", Notification);
 app.use("/api/medicineRoutes", medicineRoutes);
 app.use("/api/MedicalscheduleRoutes", MedicalscheduleRoutes);
 
+// Admin routes
+app.use("/api/admin/verification", adminUserVerificationRoutes);
+app.use("/api/admin", AdminUserRoute);
+app.use("/api/admin/notifications", adminNotificationRoutes);
 
 const server = http.createServer(app);
 initSocket(server);
