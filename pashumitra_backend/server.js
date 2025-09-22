@@ -26,6 +26,7 @@ import UserVerificationRoutes from "./routes/Common/userVerificationRoutes.js";
 import adminUserVerificationRoutes from "./routes/Admin/UserVerification_Admin.js";
 import AdminUserRoute from "./routes/Admin/AdminUserRoute.js";
 import adminNotificationRoutes from "./routes/Admin/NotificationRoute_Admin.js";
+import adminAuthRoutes from "./routes/Admin/AdminAuth.js";
 
 
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/MedicalscheduleRoutes", MedicalscheduleRoutes);
 app.use("/api/admin/verification", adminUserVerificationRoutes);
 app.use("/api/admin", AdminUserRoute);
 app.use("/api/admin/notifications", adminNotificationRoutes);
+app.use("/api/admin/auth", adminAuthRoutes);
 
 const server = http.createServer(app);
 initSocket(server);

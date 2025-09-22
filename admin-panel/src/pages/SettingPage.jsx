@@ -1,10 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { Settings, User, Shield, Bell, Database, Palette } from "lucide-react"
 import toast from "react-hot-toast"
 
 const SettingsPage = () => {
+  const [newAdminEmail, setNewAdminEmail] = useState("")
+  const [newAdminPassword, setNewAdminPassword] = useState("")
+
   const settingsSections = [
     {
       icon: User,
@@ -40,6 +44,31 @@ const SettingsPage = () => {
 
   const handleSettingAction = (title) => {
     toast.success(`${title} settings opened`)
+  }
+
+  const handleCreateAdmin = async () => {
+    if (!newAdminEmail || !newAdminPassword) {
+      return toast.error("Email and password are required")
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/admin/auth/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newAdminEmail, password: newAdminPassword }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(data.message)
+        setNewAdminEmail("")
+        setNewAdminPassword("")
+      } else {
+        toast.error(data.message)
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Server error")
+    }
   }
 
   return (
@@ -112,6 +141,38 @@ const SettingsPage = () => {
             <Shield className="w-5 h-5 text-gray-600 mb-2" />
             <div className="font-medium text-gray-900">Export Logs</div>
             <div className="text-sm text-gray-600">Download system logs</div>
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Create New Admin */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+      >
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Admin</h2>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="email"
+            placeholder="Admin email"
+            value={newAdminEmail}
+            onChange={(e) => setNewAdminEmail(e.target.value)}
+            className="flex-1 p-2 border border-gray-300 rounded-md"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={newAdminPassword}
+            onChange={(e) => setNewAdminPassword(e.target.value)}
+            className="flex-1 p-2 border border-gray-300 rounded-md"
+          />
+          <button
+            onClick={handleCreateAdmin}
+            className="bg-blue-600 text-white px-4 rounded-md hover:bg-blue-700"
+          >
+            Create
           </button>
         </div>
       </motion.div>

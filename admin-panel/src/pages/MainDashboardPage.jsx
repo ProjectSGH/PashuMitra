@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import resources from "../resource"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import resources from "../resource";
 import {
+  LogOut,
   LayoutDashboard,
   Users,
   Tractor,
@@ -19,35 +20,55 @@ import {
   XCircle,
   ChevronDown,
   ChevronRight,
-} from "lucide-react"
-import toast, { Toaster } from "react-hot-toast"
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import DashboardPage from "./Dashboard";
+import FarmersPage from "./FarmerPage";
+import DoctorsPage from "./DoctorPage";
+import MedicalStoresPage from "./MedicalStorePage";
+import VerificationsPage from "./VerificationPage";
+import NotificationsPage from "./NotificationPage";
+import SettingsPage from "./SettingPage";
 
-import DashboardPage from "./Dashboard"
-import FarmersPage from "./FarmerPage"
-import DoctorsPage from "./DoctorPage"
-import MedicalStoresPage from "./MedicalStorePage"
-import VerificationsPage from "./VerificationPage"
-import NotificationsPage from "./NotificationPage"
-import SettingsPage from "./SettingPage"
+const AdminDashboard = ({onLogout}) => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
+  const [activePage, setActivePage] = useState("Dashboard");
+  const navigate = useNavigate(); // ✅ setup navigate
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // ✅ added
 
-const AdminDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [usersDropdownOpen, setUsersDropdownOpen] = useState(false)
-  const [activePage, setActivePage] = useState("Dashboard")
-
+   const handleLogout = () => {
+    setIsLoggingOut(true)
+    setTimeout(() => {
+      onLogout()
+    }, 300)
+  }
   const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", active: activePage === "Dashboard" },
+    {
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      active: activePage === "Dashboard",
+    },
     { icon: Users, label: "Users", hasSubmenu: true },
-    { icon: Shield, label: "Verifications", active: activePage === "Verifications" },
-    { icon: Bell, label: "Notifications", active: activePage === "Notifications" },
+    {
+      icon: Shield,
+      label: "Verifications",
+      active: activePage === "Verifications",
+    },
+    {
+      icon: Bell,
+      label: "Notifications",
+      active: activePage === "Notifications",
+    },
     { icon: Settings, label: "Settings", active: activePage === "Settings" },
-  ]
+  ];
 
   const usersDropdownItems = [
     { icon: Tractor, label: "Veterinary Farmer", page: "Farmers" },
     { icon: Stethoscope, label: "Veterinary Doctor", page: "Doctors" },
     { icon: Store, label: "Medical Store", page: "Medical Stores" },
-  ]
+  ];
 
   const statsCards = [
     {
@@ -86,7 +107,7 @@ const AdminDashboard = () => {
       icon: Clock,
       color: "orange",
     },
-  ]
+  ];
 
   const verifications = [
     {
@@ -116,32 +137,32 @@ const AdminDashboard = () => {
       status: "Rejected",
       statusColor: "red",
     },
-  ]
+  ];
 
   const handleNavigation = (page) => {
-    setActivePage(page)
-    toast.success(`Navigated to ${page}`)
-  }
+    setActivePage(page);
+    toast.success(`Navigated to ${page}`);
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
       case "Pending":
-        return <Clock className="w-4 h-4" />
+        return <Clock className="w-4 h-4" />;
       case "Approved":
-        return <CheckCircle className="w-4 h-4" />
+        return <CheckCircle className="w-4 h-4" />;
       case "Rejected":
-        return <XCircle className="w-4 h-4" />
+        return <XCircle className="w-4 h-4" />;
       default:
-        return <Clock className="w-4 h-4" />
+        return <Clock className="w-4 h-4" />;
     }
-  }
+  };
 
   const getStatusBadge = (status, color) => {
     const colorClasses = {
       orange: "bg-orange-100 text-orange-800 border-orange-200",
       green: "bg-green-100 text-green-800 border-green-200",
       red: "bg-red-100 text-red-800 border-red-200",
-    }
+    };
 
     return (
       <span
@@ -150,29 +171,29 @@ const AdminDashboard = () => {
         {getStatusIcon(status)}
         {status}
       </span>
-    )
-  }
+    );
+  };
 
   const renderActivePage = () => {
     switch (activePage) {
       case "Dashboard":
-        return <DashboardPage />
+        return <DashboardPage />;
       case "Farmers":
-        return <FarmersPage />
+        return <FarmersPage />;
       case "Doctors":
-        return <DoctorsPage />
+        return <DoctorsPage />;
       case "Medical Stores":
-        return <MedicalStoresPage />
+        return <MedicalStoresPage />;
       case "Verifications":
-        return <VerificationsPage />
+        return <VerificationsPage />;
       case "Notifications":
-        return <NotificationsPage />
+        return <NotificationsPage />;
       case "Settings":
-        return <SettingsPage />
+        return <SettingsPage />;
       default:
-        return <DashboardPage />
+        return <DashboardPage />;
     }
-  }
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -192,7 +213,11 @@ const AdminDashboard = () => {
               {/* Sidebar Header */}
               <div className="flex items-center gap-3 p-6 border-b border-gray-200">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center">
-                    <img src={resources.Logo.src} alt="Logo" className="w-auto h-auto" />
+                  <img
+                    src={resources.Logo.src}
+                    alt="Logo"
+                    className="w-auto h-auto"
+                  />
                 </div>
                 <div>
                   <h2 className="font-semibold text-gray-900">PashuMitra</h2>
@@ -204,15 +229,23 @@ const AdminDashboard = () => {
               <nav className="flex-1 p-4">
                 <ul className="space-y-2">
                   {sidebarItems.map((item, index) => (
-                    <motion.li key={index} whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
+                    <motion.li
+                      key={index}
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       {item.hasSubmenu ? (
                         <div>
                           <button
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50"
-                            onClick={() => setUsersDropdownOpen(!usersDropdownOpen)}
+                            onClick={() =>
+                              setUsersDropdownOpen(!usersDropdownOpen)
+                            }
                           >
                             <item.icon className="w-5 h-5" />
-                            <span className="font-medium flex-1">{item.label}</span>
+                            <span className="font-medium flex-1">
+                              {item.label}
+                            </span>
                             {usersDropdownOpen ? (
                               <ChevronDown className="w-4 h-4" />
                             ) : (
@@ -230,26 +263,35 @@ const AdminDashboard = () => {
                                 className="overflow-hidden"
                               >
                                 <ul className="mt-2 space-y-1">
-                                  {usersDropdownItems.map((dropdownItem, dropdownIndex) => (
-                                    <motion.li
-                                      key={dropdownIndex}
-                                      initial={{ opacity: 0, x: -10 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      transition={{ duration: 0.2, delay: dropdownIndex * 0.05 }}
-                                    >
-                                      <button
-                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors pl-8 ${
-                                          activePage === dropdownItem.page
-                                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                            : "text-gray-600 hover:bg-gray-50"
-                                        }`}
-                                        onClick={() => handleNavigation(dropdownItem.page)}
+                                  {usersDropdownItems.map(
+                                    (dropdownItem, dropdownIndex) => (
+                                      <motion.li
+                                        key={dropdownIndex}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{
+                                          duration: 0.2,
+                                          delay: dropdownIndex * 0.05,
+                                        }}
                                       >
-                                        <dropdownItem.icon className="w-4 h-4" />
-                                        <span className="text-sm font-medium">{dropdownItem.label}</span>
-                                      </button>
-                                    </motion.li>
-                                  ))}
+                                        <button
+                                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors pl-8 ${
+                                            activePage === dropdownItem.page
+                                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                              : "text-gray-600 hover:bg-gray-50"
+                                          }`}
+                                          onClick={() =>
+                                            handleNavigation(dropdownItem.page)
+                                          }
+                                        >
+                                          <dropdownItem.icon className="w-4 h-4" />
+                                          <span className="text-sm font-medium">
+                                            {dropdownItem.label}
+                                          </span>
+                                        </button>
+                                      </motion.li>
+                                    )
+                                  )}
                                 </ul>
                               </motion.div>
                             )}
@@ -292,7 +334,11 @@ const AdminDashboard = () => {
 
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                    <img src={resources.Logo.src} alt="Logo" className="w-auto h-auto" />
+                  <img
+                    src={resources.Logo.src}
+                    alt="Logo"
+                    className="w-auto h-auto"
+                  />
                 </div>
                 <span className="font-semibold text-gray-900">PashuMitra</span>
               </div>
@@ -314,10 +360,13 @@ const AdminDashboard = () => {
                   3
                 </span>
               </button> */}
-
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                    <img src={resources.Logo.src} alt="Logo" className="w-auto h-auto" />
-              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100 mt-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
             </div>
           </div>
         </header>
@@ -337,7 +386,7 @@ const AdminDashboard = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default AdminDashboard
+export default AdminDashboard;
