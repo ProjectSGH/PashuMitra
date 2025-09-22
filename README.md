@@ -79,6 +79,16 @@
    <p>
       This project is part of our college initiative and is intended for academic and educational use.
    </p>
+
+<h2>👥 Meet Our Team</h2>
+<p>U.V.Patel College of Engineerng, Ganpat University - Batch 2023-26</p>
+
+<ul>
+  <li><code><b>Dhruv Shere</b></code> - sheredhruv@gmail.com</li>
+  <li><code><b>Jeet Jani</b></code> - janijeet38@gmail.com</li>
+  <li><code><b>Herin Patel</b></code> - herin7151@gmail.com</li>
+</ul>
+
     
    <p><h3>Created with ❤️ by Team-26 | <a href="https://github.com/ProjectSGH/PashuMitra">GitHub Repo</a></h3></p>
 
