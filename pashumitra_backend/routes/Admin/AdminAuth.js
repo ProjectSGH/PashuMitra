@@ -1,41 +1,39 @@
+// routes/adminAuth.js
 const express = require("express");
 const router = express.Router();
+const Admin = require("../../models/Common/Admin");
 
-// Hardcoded admin credentials (you can keep multiple admins here)
-let admins = [
-  { email: "admin@pashumitra.com", password: "admin123" },
-  { email: "superadmin@pashumitra.com", password: "super123" },
-];
+// ✅ Create admin
+router.post("/create", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ success: false, message: "Email and password required" });
 
-router.post("/create", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ success: false, message: "Email and password are required" });
+    const exists = await Admin.findOne({ email });
+    if (exists) return res.status(409).json({ success: false, message: "Admin already exists" });
 
-  const exists = admins.find(a => a.email === email);
-  if (exists) return res.status(409).json({ success: false, message: "Admin already exists" });
-
-  admins.push({ email, password });
-  res.json({ success: true, message: "New admin created successfully" });
+    const newAdmin = new Admin({ email, password });
+    await newAdmin.save();
+    res.json({ success: true, message: "New admin created successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
-// ✅ Login Route
-router.post("/login", (req, res) => {
-  const { email, password } = req.body;
+// ✅ List all admins
+router.get("/list", async (req, res) => {
+  const admins = await Admin.find({}, "email");
+  res.json({ success: true, admins });
+});
 
-  const admin = admins.find((a) => a.email === email && a.password === password);
+// ✅ Remove admin
+router.delete("/remove", async (req, res) => {
+  const { email } = req.body;
+  const deleted = await Admin.findOneAndDelete({ email });
+  if (!deleted) return res.status(404).json({ success: false, message: "Admin not found" });
 
-  if (!admin) {
-    return res.status(401).json({ success: false, message: "Invalid email or password" });
-  }
-
-  // simple session token (for demo only)
-  const token = Buffer.from(`${email}:${Date.now()}`).toString("base64");
-
-  res.json({
-    success: true,
-    message: "Login successful",
-    token, // frontend can store in localStorage
-  });
+  res.json({ success: true, message: "Admin removed successfully" });
 });
 
 module.exports = router;
