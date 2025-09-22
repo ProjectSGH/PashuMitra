@@ -84,9 +84,9 @@
 <p>U.V.Patel College of Engineerng, Ganpat University - Batch 2023-26</p>
 
 <ul>
-  <li><code><b>Dhruv Shere</b></code></li>
-  <li><code><b>Jeet Jani</b></code></li>
-  <li><code><b>Herin Patel</b></code></li>
+  <li><code><b>Dhruv Shere</b></code> - sheredhruv@gmail.com</li>
+  <li><code><b>Jeet Jani</b></code> - janijeet38@gmail.com</li>
+  <li><code><b>Herin Patel</b></code> - herin7151@gmail.com</li>
 </ul>
 
     
