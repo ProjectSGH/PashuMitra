@@ -1,4 +1,4 @@
-import Logo from './assets/Logo_New_3.png';
+import Logo from './assets/Final Logo PashuMitra.png';
 import About from './assets/About.png';
 import ContactHero from './assets/Contact Us.png';
 import FarmerLogo from './assets/FarmerLogo.jpg'
