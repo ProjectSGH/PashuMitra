@@ -1,4 +1,4 @@
-import Logo from './assets/Logo_New_3.png';
+import Logo from './assets/Final Logo PashuMitra.png';
 import illustration from './assets/imgi_194_computer-technician-trending-concept-flat-illustration_720185-1878.jpg';
 
 const resources = {
