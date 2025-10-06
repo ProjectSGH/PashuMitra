@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { Edit, Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Store } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function StoreProfileSettings() {
@@ -15,25 +15,16 @@ export default function StoreProfileSettings() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ Fetch store profile
-        const res = await axios.get(
-          `http://localhost:5000/api/users/${user._id}`
-        );
+        const res = await axios.get(`http://localhost:5000/api/users/${user._id}`);
         setStoreData(res.data?.storeProfile || null);
 
-        // ✅ Fetch schedule
         let scheduleData;
         try {
-          const scheduleRes = await axios.get(
-            `http://localhost:5000/api/schedules/${user._id}`
-          );
+          const scheduleRes = await axios.get(`http://localhost:5000/api/schedules/${user._id}`);
           scheduleData = scheduleRes.data;
         } catch (err) {
           if (err.response?.status === 404) {
-            console.warn("No existing schedule found, using fallback.");
             scheduleData = null;
-          } else {
-            console.error("Error fetching schedule:", err);
           }
         }
 
@@ -56,9 +47,7 @@ export default function StoreProfileSettings() {
       }
     };
 
-    if (user && user._id) {
-      fetchData();
-    }
+    if (user && user._id) fetchData();
   }, [user._id]);
 
   const handleScheduleChange = (day, field, value) => {
@@ -70,202 +59,141 @@ export default function StoreProfileSettings() {
 
   const handleUpdateSchedule = async () => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/schedules/${user._id}`,
-        schedule
-      );
-      toast.success("Business hours updated!", {
-        style: { background: "#059669", color: "#fff" },
-      });
+      await axios.put(`http://localhost:5000/api/schedules/${user._id}`, schedule);
+      toast.success("Business hours updated!");
     } catch (err) {
-      console.error("Error updating schedule", err);
       toast.error("Failed to update schedule.");
     }
   };
 
   if (loading || !storeData || !schedule) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px] py-24">
-        <p className="text-gray-500">Loading store profile...</p>
-      </div>
-    );
+    return <div className="p-10 text-center text-gray-600">Loading store profile...</div>;
   }
 
-  // ✅ Only allow weekdays (ignore _id, userId, __v, etc.)
-  const validDays = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
+  const validDays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, staggerChildren: 0.1 } },
+  };
+
+  const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="max-w-7xl mx-auto"
+      >
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl font-semibold text-gray-900 mb-4 sm:mb-0"
-          >
+        <motion.div variants={itemVariants} className="mb-8 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             Store Profile & Settings
-          </motion.h1>
-        </div>
+          </h1>
+          <p className="text-gray-600">Manage store details and operating hours</p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {/* Store Info */}
-          <div className="lg:col-span-3 space-y-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-            >
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Store Information
-              </h2>
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Store className="text-gray-700 w-5 h-5" />
+              <h2 className="text-xl font-semibold text-gray-900">Store Information</h2>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Store Name
-                  </label>
-                  <p className="text-gray-900 font-medium">
-                    {storeData.storeName}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Owner Name
-                  </label>
-                  <p className="text-gray-900 font-medium">
-                    {storeData.ownerName}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <div className="flex items-center gap-2 text-gray-900">
-                    <Mail size={16} className="text-gray-500" />
-                    <span>{user.email}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone
-                  </label>
-                  <div className="flex items-center gap-2 text-gray-900">
-                    <Phone size={16} className="text-gray-500" />
-                    <span>{user.phone}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <div className="flex items-start gap-2 text-gray-900">
-                    <MapPin size={16} className="text-gray-500 mt-0.5" />
-                    <span>{storeData.address}</span>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Store Name</label>
+                <p className="font-medium text-gray-900">{storeData.storeName}</p>
               </div>
-            </motion.div>
-          </div>
-
-          {/* Sidebar - Business Hours */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <Clock size={20} className="text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Business Hours
-                </h3>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Owner Name</label>
+                <p className="font-medium text-gray-900">{storeData.ownerName}</p>
               </div>
+              <div className="flex items-center gap-2 text-gray-900">
+                <Mail className="text-gray-500 w-4 h-4" />
+                <span>{user.email}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-900">
+                <Phone className="text-gray-500 w-4 h-4" />
+                <span>{user.phone}</span>
+              </div>
+              <div className="flex items-start gap-2 text-gray-900">
+                <MapPin className="text-gray-500 w-4 h-4 mt-0.5" />
+                <span>{storeData.address}</span>
+              </div>
+            </div>
+          </motion.div>
 
-              <div className="space-y-3">
-                {validDays.map((day) => {
-                  const data = schedule[day];
-                  return (
-                    <div
-                      key={day}
-                      className="flex flex-col border p-2 rounded-md mb-2"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">{day}</span>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={data?.available || false}
-                            onChange={(e) =>
-                              handleScheduleChange(
-                                day,
-                                "available",
-                                e.target.checked
-                              )
-                            }
-                          />
-                          Available
-                        </label>
-                      </div>
-                      {data?.available && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <input
-                            type="time"
-                            value={data.startTime}
-                            onChange={(e) =>
-                              handleScheduleChange(
-                                day,
-                                "startTime",
-                                e.target.value
-                              )
-                            }
-                            className="border px-2 py-1 rounded"
-                          />
-                          to
-                          <input
-                            type="time"
-                            value={data.endTime}
-                            onChange={(e) =>
-                              handleScheduleChange(
-                                day,
-                                "endTime",
-                                e.target.value
-                              )
-                            }
-                            className="border px-2 py-1 rounded"
-                          />
-                        </div>
-                      )}
+          {/* Business Hours */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Clock className="text-gray-700 w-5 h-5" />
+              <h2 className="text-xl font-semibold text-gray-900">Business Hours</h2>
+            </div>
+
+            <div className="space-y-3">
+              {validDays.map((day) => {
+                const data = schedule[day];
+                return (
+                  <motion.div
+                    key={day}
+                    variants={itemVariants}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border border-gray-200 rounded-md"
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
+                      <span className="font-medium text-gray-900 w-24">{day}</span>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={data?.available || false}
+                          onChange={(e) => handleScheduleChange(day, "available", e.target.checked)}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <span className="text-sm text-green-600 font-medium">Available</span>
+                      </label>
                     </div>
-                  );
-                })}
-              </div>
+                    {data?.available && (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
+                        <input
+                          type="time"
+                          value={data.startTime}
+                          onChange={(e) => handleScheduleChange(day, "startTime", e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <span className="text-gray-500">to</span>
+                        <input
+                          type="time"
+                          value={data.endTime}
+                          onChange={(e) => handleScheduleChange(day, "endTime", e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
 
-              <button
-                onClick={handleUpdateSchedule}
-                className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-              >
-                Update Business Hours
-              </button>
-            </motion.div>
-          </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleUpdateSchedule}
+              className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200"
+            >
+              Update Business Hours
+            </motion.button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

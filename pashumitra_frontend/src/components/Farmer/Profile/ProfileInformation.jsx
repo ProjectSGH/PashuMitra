@@ -101,68 +101,81 @@ const ProfileInformation = ({ userData, onUserUpdate }) => {
       </div>
 
       {/* Verification Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md mt-8 w-full max-w-lg mx-auto">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4 flex flex-wrap items-center gap-2">
-          {userData.role} Verification
-          {isVerified && (
-            <span className="text-green-600 text-sm font-semibold bg-green-100 px-2 py-1 rounded-full flex items-center gap-1">
-              ✅ Verified
-            </span>
-          )}
-        </h3>
+<div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm mt-8 w-full max-w-lg mx-auto">
+  <h3 className="text-xl font-bold text-gray-900 mb-6 flex flex-wrap items-center gap-3">
+    {userData.role} Verification
+    {isVerified && (
+      <span className="text-green-700 text-xs font-semibold bg-green-50 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-green-200">
+        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+        Verified
+      </span>
+    )}
+  </h3>
 
-        {verificationStatus === "not_submitted" ||
-        verificationStatus === "rejected" ? (
-          <form className="space-y-4" onSubmit={handleVerificationUpload}>
-            <label className="block w-full">
-              <span className="text-gray-700 text-sm mb-1 block">Upload Document</span>
-              <div className="flex items-center justify-between border border-gray-300 rounded-md px-4 py-2 cursor-pointer hover:border-blue-500 transition">
-                <span className="text-gray-600 text-sm truncate">
-                  {file?.name || "Choose an image or PDF..."}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  className="hidden"
-                  onChange={(e) => setFile(e.target.files[0])}
-                />
-              </div>
-            </label>
-
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 font-medium"
-            >
-              {isUploading ? (
-                <>
-                  <img
-                    src={resources.CustomLoader.src}
-                    alt="Loading"
-                    className="w-5 h-5 animate-spin"
-                  />
-                  Uploading...
-                </>
-              ) : (
-                "Submit for Verification"
-              )}
-            </button>
-          </form>
-        ) : (
-          <div className="text-sm text-gray-700 space-y-2">
-            {verificationStatus === "pending" && (
-              <p className="text-yellow-600 font-medium">
-                📄 Your verification document has been submitted. It is currently under review by our team. You’ll be notified once verified.
-              </p>
-            )}
-            {verificationStatus === "approved" && (
-              <p className="text-green-600 text-base font-semibold flex items-center gap-1">
-                ✅ You are verified.
-              </p>
-            )}
+  {verificationStatus === "not_submitted" || verificationStatus === "rejected" ? (
+    <form className="space-y-5" onSubmit={handleVerificationUpload}>
+      <label className="block w-full cursor-pointer">
+        <span className="text-gray-800 text-sm font-medium mb-2 block">Upload Document</span>
+        <div className="flex items-center justify-between border-2 border-dashed border-gray-200 rounded-lg px-4 py-3 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 bg-gray-50">
+          <span className={`text-sm truncate max-w-[70%] ${file?.name ? "text-gray-900 font-medium" : "text-gray-500"}`}>
+            {file?.name || "Choose an image or PDF..."}
+          </span>
+          <div className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Browse
           </div>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+        </div>
+      </label>
+
+      <button
+        type="submit"
+        disabled={isUploading}
+        className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 font-semibold shadow-sm hover:shadow-md"
+      >
+        {isUploading ? (
+          <>
+            <img
+              src={resources.CustomLoader.src}
+              alt="Loading"
+              className="w-5 h-5 animate-spin"
+            />
+            Uploading...
+          </>
+        ) : (
+          "Submit for Verification"
         )}
-      </div>
+      </button>
+    </form>
+  ) : (
+    <div className="text-sm space-y-3">
+      {verificationStatus === "pending" && (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="w-5 h-5 text-amber-600 mt-0.5">📄</div>
+          <div>
+            <p className="text-amber-800 font-medium">Verification Under Review</p>
+            <p className="text-amber-700 mt-1">Your document has been submitted and is currently being reviewed by our team.</p>
+          </div>
+        </div>
+      )}
+      {verificationStatus === "approved" && (
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-xs">✓</span>
+          </div>
+          <div>
+            <p className="text-green-800 font-semibold">Verification Successful</p>
+            <p className="text-green-700 text-sm mt-0.5">Your account has been verified.</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+</div>
     </>
   );
 };

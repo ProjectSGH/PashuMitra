@@ -457,46 +457,99 @@ export default function ProfileSchedule() {
         {/* Doctor Verification */}
         <motion.div
           variants={itemVariants}
-          className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mt-8 max-w-lg mx-auto"
+          className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 sm:p-8 mt-8 max-w-lg mx-auto"
         >
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             Doctor Verification
           </h3>
 
           {["not_submitted", "rejected", ""].includes(
             profile.verificationStatus
           ) ? (
-            <form onSubmit={handleVerificationUpload} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Enter License Number"
-                value={license}
-                onChange={(e) => setLicense(e.target.value)}
-                className="w-full p-2 border rounded text-sm sm:text-base"
-                required
-              />
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                className="w-full p-2 border rounded text-sm sm:text-base"
-                onChange={(e) => setFile(e.target.files[0])}
-                required
-              />
+            <form onSubmit={handleVerificationUpload} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-gray-800 text-sm font-medium block">
+                  License Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your medical license number"
+                  value={license}
+                  onChange={(e) => setLicense(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base bg-white"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-gray-800 text-sm font-medium block">
+                  Upload License Document
+                </label>
+                <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 bg-gray-50">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="w-full text-sm sm:text-base file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    required
+                  />
+                  <p className="text-gray-500 text-xs mt-2">
+                    Supported formats: JPG, PNG, PDF (Max 5MB)
+                  </p>
+                </div>
+              </div>
+
               <button
                 type="submit"
-                className="w-full flex justify-center items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm sm:text-base"
+                className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3.5 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 font-semibold text-sm sm:text-base shadow-sm hover:shadow-md"
                 disabled={isUploading}
               >
-                {isUploading ? "Uploading..." : "Submit for Verification"}
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  "Submit for Verification"
+                )}
               </button>
             </form>
           ) : (
-            <p className="text-gray-700 text-sm sm:text-base">
-              {profile.verificationStatus === "pending" &&
-                "📄 Document uploaded. Awaiting admin review."}
-              {profile.verificationStatus === "approved" &&
-                "✅ You are verified."}
-            </p>
+            <div className="space-y-3">
+              {profile.verificationStatus === "pending" && (
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0">
+                    📄
+                  </div>
+                  <div>
+                    <p className="text-amber-800 font-medium">
+                      Verification Under Review
+                    </p>
+                    <p className="text-amber-700 text-sm mt-1">
+                      Your license document has been submitted and is currently
+                      being reviewed by our team. You'll be notified once
+                      verified.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {profile.verificationStatus === "approved" && (
+                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">✓</span>
+                  </div>
+                  <div>
+                    <p className="text-green-800 font-semibold">
+                      Verification Successful
+                    </p>
+                    <p className="text-green-700 text-sm">
+                      Your medical license has been verified.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </motion.div>
       </motion.div>
