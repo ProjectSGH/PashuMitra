@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Search, ChevronDown } from "lucide-react"
 
@@ -8,42 +8,21 @@ export default function MedicineSearch() {
   const [searchTerm, setSearchTerm] = useState("")
   const [searchBy, setSearchBy] = useState("Medicine Name")
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [medicines, setMedicines] = useState([])
 
-  const medicines = [
-    {
-      id: 1,
-      name: "Amoxicillin Injectable",
-      type: "Antibiotic",
-      dosage: "150mg/ml",
-      price: "₹245",
-      description: "Broad-spectrum antibiotic for bacterial infections in cattle",
-      stock: "In Stock",
-      stockColor: "bg-green-100 text-green-800",
-      availableAt: ["VetCare Pharmacy", "Animal Health Store"],
-    },
-    {
-      id: 2,
-      name: "Ivermectin Pour-On",
-      type: "Antiparasitic",
-      dosage: "500ml",
-      price: "₹380",
-      description: "Effective treatment for internal and external parasites",
-      stock: "Limited Stock",
-      stockColor: "bg-yellow-100 text-yellow-800",
-      availableAt: ["Rural Vet Supplies"],
-    },
-    {
-      id: 3,
-      name: "Calcium Gluconate",
-      type: "Supplement",
-      dosage: "100ml",
-      price: "₹120",
-      description: "Calcium supplement for milk fever prevention",
-      stock: "In Stock",
-      stockColor: "bg-green-100 text-green-800",
-      availableAt: ["VetCare Pharmacy", "Farm Health Center"],
-    },
-  ]
+  // Fetch medicines from backend
+  useEffect(() => {
+    const fetchMedicines = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/medicineRoutes") // adjust baseURL if different
+        const data = await res.json()
+        setMedicines(data)
+      } catch (err) {
+        console.error("Error fetching medicines:", err)
+      }
+    }
+    fetchMedicines()
+  }, [])
 
   const searchOptions = ["Medicine Name", "Condition", "Type"]
 
@@ -79,6 +58,12 @@ export default function MedicineSearch() {
       transition: { duration: 0.2 },
     },
   }
+
+  // Search filter
+  const filteredMedicines = medicines.filter((medicine) => {
+    if (!searchTerm) return true
+    return medicine.name.toLowerCase().includes(searchTerm.toLowerCase())
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -152,9 +137,9 @@ export default function MedicineSearch() {
 
         {/* Medicine Cards */}
         <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {medicines.map((medicine, index) => (
+          {filteredMedicines.map((medicine, index) => (
             <motion.div
-              key={medicine.id}
+              key={medicine._id}
               variants={cardVariants}
               whileHover="hover"
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
@@ -162,44 +147,37 @@ export default function MedicineSearch() {
               {/* Header with stock status */}
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex-1">{medicine.name}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ml-2 ${medicine.stockColor}`}>
-                  {medicine.stock}
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ml-2 ${
+                    medicine.status === "In Stock"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {medicine.status}
                 </span>
               </div>
 
               {/* Medicine details */}
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-600">Type:</span>
-                  <span className="text-sm text-gray-900">{medicine.type}</span>
+                  <span className="text-sm font-medium text-gray-600">Category:</span>
+                  <span className="text-sm text-gray-900">{medicine.category}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-600">Dosage:</span>
-                  <span className="text-sm text-gray-900">{medicine.dosage}</span>
+                  <span className="text-sm font-medium text-gray-600">Quantity:</span>
+                  <span className="text-sm text-gray-900">{medicine.quantity}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-600">Price:</span>
-                  <span className="text-sm font-semibold text-gray-900">{medicine.price}</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{medicine.price}</span>
                 </div>
               </div>
 
-              {/* Description */}
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">{medicine.description}</p>
-
-              {/* Available at */}
-              <div className="mb-6">
-                <p className="text-sm font-medium text-gray-600 mb-2">Available at:</p>
-                <div className="flex flex-wrap gap-2">
-                  {medicine.availableAt.map((location, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full border border-blue-200"
-                    >
-                      {location}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {/* Supplier */}
+              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                Supplier: {medicine.supplier || "Not specified"}
+              </p>
 
               {/* Action buttons */}
               <div className="flex gap-3">
