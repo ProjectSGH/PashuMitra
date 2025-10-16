@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -14,8 +14,25 @@ export default function StoreProfileSchedule() {
   const [file, setFile] = useState(null);
   const [license, setLicense] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const pollingRef = useRef(null);
+
+  // Function to fetch verification status only
+  const fetchVerificationStatus = async () => {
+    try {
+      const verificationRes = await axios.get(
+        `http://localhost:5000/api/verification/status/${user._id}?role=Store`
+      );
+      const verificationStatus = verificationRes.data.verificationStatus || "not_submitted";
+      
+      return verificationStatus;
+    } catch (error) {
+      console.warn("Error fetching verification status:", error);
+      return "not_submitted";
+    }
+  };
 
   const fetchProfileAndSchedule = async () => {
     try {
@@ -24,17 +41,8 @@ export default function StoreProfileSchedule() {
       );
       const userData = userRes.data;
 
-      // ✅ Fetch store verification status
-      let verificationStatus = "not_submitted";
-      try {
-        const verificationRes = await axios.get(
-          `http://localhost:5000/api/verification/status/${user._id}?role=Store`
-        );
-        verificationStatus =
-          verificationRes.data.verificationStatus || "pending";
-      } catch {
-        console.warn("Verification status not found, defaulting to not_submitted");
-      }
+      // Fetch initial verification status
+      const verificationStatus = await fetchVerificationStatus();
 
       setProfile({
         storeName: userData.storeProfile?.storeName || "",
@@ -79,9 +87,73 @@ export default function StoreProfileSchedule() {
     }
   };
 
+  // Start polling for verification status updates
+  const startPolling = () => {
+    if (pollingRef.current) return; // Already polling
+    
+    console.log("Starting verification status polling...");
+    pollingRef.current = setInterval(async () => {
+      try {
+        const currentStatus = await fetchVerificationStatus();
+        
+        // Update profile if status changed
+        setProfile(prev => {
+          if (prev && prev.verificationStatus !== currentStatus) {
+            console.log("Verification status updated:", currentStatus);
+            
+            // Show toast notification for status changes
+            if (currentStatus === "approved") {
+              toast.success("Your store has been verified! 🎉");
+            } else if (currentStatus === "rejected") {
+              toast.error("Verification rejected. Please check your documents.");
+            }
+            
+            return { ...prev, verificationStatus: currentStatus };
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.warn("Polling error:", error);
+      }
+    }, 5000); // Check every 5 seconds
+  };
+
+  // Stop polling
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      console.log("Stopping verification status polling...");
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+      setIsPolling(false);
+    }
+  };
+
+  // Manage polling based on verification status
+  useEffect(() => {
+    if (!profile?.verificationStatus) return;
+
+    // Start polling when verification is pending
+    if (profile.verificationStatus === 'pending' && !isPolling) {
+      setIsPolling(true);
+      startPolling();
+    } 
+    // Stop polling when verification is completed (approved or rejected)
+    else if ((profile.verificationStatus === 'approved' || profile.verificationStatus === 'rejected') && isPolling) {
+      stopPolling();
+    }
+  }, [profile?.verificationStatus, isPolling]);
+
+  // Initial data fetch
   useEffect(() => {
     fetchProfileAndSchedule();
   }, [user._id]);
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, []);
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -151,15 +223,18 @@ export default function StoreProfileSchedule() {
 
       toast.success("Store license uploaded successfully!");
 
-      // Refresh verification status
-      const verificationRes = await axios.get(
-        `http://localhost:5000/api/verification/status/${user._id}?role=Store`
-      );
+      // Immediately update verification status after upload
+      const newStatus = await fetchVerificationStatus();
       setProfile((prev) => ({
         ...prev,
-        verificationStatus:
-          verificationRes.data.verificationStatus || "pending",
+        verificationStatus: newStatus,
       }));
+
+      // Auto-start polling since status should now be "pending"
+      if (newStatus === "pending" && !isPolling) {
+        setIsPolling(true);
+        startPolling();
+      }
 
       setFile(null);
       setLicense("");
@@ -168,6 +243,20 @@ export default function StoreProfileSchedule() {
       toast.error("Upload failed. Try again later.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // Manual refresh function (optional - you can add a refresh button)
+  const handleManualRefresh = async () => {
+    try {
+      const newStatus = await fetchVerificationStatus();
+      setProfile((prev) => ({
+        ...prev,
+        verificationStatus: newStatus,
+      }));
+      toast.success("Status refreshed!");
+    } catch (error) {
+      toast.error("Failed to refresh status");
     }
   };
 
@@ -202,12 +291,30 @@ export default function StoreProfileSchedule() {
           variants={itemVariants}
           className="mb-8 text-center sm:text-left"
         >
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Store Profile & Schedule
-          </h1>
-          <p className="text-gray-600">
-            Manage your store information and business hours
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                Store Profile & Schedule
+              </h1>
+              <p className="text-gray-600">
+                Manage your store information and business hours
+              </p>
+            </div>
+            {/* Optional: Manual refresh button */}
+            <button
+              onClick={handleManualRefresh}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors"
+            >
+              Refresh Status
+            </button>
+          </div>
+          {/* Polling indicator */}
+          {isPolling && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              Auto-checking verification status...
+            </div>
+          )}
         </motion.div>
 
         {/* License Upload Section */}
@@ -243,7 +350,19 @@ export default function StoreProfileSchedule() {
                 </p>
                 <p className="text-amber-700 text-sm mt-1">
                   Your store license has been submitted. Please wait for admin
-                  approval.
+                  approval. {isPolling && "(Auto-checking for updates...)"}
+                </p>
+              </div>
+            </div>
+          ) : profile.verificationStatus === "rejected" ? (
+            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="text-red-600 mt-1">❌</div>
+              <div>
+                <p className="text-red-800 font-medium">
+                  Verification Rejected
+                </p>
+                <p className="text-red-700 text-sm mt-1">
+                  Your store license was rejected. Please upload correct documents and try again.
                 </p>
               </div>
             </div>
@@ -393,89 +512,87 @@ export default function StoreProfileSchedule() {
           </motion.div>
 
           {/* Weekly Schedule */}
-<motion.div
-  variants={itemVariants}
-  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
->
-  <div className="flex items-center gap-2 mb-6">
-    <Calendar className="w-5 h-5 text-gray-700" />
-    <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
-  </div>
-
-  <div className="space-y-3">
-    {Object.entries(schedule)
-      // ✅ filter out unwanted fields
-      .filter(
-        ([day]) =>
-          !["_id", "userId", "__v"].includes(day) &&
-          [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-          ].includes(day)
-      )
-      .map(([day, data]) => (
-        <motion.div
-          key={day}
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border border-gray-200 rounded-md"
-        >
-          <div className="flex items-center gap-3 flex-1">
-            <span className="font-medium text-gray-900 w-24">{day}</span>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={data.available}
-                onChange={(e) =>
-                  handleScheduleChange(day, "available", e.target.checked)
-                }
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-blue-600 font-medium">Open</span>
-            </label>
-          </div>
-
-          {data.available && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-gray-500" />
-              <input
-                type="time"
-                value={data.startTime}
-                onChange={(e) =>
-                  handleScheduleChange(day, "startTime", e.target.value)
-                }
-                className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="text-gray-500">to</span>
-              <Clock className="w-4 h-4 text-gray-500" />
-              <input
-                type="time"
-                value={data.endTime}
-                onChange={(e) =>
-                  handleScheduleChange(day, "endTime", e.target.value)
-                }
-                className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-              />
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Calendar className="w-5 h-5 text-gray-700" />
+              <h2 className="text-xl font-semibold text-gray-900">Weekly Schedule</h2>
             </div>
-          )}
-        </motion.div>
-      ))}
-  </div>
 
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={handleUpdateSchedule}
-    className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200 text-sm sm:text-base"
-  >
-    Update Business Hours
-  </motion.button>
-</motion.div>
+            <div className="space-y-3">
+              {Object.entries(schedule)
+                .filter(
+                  ([day]) =>
+                    !["_id", "userId", "__v"].includes(day) &&
+                    [
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday",
+                      "Sunday",
+                    ].includes(day)
+                )
+                .map(([day, data]) => (
+                  <motion.div
+                    key={day}
+                    variants={itemVariants}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border border-gray-200 rounded-md"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="font-medium text-gray-900 w-24">{day}</span>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={data.available}
+                          onChange={(e) =>
+                            handleScheduleChange(day, "available", e.target.checked)
+                          }
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-blue-600 font-medium">Open</span>
+                      </label>
+                    </div>
 
+                    {data.available && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <input
+                          type="time"
+                          value={data.startTime}
+                          onChange={(e) =>
+                            handleScheduleChange(day, "startTime", e.target.value)
+                          }
+                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-500">to</span>
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <input
+                          type="time"
+                          value={data.endTime}
+                          onChange={(e) =>
+                            handleScheduleChange(day, "endTime", e.target.value)
+                          }
+                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleUpdateSchedule}
+              className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 transition-colors duration-200 text-sm sm:text-base"
+            >
+              Update Business Hours
+            </motion.button>
+          </motion.div>
         </div>
       </motion.div>
     </div>

@@ -8,6 +8,7 @@ import TransferManagement from "../MedicalStore/transfer-management";
 import TransportManagement from "../MedicalStore/transport-management";
 import CommunityMedicineBank from "../MedicalStore/community-medicine-bank";
 import StoreProfileSettings from "../MedicalStore/store-profile-settings";
+import StoreNotificationsPage from "../MedicalStore/store-notification";
 import ContactUs from "../ContactUsForm";
 
 const MedicalStoreRoutes = (
@@ -22,6 +23,7 @@ const MedicalStoreRoutes = (
       <Route path="community-bank" element={<CommunityMedicineBank />} />
       <Route path="Profile" element={<StoreProfileSettings />} />
       <Route path="Contact" element={<ContactUs />} />
+      <Route path="notifications" element={<StoreNotificationsPage />} />
     </Route>
   </Route>
 );
