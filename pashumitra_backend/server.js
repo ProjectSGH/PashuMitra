@@ -28,15 +28,19 @@ import AdminUserRoute from "./routes/Admin/AdminUserRoute.js";
 import adminNotificationRoutes from "./routes/Admin/NotificationRoute_Admin.js";
 import adminAuthRoutes from "./routes/Admin/AdminAuth.js";
 
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 connectDB();
 
-
 app.use(cors());
 app.use(express.json());
+
+// ✅ ADD ROUTE LOGGING MIDDLEWARE
+app.use((req, res, next) => {
+  console.log(`🌐 ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 app.use("/api/users", userRoutes);
 app.use("/api/verification", UserVerificationRoutes);
@@ -58,6 +62,15 @@ app.use("/api/admin/verification", adminUserVerificationRoutes);
 app.use("/api/admin", AdminUserRoute);
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
+
+// ✅ ADD HEALTH CHECK
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "Server is running", 
+    timestamp: new Date().toISOString(),
+    port: PORT
+  });
+});
 
 const server = http.createServer(app);
 initSocket(server);

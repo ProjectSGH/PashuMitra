@@ -4,12 +4,12 @@ const ConsultationRequestSchema = new mongoose.Schema(
   {
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Doctor_User",
+      ref: "Doctor_User", // Match your Doctor model name
       required: true,
     },
     farmerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Farmer_User",
+      ref: "Farmer_User", // Match your Farmer model name
       required: true,
     },
     date: {
@@ -29,11 +29,11 @@ const ConsultationRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "completed",],
+      enum: ["pending", "approved", "rejected", "completed"],
       default: "pending",
     },
   },
-  { timestamps: true } // ⬅ auto adds createdAt & updatedAt
+  { timestamps: true }
 );
 
 export default mongoose.model("ConsultationRequest", ConsultationRequestSchema);
