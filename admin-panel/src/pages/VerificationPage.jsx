@@ -26,16 +26,22 @@ const VerificationsPage = () => {
       );
       console.log("API response:", res.data);
 
-      setVerifications(res.data);
+      // Filter out rejected verifications from the main list
+      const filteredVerifications = res.data.filter(
+        (v) => v.verificationStatus !== "rejected"
+      );
 
-      // update stats
-      const total = res.data.length;
-      const pending = res.data.filter(
+      setVerifications(filteredVerifications);
+
+      // update stats (excluding rejected from total)
+      const total = filteredVerifications.length;
+      const pending = filteredVerifications.filter(
         (v) => v.verificationStatus === "pending"
       ).length;
-      const approved = res.data.filter(
+      const approved = filteredVerifications.filter(
         (v) => v.verificationStatus === "approved"
       ).length;
+      
       setStatsCards([
         { title: "Total Requests", value: total.toString(), color: "blue" },
         { title: "Pending", value: pending.toString(), color: "orange" },
@@ -89,6 +95,13 @@ const VerificationsPage = () => {
   const closeDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedVerification(null);
+  };
+
+  // Remove verification from list after rejection
+  const handleVerificationRemoval = (verificationId) => {
+    setVerifications((prev) => 
+      prev.filter((v) => v._id !== verificationId)
+    );
   };
 
   return (
@@ -247,37 +260,20 @@ const VerificationsPage = () => {
         onClose={closeDetailsModal}
         verification={selectedVerification}
         onStatusChange={(updatedVerification) => {
-          // Update the verification in the table
-          setVerifications((prev) =>
-            prev.map((v) =>
-              v._id === updatedVerification._id ? updatedVerification : v
-            )
-          );
+          // If rejected, remove from list
+          if (updatedVerification.verificationStatus === "rejected") {
+            handleVerificationRemoval(updatedVerification._id);
+          } else {
+            // Update the verification in the table
+            setVerifications((prev) =>
+              prev.map((v) =>
+                v._id === updatedVerification._id ? updatedVerification : v
+              )
+            );
+          }
 
-          // Update stats
-          setStatsCards((prevStats) => {
-            const total = prevStats[0].value; // total requests stay the same
-            const pending = verifications.filter(
-              (v) =>
-                (v._id === updatedVerification._id
-                  ? updatedVerification
-                  : v
-                ).verificationStatus === "pending"
-            ).length;
-            const approved = verifications.filter(
-              (v) =>
-                (v._id === updatedVerification._id
-                  ? updatedVerification
-                  : v
-                ).verificationStatus === "approved"
-            ).length;
-
-            return [
-              { title: "Total Requests", value: total.toString(), color: "blue" },
-              { title: "Pending", value: pending.toString(), color: "orange" },
-              { title: "Approved", value: approved.toString(), color: "green" },
-            ];
-          });
+          // Refresh stats
+          fetchVerifications();
         }}
       />
     </>

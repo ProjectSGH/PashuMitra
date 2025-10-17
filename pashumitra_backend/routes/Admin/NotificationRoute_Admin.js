@@ -2,11 +2,12 @@ import express from "express";
 import Notification from "../../models/Common/notificationModel.js";
 import User from "../../models/UserModel.js";
 const router = express.Router();
-// ✅ Role mapping: frontend -> DB
+
+// ✅ Correct role mapping: frontend -> DB
 const roleMap = {
   farmers: "Farmer",
   doctors: "Doctor",
-  stores: "Store",
+  stores: "MedicalStore", // Changed from "Store" to "MedicalStore"
 };
 
 router.post("/send", async (req, res) => {
@@ -26,7 +27,7 @@ router.post("/send", async (req, res) => {
 
     if (!users.length) return res.status(404).json({ message: "No users found for this role" });
 
-    console.log("Users found:", users.map(u => u.email)); // debug log
+    console.log("Users found:", users.map(u => ({ email: u.email, role: u.role }))); // debug log
 
     const notification = new Notification({
       userIds: users.map(u => u._id),

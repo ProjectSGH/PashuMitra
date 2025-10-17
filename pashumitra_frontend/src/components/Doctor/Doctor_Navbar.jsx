@@ -90,7 +90,7 @@ export default function Navbar() {
                 alt="FarmerCare Logo"
                 className="h-8"
               />
-              Doctor Portal
+              PashuMitra - Doctor Portal
             </h1>
           </motion.div>
 

@@ -66,13 +66,13 @@ export default function Header() {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <motion.div whileHover={{ scale: 1.05 }} className="flex-shrink-0">
+          <motion.div className="flex-shrink-0">
             <h1
               className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
               <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
-              MedicalCare
+              PashuMitra - Medical Store Portal
             </h1>
           </motion.div>
 

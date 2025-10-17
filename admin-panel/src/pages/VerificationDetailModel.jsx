@@ -27,7 +27,11 @@ const VerificationDetailsModal = ({
   const [rejectionReason, setRejectionReason] = useState("");
   const [loading, setLoading] = useState(false);
   const BASE_URL = "http://localhost:5000";
+
   if (!verification) return null;
+
+  // Check if action buttons should be shown (only for pending status)
+  const showActionButtons = verification.verificationStatus === "pending";
 
   // Documents
   const documents = verification.verificationDocument
@@ -110,7 +114,7 @@ const VerificationDetailsModal = ({
       setShowRejectModal(false);
       setRejectionReason("");
       onClose();
-      onStatusChange && onStatusChange(res.data.verification); // refresh parent list
+      onStatusChange && onStatusChange(res.data.verification);
     } catch (err) {
       console.error(err);
       toast.error("Failed to reject verification");
@@ -186,6 +190,50 @@ const VerificationDetailsModal = ({
     }
   };
 
+  // Render status message for non-pending verifications
+  const renderStatusMessage = () => {
+    if (verification.verificationStatus === "approved") {
+      const approvedDate = verification.updatedAt || verification.createdAt;
+      const formattedDate = approvedDate
+        ? new Date(approvedDate).toLocaleDateString()
+        : "Unknown date";
+
+      return (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="text-green-800 font-medium">
+              This verification has been approved
+            </span>
+          </div>
+          <p className="text-green-700 text-sm mt-1">
+            Approved on {formattedDate}
+          </p>
+        </div>
+      );
+    } else if (verification.verificationStatus === "rejected") {
+      const rejectedDate = verification.updatedAt || verification.createdAt;
+      const formattedDate = rejectedDate
+        ? new Date(rejectedDate).toLocaleDateString()
+        : "Unknown date";
+
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-red-600" />
+            <span className="text-red-800 font-medium">
+              This verification has been rejected
+            </span>
+          </div>
+          <p className="text-red-700 text-sm mt-1">
+            Rejected on {formattedDate}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -226,6 +274,9 @@ const VerificationDetailsModal = ({
 
               {/* Content */}
               <div className="p-6">
+                {/* Status Message for non-pending verifications */}
+                {renderStatusMessage()}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                   {/* Personal Information */}
                   <div>
@@ -327,25 +378,27 @@ const VerificationDetailsModal = ({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <button
-                    disabled={loading}
-                    onClick={() => setShowApproveModal(true)}
-                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    Approve
-                  </button>
-                  <button
-                    disabled={loading}
-                    onClick={() => setShowRejectModal(true)}
-                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <XCircle className="w-5 h-5" />
-                    Reject
-                  </button>
-                </div>
+                {/* Action Buttons - Only show for pending verifications */}
+                {showActionButtons && (
+                  <div className="flex gap-4">
+                    <button
+                      disabled={loading}
+                      onClick={() => setShowApproveModal(true)}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Approve
+                    </button>
+                    <button
+                      disabled={loading}
+                      onClick={() => setShowRejectModal(true)}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <XCircle className="w-5 h-5" />
+                      Reject
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

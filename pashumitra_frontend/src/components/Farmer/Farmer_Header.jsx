@@ -115,7 +115,7 @@ const fetchNotifications = async () => {
                 alt="FarmerCare Logo"
                 className="h-8"
               />
-              FarmerCare
+              PashuMitra - Farmer Portal
             </h1>
           </motion.div>
 
