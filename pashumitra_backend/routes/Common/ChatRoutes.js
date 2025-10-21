@@ -1,8 +1,9 @@
+
 import express from "express";
 import ChatMessage from "../../models/Common/chatModel.js";
 import User from "../../models/UserModel.js";
 import Farmer from "../../models/Farmer/FarmerModel.js";
-import { getIO } from "../../services/socket.js"; // import socket instance
+import { getIO } from "../../services/socket.js";
 
 const router = express.Router();
 
@@ -10,7 +11,12 @@ const router = express.Router();
 router.get("/messages/:farmerId/:doctorId", async (req, res) => {
   try {
     const { farmerId, doctorId } = req.params;
-    const messages = await ChatMessage.find({ farmerId, doctorId }).sort({ timestamp: 1 });
+    
+    const messages = await ChatMessage.find({ 
+      farmerId, 
+      doctorId 
+    }).sort({ timestamp: 1 });
+    
     res.json(messages);
   } catch (err) {
     console.error("Error fetching messages:", err);
@@ -18,18 +24,35 @@ router.get("/messages/:farmerId/:doctorId", async (req, res) => {
   }
 });
 
-// 🔹 Send a new message
+// 🔹 Send a new message - FIXED: Better socket emission
 router.post("/send", async (req, res) => {
   try {
     const { farmerId, doctorId, message, sender } = req.body;
 
-    const newMessage = new ChatMessage({ farmerId, doctorId, message, sender });
+    if (!farmerId || !doctorId || !message || !sender) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const newMessage = new ChatMessage({ 
+      farmerId, 
+      doctorId, 
+      message, 
+      sender 
+    });
     await newMessage.save();
 
-    // Emit to socket room after saving
+    console.log("Message saved to DB:", newMessage._id);
+
+    // Emit to socket room after saving - FIXED: Use consistent room naming
     const io = getIO();
-    const room = `${doctorId}_${farmerId}`;
+    const room = `chat_${doctorId}_${farmerId}`;
+    
+    // Emit to everyone in the room including sender
     io.to(room).emit("receiveMessage", newMessage);
+    
+    // Also emit to both users' personal rooms for backup
+    io.to(farmerId).emit("receiveMessage", newMessage);
+    io.to(doctorId).emit("receiveMessage", newMessage);
 
     res.status(201).json(newMessage);
   } catch (err) {
@@ -60,34 +83,38 @@ router.get("/doctor/:doctorId/farmers", async (req, res) => {
   try {
     const { doctorId } = req.params;
 
-    // farmerIds here are actually userIds
-    const farmerIds = await ChatMessage.distinct("farmerId", { doctorId });
-    if (!farmerIds.length) return res.json([]);
+    // Get distinct farmer user IDs from chat messages
+    const farmerUserIds = await ChatMessage.distinct("farmerId", { doctorId });
+    
+    if (!farmerUserIds.length) return res.json([]);
 
-    // fetch user info
+    // Fetch user info
     const users = await User.find(
-      { _id: { $in: farmerIds }, role: "Farmer" },
+      { _id: { $in: farmerUserIds }, role: "Farmer" },
       "email phone role"
     );
 
-    // fetch Farmer model for fullName using userId
-    const farmers = await Farmer.find({ userId: { $in: farmerIds } }, "fullName userId");
+    // Fetch Farmer profiles using userId
+    const farmers = await Farmer.find({ userId: { $in: farmerUserIds } }, "fullName userId");
 
-    // combine
-    const result = users.map((u) => {
-      const f = farmers.find((farmer) => farmer.userId.toString() === u._id.toString());
+    // Combine data
+    const result = users.map((user) => {
+      const farmerProfile = farmers.find((farmer) => 
+        farmer.userId.toString() === user._id.toString()
+      );
+      
       return {
-        _id: u._id,
-        email: u.email,
-        phone: u.phone,
-        role: u.role,
-        fullName: f?.fullName || "",
+        _id: user._id, // This is the user ID used in chat messages
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        fullName: farmerProfile?.fullName || "Unknown Farmer",
       };
     });
 
     res.json(result);
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching chat farmers:", err);
     res.status(500).json({ error: "Server error while fetching farmers" });
   }
 });

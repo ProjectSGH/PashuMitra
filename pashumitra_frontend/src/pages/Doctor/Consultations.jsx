@@ -45,149 +45,159 @@ export default function DoctorChat() {
     scrollToBottom();
   }, [messages, selectedFarmer]);
 
-  // Initialize socket
+  // Initialize socket with status listeners
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
 
+    // Join doctor's personal room for notifications
+    if (doctorId) {
+      socket.emit("joinUserRoom", doctorId);
+    }
+
     socket.on("receiveMessage", (newMessage) => {
+      console.log("Socket received message:", newMessage);
       const farmerKey = newMessage.farmerId?.toString();
-      setMessages((prev) => ({
-        ...prev,
-        [farmerKey]: [...(prev[farmerKey] || []), newMessage],
-      }));
+      
+      // Prevent duplicates by checking if message already exists
+      setMessages((prev) => {
+        const existingMessages = prev[farmerKey] || [];
+        const isDuplicate = existingMessages.some(msg => 
+          msg._id === newMessage._id || 
+          (msg.timestamp === newMessage.timestamp && msg.message === newMessage.message)
+        );
+        
+        if (isDuplicate) {
+          console.log("Duplicate message detected, skipping");
+          return prev;
+        }
+        
+        return {
+          ...prev,
+          [farmerKey]: [...existingMessages, newMessage],
+        };
+      });
+    });
+
+    // Listen for consultation status updates
+    socket.on("consultationStatusUpdated", (data) => {
+      if (data.requestId) {
+        setConsultations((prev) => ({
+          ...prev,
+          [data.requestId]: data.status,
+        }));
+
+        setFarmers((prev) =>
+          prev.map((f) =>
+            f.requestId === data.requestId ? { ...f, status: data.status } : f
+          )
+        );
+
+        if (data.status === "approved") {
+          toast.success("Consultation approved successfully! Chat is now available.");
+        } else if (data.status === "rejected") {
+          toast.error("Consultation rejected");
+        }
+      }
+    });
+
+    // Listen for new consultation requests
+    socket.on("newConsultationRequest", (data) => {
+      toast.success("New consultation request received!");
+      fetchFarmersAndConsultations();
     });
 
     return () => socket.disconnect();
-  }, []);
+  }, [doctorId]);
 
-  // Fetch farmers & consultations
-  useEffect(() => {
-    const fetchFarmersAndConsultations = async () => {
-      try {
-        console.log("Fetching consultations for doctor:", doctorId);
-        const consultRes = await axios.get(
-          `http://localhost:5000/api/consultations/doctor/${doctorId}/requests`
-        );
+  // Fetch farmers & consultations - FIXED: Use proper farmer user ID
+  const fetchFarmersAndConsultations = async () => {
+    try {
+      console.log("Fetching consultations for doctor:", doctorId);
+      const consultRes = await axios.get(
+        `http://localhost:5000/api/consultations/doctor/${doctorId}/requests`
+      );
 
-        console.log("Consultations API response:", consultRes.data);
+      console.log("Consultations API response:", consultRes.data);
 
-        if (!consultRes.data || consultRes.data.length === 0) {
-          console.log("No consultation requests found");
-          setFarmers([]);
-          setLoading(false);
-          return;
-        }
+      if (!consultRes.data || consultRes.data.length === 0) {
+        console.log("No consultation requests found");
+        setFarmers([]);
+        setLoading(false);
+        return;
+      }
 
-        const farmersList = consultRes.data
-          .filter(c => c && c._id)
-          .map((c) => ({
-            _id: c._id,
-            requestId: c.requestId,
-            fullName: c.fullName || "Unknown Farmer",
-            email: c.email || "",
-            phone: c.phone || "No phone",
-            status: c.status || "pending",
-            consultationDate: c.date,
-            startTime: c.startTime,
-            endTime: c.endTime,
-            fee: c.fee || 0,
-          }));
+      // Create a map to avoid duplicates - Use farmerUserId for chat
+      const farmersMap = new Map();
 
-        console.log("Processed farmers list:", farmersList);
-
-        const consultMap = {};
-        const detailsMap = {};
-
-        farmersList.forEach((f) => {
-          if (f.requestId) {
-            consultMap[f.requestId] = f.status;
-            detailsMap[f.requestId] = {
-              date: f.consultationDate,
-              startTime: f.startTime,
-              endTime: f.endTime,
-            };
+      consultRes.data
+        .filter((c) => c && c._id && c.farmerUserId) // Only include items with farmerUserId
+        .forEach((c) => {
+          const farmerUserKey = c.farmerUserId;
+          
+          if (!farmersMap.has(farmerUserKey)) {
+            farmersMap.set(farmerUserKey, {
+              _id: farmerUserKey, // This is the user ID for chat
+              requestId: c._id,
+              fullName: c.fullName || "Unknown Farmer",
+              email: c.email || "",
+              phone: c.phone || "No phone",
+              status: c.status || "pending",
+              consultationDate: c.date,
+              startTime: c.startTime,
+              endTime: c.endTime,
+              fee: c.fee || 0,
+            });
           }
         });
 
-        setConsultations(consultMap);
-        setConsultationDetails(detailsMap);
-        setFarmers(farmersList);
+      const farmersList = Array.from(farmersMap.values());
+      console.log("Processed farmers list for chat:", farmersList);
 
-      } catch (err) {
-        console.error("Error fetching consultations/farmers:", err);
-        toast.error("Failed to load consultations");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const consultMap = {};
+      const detailsMap = {};
 
+      farmersList.forEach((f) => {
+        if (f.requestId) {
+          consultMap[f.requestId] = f.status;
+          detailsMap[f.requestId] = {
+            date: f.consultationDate,
+            startTime: f.startTime,
+            endTime: f.endTime,
+          };
+        }
+      });
+
+      setConsultations(consultMap);
+      setConsultationDetails(detailsMap);
+      setFarmers(farmersList);
+    } catch (err) {
+      console.error("Error fetching consultations/farmers:", err);
+      toast.error("Failed to load consultations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (doctorId) {
       fetchFarmersAndConsultations();
     }
   }, [doctorId]);
 
-  // Fetch farmers who have chatted
-  useEffect(() => {
-    const fetchChatFarmers = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/chat/doctor/${doctorId}/farmers`
-        );
-        console.log("Farmers from chat API:", res.data);
-        
-        if (res.data && res.data.length > 0) {
-          setFarmers(prev => {
-            const existingIds = new Set(prev.map(f => f._id));
-            const newFarmers = res.data.filter(f => !existingIds.has(f._id));
-            return [...prev, ...newFarmers];
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching chat farmers:", err);
-      }
-    };
-
-    if (doctorId) {
-      fetchChatFarmers();
-    }
-  }, [doctorId]);
-
-  // Check if chat is allowed based on consultation time
+  // Check if chat is allowed
   const isChatAvailable = (farmer) => {
     if (!farmer.requestId || consultations[farmer.requestId] !== "approved") {
       return false;
     }
-
-    const consultation = consultationDetails[farmer.requestId];
-    if (!consultation || !consultation.date || !consultation.startTime) {
-      return false;
-    }
-
-    const consultationDate = new Date(consultation.date);
-    const now = new Date();
-
-    if (consultationDate.toDateString() !== now.toDateString()) {
-      return false;
-    }
-
-    const [startHour, startMin] = consultation.startTime.split(":").map(Number);
-    const [endHour, endMin] = consultation.endTime.split(":").map(Number);
-
-    const startDateTime = new Date(consultationDate);
-    startDateTime.setHours(startHour, startMin - 15, 0, 0);
-
-    const endDateTime = new Date(consultationDate);
-    endDateTime.setHours(endHour, endMin + 15, 0, 0);
-
-    return now >= startDateTime && now <= endDateTime;
+    return true;
   };
 
   // Open chat
   const openChat = (farmer) => {
     if (farmer.requestId && !isChatAvailable(farmer)) {
       toast.error(
-        "Chat is available only during the scheduled consultation time.",
+        "Chat will be available after you approve the consultation.",
         { duration: 4000, position: "bottom-right" }
       );
       return;
@@ -208,21 +218,27 @@ export default function DoctorChat() {
     fetchMessages(farmerId);
   };
 
-  // Fetch messages
+  // Fetch messages - FIXED: Remove duplicate socket emission
   const fetchMessages = async (farmerId) => {
     try {
       const res = await axios.get(
         `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
       );
+      console.log("Fetched messages:", res.data);
       setMessages((prev) => ({ ...prev, [farmerId]: res.data }));
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
   };
 
-  // Send message
+  // Send message - FIXED: Remove duplicate emission
   const handleSendMessage = async () => {
     if (!selectedFarmer || !message.trim()) return;
+
+    if (!isChatAvailable(selectedFarmer)) {
+      toast.error("You can only send messages after approving the consultation.");
+      return;
+    }
 
     try {
       const newMessage = {
@@ -232,14 +248,21 @@ export default function DoctorChat() {
         message,
       };
 
+      console.log("Sending message:", newMessage);
+
+      // Send to backend - the backend will handle socket emission
       await axios.post("http://localhost:5000/api/chat/send", newMessage);
 
-      if (socketRef.current) {
-        socketRef.current.emit("sendMessage", newMessage);
-      }
+      // DO NOT emit via socket here - backend already does it
+      // This was causing duplicate messages
 
       setMessage("");
-      fetchMessages(selectedFarmer._id.toString());
+      
+      // Refresh messages to get the latest from DB
+      setTimeout(() => {
+        fetchMessages(selectedFarmer._id.toString());
+      }, 100);
+      
     } catch (err) {
       console.error("Error sending message:", err);
       toast.error("Failed to send message");
@@ -247,49 +270,67 @@ export default function DoctorChat() {
   };
 
   // Confirm / Approve consultation
-  // In your handleConfirmConsultation function, add better error handling:
-const handleConfirmConsultation = async (requestId, farmerId) => {
-  try {
-    console.log("Approving consultation:", requestId);
-    
-    const response = await axios.put(
-      `http://localhost:5000/api/consultations/${requestId}/approve`
-    );
-    
-    console.log("Approval response:", response.data);
-    
-    setConsultations((prev) => ({ ...prev, [requestId]: "approved" }));
-    
-    setFarmers(prev => prev.map(f => 
-      f.requestId === requestId ? { ...f, status: "approved" } : f
-    ));
+  const handleConfirmConsultation = async (requestId, farmerId) => {
+    try {
+      console.log("Approving consultation:", requestId);
 
-    toast.success("Consultation approved successfully", {
-      duration: 4000,
-      position: "bottom-right",
-    });
-  } catch (err) {
-    console.error("Approval error:", err);
-    console.error("Error response:", err.response?.data);
-    
-    const errorMessage = err.response?.data?.error || "Failed to approve consultation";
-    toast.error(errorMessage, {
-      duration: 5000,
-      position: "bottom-right",
-    });
-  }
-};
+      const response = await axios.put(
+        `http://localhost:5000/api/consultations/${requestId}/approve`
+      );
+
+      console.log("Approval response:", response.data);
+
+      setConsultations((prev) => ({ ...prev, [requestId]: "approved" }));
+      setFarmers((prev) =>
+        prev.map((f) =>
+          f.requestId === requestId ? { ...f, status: "approved" } : f
+        )
+      );
+
+      if (socketRef.current) {
+        socketRef.current.emit("consultationApproved", {
+          requestId,
+          farmerId,
+          doctorId,
+          status: "approved",
+        });
+      }
+
+      toast.success("Consultation approved successfully! Chat is now available.", {
+        duration: 4000,
+        position: "bottom-right",
+      });
+    } catch (err) {
+      console.error("Approval error:", err);
+      const errorMessage = err.response?.data?.error || "Failed to approve consultation";
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "bottom-right",
+      });
+    }
+  };
+
   const handleRejectConsultation = async (requestId, farmerId) => {
     try {
       await axios.put(
         `http://localhost:5000/api/consultations/${requestId}/reject`
       );
-      
+
       setConsultations((prev) => ({ ...prev, [requestId]: "rejected" }));
-      
-      setFarmers(prev => prev.map(f => 
-        f.requestId === requestId ? { ...f, status: "rejected" } : f
-      ));
+      setFarmers((prev) =>
+        prev.map((f) =>
+          f.requestId === requestId ? { ...f, status: "rejected" } : f
+        )
+      );
+
+      if (socketRef.current) {
+        socketRef.current.emit("consultationRejected", {
+          requestId,
+          farmerId,
+          doctorId,
+          status: "rejected",
+        });
+      }
 
       toast.error("Consultation rejected", {
         duration: 4000,
@@ -308,17 +349,40 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
     }
   };
 
-  const formatTime = (date) =>
-    new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  // FIXED: Better date formatting with validation
+  const formatTime = (date) => {
+    if (!date) return "";
+    
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return "";
+      
+      return dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting time:", error, date);
+      return "";
+    }
+  };
 
-  const formatMessageTime = (date) =>
-    new Date(date).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatMessageTime = (date) => {
+    if (!date) return "Invalid Date";
+    
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return "Invalid Date";
+      
+      return dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (error) {
+      console.error("Error formatting message time:", error, date);
+      return "Invalid Date";
+    }
+  };
 
   const StatusIcon = ({ seen }) =>
     !seen ? (
@@ -338,7 +402,10 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
       {/* Mobile header */}
       {activeChat && (
         <div className="md:hidden flex items-center justify-between p-3 bg-green-50 border-b border-gray-200">
-          <button onClick={() => setActiveChat(null)} className="p-2 text-gray-600">
+          <button
+            onClick={() => setActiveChat(null)}
+            className="p-2 text-gray-600"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
@@ -346,9 +413,13 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
               <User2 className="h-4 w-4 text-white" />
             </div>
             <div className="text-left">
-              <h2 className="font-semibold text-sm text-gray-900">{activeChat.fullName}</h2>
+              <h2 className="font-semibold text-sm text-gray-900">
+                {activeChat.fullName}
+              </h2>
               <p className="text-xs text-gray-600">
-                {consultations[activeChat.requestId] === "approved" ? "Online" : "Offline"}
+                {consultations[activeChat.requestId] === "approved"
+                  ? "Online - Chat Available"
+                  : "Offline"}
               </p>
             </div>
           </div>
@@ -364,7 +435,7 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
       )}
 
       <div className="flex h-screen">
-        {/* Sidebar - White Theme */}
+        {/* Sidebar */}
         <div
           className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
             activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
@@ -381,7 +452,9 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                     <User2 className="h-5 w-5 text-white" />
                   </div>
                 )}
-                <h1 className="text-xl font-bold text-gray-900">Your Farmers</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Your Farmers
+                </h1>
               </div>
               <button
                 onClick={() => setShowSidebar(false)}
@@ -405,21 +478,27 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
           {/* Farmers list */}
           <div className="overflow-y-auto h-full pb-20 bg-white">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">Loading farmers...</div>
+              <div className="p-4 text-center text-gray-500">
+                Loading farmers...
+              </div>
             ) : filteredFarmers.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                {searchTerm ? "No farmers found" : "No consultation requests yet"}
+                {searchTerm
+                  ? "No farmers found"
+                  : "No consultation requests yet"}
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredFarmers.map((farmer) => {
-                  const uniqueKey = `${farmer._id}-${farmer.requestId || 'no-request'}`;
+                  const uniqueKey = `${farmer._id}-${farmer.requestId || "no-request"}`;
+                  const isApproved = farmer.requestId && consultations[farmer.requestId] === "approved";
+
                   return (
                     <div
                       key={uniqueKey}
                       className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors border-l-2 ${
-                        selectedFarmer?._id === farmer._id 
-                          ? "bg-blue-50 border-l-blue-500" 
+                        selectedFarmer?._id === farmer._id
+                          ? "bg-blue-50 border-l-blue-500"
                           : "border-l-transparent"
                       }`}
                       onClick={() => openChat(farmer)}
@@ -446,22 +525,35 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                           <p className="truncate text-sm text-gray-500">
                             {farmer.phone}
                           </p>
-                          
+
                           {/* Consultation status */}
                           <div className="mt-1">
                             {farmer.requestId && consultations[farmer.requestId] === "pending" && (
-                              <p className="text-sm text-amber-600 font-medium">Pending approval</p>
-                            )}
-                            {farmer.requestId && consultations[farmer.requestId] === "approved" && (
-                              <p className="text-sm text-green-600 font-medium">
-                                Approved for {new Date(farmer.consultationDate).toLocaleDateString()} at {farmer.startTime}
+                              <p className="text-sm text-amber-600 font-medium">
+                                Pending approval
                               </p>
                             )}
+                            {farmer.requestId && consultations[farmer.requestId] === "approved" && (
+                              <div>
+                                <p className="text-sm text-green-600 font-medium">
+                                  ✅ Consultation Approved - Chat Available
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Scheduled:{" "}
+                                  {new Date(farmer.consultationDate).toLocaleDateString()}{" "}
+                                  at {farmer.startTime}
+                                </p>
+                              </div>
+                            )}
                             {farmer.requestId && consultations[farmer.requestId] === "rejected" && (
-                              <p className="text-sm text-red-600 font-medium">Consultation rejected</p>
+                              <p className="text-sm text-red-600 font-medium">
+                                Consultation rejected
+                              </p>
                             )}
                             {!farmer.requestId && (
-                              <p className="text-sm text-gray-500">No active consultation</p>
+                              <p className="text-sm text-gray-500">
+                                No active consultation
+                              </p>
                             )}
                           </div>
                         </div>
@@ -470,7 +562,9 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                       {/* Last message preview */}
                       {messages[farmer._id]?.length > 0 && (
                         <p className="truncate text-sm text-gray-600 mt-2 ml-15">
-                          {messages[farmer._id][messages[farmer._id].length - 1]?.message}
+                          {
+                            messages[farmer._id][messages[farmer._id].length - 1]?.message
+                          }
                         </p>
                       )}
 
@@ -505,7 +599,7 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
           </div>
         </div>
 
-        {/* Chat panel - White Theme */}
+        {/* Chat panel */}
         <div
           className={`flex-1 flex flex-col h-full ${
             activeChat ? "block" : "hidden md:block"
@@ -524,11 +618,10 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                       {activeChat.fullName}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {activeChat.email} • {
-                        consultations[activeChat.requestId] === "approved" 
-                          ? "Online" 
-                          : "Offline"
-                      }
+                      {activeChat.email} •{" "}
+                      {consultations[activeChat.requestId] === "approved"
+                        ? "Online - Chat Available"
+                        : "Chat not available"}
                     </p>
                   </div>
                 </div>
@@ -554,49 +647,54 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
               {/* Messages Area */}
               <div
                 className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50"
-                style={{ 
+                style={{
                   maxHeight: "calc(100vh - 140px)",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                 }}
               >
                 {messages[selectedFarmer?._id?.toString()]?.length > 0 ? (
-                  messages[selectedFarmer._id.toString()]?.map((msg) => (
-                    <motion.div
-                      key={msg._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className={`flex ${
-                        msg.sender === "doctor"
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`flex flex-col max-w-[70%] ${
-                          msg.sender === "doctor" ? "items-end" : "items-start"
+                  messages[selectedFarmer._id.toString()]?.map((msg, index) => {
+                    // Debug log to see what we're rendering
+                    console.log(`Rendering message ${index}:`, msg);
+                    
+                    return (
+                      <motion.div
+                        key={msg._id || `${msg.timestamp}-${index}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className={`flex ${
+                          msg.sender === "doctor" ? "justify-end" : "justify-start"
                         }`}
                       >
                         <div
-                          className={`px-4 py-3 rounded-2xl shadow-sm ${
-                            msg.sender === "doctor"
-                              ? "bg-green-500 text-white rounded-br-md"
-                              : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
+                          className={`flex flex-col max-w-[70%] ${
+                            msg.sender === "doctor" ? "items-end" : "items-start"
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                          <div
+                            className={`px-4 py-3 rounded-2xl shadow-sm ${
+                              msg.sender === "doctor"
+                                ? "bg-green-500 text-white rounded-br-md"
+                                : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">
+                              {msg.message}
+                            </p>
+                          </div>
+                          <div className="flex items-center mt-1 space-x-1 px-1">
+                            <span className="text-xs text-gray-500">
+                              {formatMessageTime(msg.timestamp)}
+                            </span>
+                            {msg.sender === "doctor" && (
+                              <StatusIcon seen={msg.seen} />
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center mt-1 space-x-1 px-1">
-                          <span className="text-xs text-gray-500">
-                            {formatMessageTime(msg.timestamp)}
-                          </span>
-                          {msg.sender === "doctor" && (
-                            <StatusIcon seen={msg.seen} />
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
+                      </motion.div>
+                    );
+                  })
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
                     <div className="text-center">
@@ -607,9 +705,9 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                         {activeChat.fullName}
                       </p>
                       <p className="text-sm">
-                        {consultations[activeChat.requestId] === "approved" 
-                          ? "Send a message to start the conversation" 
-                          : "Consultation not approved yet"}
+                        {consultations[activeChat.requestId] === "approved"
+                          ? "Send a message to start the conversation"
+                          : "Approve the consultation to enable chat"}
                       </p>
                     </div>
                   </div>
@@ -620,7 +718,10 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
               {/* Input Area */}
               <div className="p-4 bg-white border-t border-gray-200">
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+                  <button
+                    className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                    disabled={!isChatAvailable(activeChat)}
+                  >
                     <Paperclip className="w-5 h-5" />
                   </button>
                   <div className="flex-1 bg-gray-100 rounded-2xl border border-gray-300">
@@ -628,12 +729,17 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyDown={handleKeyPress}
-                      placeholder="Type a message..."
-                      className="w-full bg-transparent border-none text-gray-900 placeholder-gray-500 px-4 py-3 text-sm focus:outline-none resize-none max-h-32"
+                      placeholder={
+                        isChatAvailable(activeChat)
+                          ? "Type a message..."
+                          : "Approve the consultation to enable chat"
+                      }
+                      disabled={!isChatAvailable(activeChat)}
+                      className="w-full bg-transparent border-none text-gray-900 placeholder-gray-500 px-4 py-3 text-sm focus:outline-none resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
                       rows="1"
                     />
                   </div>
-                  {message.trim() ? (
+                  {message.trim() && isChatAvailable(activeChat) ? (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -644,10 +750,16 @@ const handleConfirmConsultation = async (requestId, farmerId) => {
                     </motion.button>
                   ) : (
                     <div className="flex items-center gap-1">
-                      <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+                      <button
+                        className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                        disabled={!isChatAvailable(activeChat)}
+                      >
                         <Smile className="w-5 h-5" />
                       </button>
-                      <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+                      <button
+                        className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                        disabled={!isChatAvailable(activeChat)}
+                      >
                         <Mic className="w-5 h-5" />
                       </button>
                     </div>

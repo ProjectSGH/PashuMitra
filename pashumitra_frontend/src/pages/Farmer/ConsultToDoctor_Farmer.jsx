@@ -14,6 +14,9 @@ import {
   Paperclip,
   Smile,
   Mic,
+  Clock,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
@@ -29,9 +32,13 @@ export default function ConsultDoctor() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalData, setModalData] = useState(null);
   const [consultationStatus, setConsultationStatus] = useState({});
+  const [consultationDetails, setConsultationDetails] = useState({});
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const farmerId = user?._id;
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -46,6 +53,11 @@ export default function ConsultDoctor() {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
 
+    // Join farmer's personal room for notifications
+    if (farmerId) {
+      socket.emit("joinUserRoom", farmerId);
+    }
+
     socket.on("receiveMessage", (newMessage) => {
       setMessages((prev) => ({
         ...prev,
@@ -58,22 +70,54 @@ export default function ConsultDoctor() {
 
     // Listen for consultation status updates
     socket.on("consultationStatusChanged", (data) => {
-      if (data.doctorId && data.status === "approved") {
+      if (data.doctorId) {
         setConsultationStatus(prev => ({
           ...prev,
-          [data.doctorId]: "approved"
+          [data.doctorId]: data.status
         }));
-        toast.success(`Consultation with Dr. ${data.doctorName} has been approved!`);
+        
+        // Update consultation details if available
+        if (data.consultationDetails) {
+          setConsultationDetails(prev => ({
+            ...prev,
+            [data.doctorId]: data.consultationDetails
+          }));
+        }
+
+        if (data.status === "approved") {
+          toast.success(`Consultation with Dr. ${data.doctorName} has been approved! Chat is now available.`);
+          
+          // Auto-open chat if this doctor is selected
+          if (selectedDoctor?._id === data.doctorId) {
+            setActiveChat(selectedDoctor);
+            if (socketRef.current) {
+              socketRef.current.emit("joinRoom", { farmerId, doctorId: data.doctorId });
+            }
+            fetchMessages(data.doctorId);
+          }
+        } else if (data.status === "rejected") {
+          toast.error(`Consultation with Dr. ${data.doctorName} was rejected.`);
+        }
       }
     });
 
     return () => socket.disconnect();
-  }, []);
+  }, [farmerId, selectedDoctor]);
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const farmerId = user?._id;
+  // Enhanced function to fetch consultation status
+  const fetchConsultationStatus = async (doctorId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/consultations/status/${doctorId}/${farmerId}`
+      );
+      return response.data;
+    } catch (err) {
+      console.log(`No consultation found for doctor ${doctorId}`);
+      return { status: "none", consultation: null };
+    }
+  };
 
-  // Fetch doctors
+  // Fetch doctors with consultation status
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -87,22 +131,30 @@ export default function ConsultDoctor() {
                 `http://localhost:5000/api/schedules/${doc._id}`
               );
               
-              // Check consultation status for each doctor
-              try {
-                const statusRes = await axios.get(
-                  `http://localhost:5000/api/consultations/status/${doc._id}/${farmerId}`
-                );
-                setConsultationStatus(prev => ({
+              // Fetch consultation status for each doctor
+              const consultationData = await fetchConsultationStatus(doc._id);
+              
+              // Update states
+              setConsultationStatus(prev => ({
+                ...prev,
+                [doc._id]: consultationData.status
+              }));
+              
+              if (consultationData.consultation) {
+                setConsultationDetails(prev => ({
                   ...prev,
-                  [doc._id]: statusRes.data.status
+                  [doc._id]: consultationData.consultation
                 }));
-              } catch (statusErr) {
-                console.log(`No consultation status for doctor ${doc._id}`);
               }
 
-              return { ...doc, schedule: schedRes.data };
+              return { 
+                ...doc, 
+                schedule: schedRes.data,
+                consultationStatus: consultationData.status,
+                consultation: consultationData.consultation
+              };
             } catch {
-              return { ...doc, schedule: null };
+              return { ...doc, schedule: null, consultationStatus: "none", consultation: null };
             }
           })
         );
@@ -173,13 +225,25 @@ export default function ConsultDoctor() {
     return null;
   };
 
+  // Check if consultation is approved - chat available immediately after approval
+  const isConsultationApproved = (doctorId) => {
+    const consultation = consultationDetails[doctorId];
+    return consultation && consultation.status === "approved";
+  };
+
   const openChat = async (doctor) => {
     setSelectedDoctor(doctor);
-    const availableNow = isDoctorAvailableNow(doctor.schedule);
-    const hasApprovedConsultation = consultationStatus[doctor._id] === "approved";
+    const status = consultationStatus[doctor._id];
+    const consultationApproved = isConsultationApproved(doctor._id);
 
-    if (availableNow && hasApprovedConsultation) {
-      // Doctor is available now and consultation is approved - open chat immediately
+    console.log("Opening chat:", {
+      doctor: doctor.doctorProfile?.fullName,
+      status,
+      consultationApproved
+    });
+
+    if (status === "approved") {
+      // Consultation is approved - open chat immediately
       setActiveChat(doctor);
       setShowSidebar(false);
       
@@ -188,13 +252,11 @@ export default function ConsultDoctor() {
       }
       fetchMessages(doctor._id);
       
-      toast.success("Starting chat with doctor...");
-    } else if (hasApprovedConsultation) {
-      // Consultation approved but doctor not available now
-      toast.error("Doctor is not available right now. Please come back during consultation hours.");
-    } else if (consultationStatus[doctor._id] === "pending") {
-      // Consultation pending approval
+      toast.success("Chat session started!");
+    } else if (status === "pending") {
       toast.error("Your consultation request is pending approval. Please wait for the doctor to approve it.");
+    } else if (status === "rejected") {
+      toast.error("Your consultation request was rejected. Please request a new consultation.");
     } else {
       // No consultation - show request modal
       const nextSlot = findNextAvailableSlot(doctor.schedule);
@@ -206,30 +268,14 @@ export default function ConsultDoctor() {
     }
   };
 
-  // Add this function to check existing consultations
-  const checkExistingConsultations = async (doctorId) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/consultations/status/${doctorId}/${farmerId}`);
-      console.log("Existing consultation status:", response.data);
-      return response.data;
-    } catch (err) {
-      console.error("Error checking consultation status:", err);
-      return null;
-    }
-  };
-
   const confirmConsultation = async () => {
     const { doctor, slot } = modalData;
     
     try {
-      // Debug: Check current status
-      const existingStatus = await checkExistingConsultations(doctor._id);
-      console.log("Current consultation status:", existingStatus);
-
       const payload = {
         doctorId: doctor._id,
         farmerId,
-        date: slot.dateISO,
+        date: slot.dateISO.split('T')[0], // Send only date part
         startTime: slot.startTime,
         endTime: slot.endTime,
       };
@@ -244,6 +290,22 @@ export default function ConsultDoctor() {
         [doctor._id]: "pending"
       }));
 
+      setConsultationDetails(prev => ({
+        ...prev,
+        [doctor._id]: response.data
+      }));
+
+      // Emit socket event for real-time notification to doctor
+      if (socketRef.current) {
+        socketRef.current.emit("consultationRequest", {
+          doctorId: doctor._id,
+          farmerId,
+          date: payload.date,
+          startTime: payload.startTime,
+          doctorName: doctor.doctorProfile?.fullName
+        });
+      }
+
       toast.success(
         `Consultation requested for ${slot.day} ${new Date(slot.dateISO).toLocaleDateString()} at ${slot.startTime}. Waiting for doctor approval.`
       );
@@ -253,25 +315,18 @@ export default function ConsultDoctor() {
       
     } catch (err) {
       console.error("Consultation request error:", err);
-      console.error("Error response:", err.response);
       
       if (err.response?.status === 409) {
-        // Handle conflict (duplicate request)
         const errorMessage = err.response.data.message || "You already have a pending consultation with this doctor.";
         toast.error(errorMessage);
         
-        // Update status based on error
-        if (errorMessage.includes("already have")) {
-          setConsultationStatus(prev => ({
-            ...prev,
-            [doctor._id]: "pending"
-          }));
-        }
+        setConsultationStatus(prev => ({
+          ...prev,
+          [doctor._id]: "pending"
+        }));
       } else if (err.response?.status === 404) {
-        // Handle not found
         toast.error("Farmer profile not found. Please try again.");
       } else {
-        // Handle other errors
         const errorMsg = err.response?.data?.error || "Failed to request consultation. Please try again.";
         toast.error(errorMsg);
       }
@@ -296,6 +351,12 @@ export default function ConsultDoctor() {
   const handleSendMessage = async () => {
     if (!selectedDoctor || !message.trim()) return;
 
+    // Check if consultation is approved before sending message
+    if (!isConsultationApproved(selectedDoctor._id)) {
+      toast.error("You can only send messages after consultation is approved.");
+      return;
+    }
+
     try {
       const newMessage = {
         farmerId,
@@ -304,25 +365,16 @@ export default function ConsultDoctor() {
         message,
       };
 
-      // Optimistically add message to UI
-      setMessages((prev) => ({
-        ...prev,
-        [selectedDoctor._id]: [
-          ...(prev[selectedDoctor._id] || []),
-          { ...newMessage, _id: Date.now(), timestamp: new Date(), seen: false },
-        ],
-      }));
-
-      setMessage("");
-
-      // Send to backend
+      // Send to backend first
       await axios.post("http://localhost:5000/api/chat/send", newMessage);
 
-      // Emit via socket
+      // Emit via socket - the socket response will update the UI
       if (socketRef.current) {
         socketRef.current.emit("sendMessage", newMessage);
       }
 
+      setMessage("");
+      
     } catch (err) {
       console.error("Error sending message:", err);
       toast.error("Failed to send message");
@@ -353,17 +405,44 @@ export default function ConsultDoctor() {
       <CheckCheck className="w-3 h-3 text-green-500" />
     );
 
-  const getConsultationStatusText = (doctorId) => {
+  const getConsultationStatusDisplay = (doctorId) => {
     const status = consultationStatus[doctorId];
+    const consultation = consultationDetails[doctorId];
+    const isApproved = isConsultationApproved(doctorId);
+
     switch (status) {
       case "approved":
-        return { text: "Consultation Approved", color: "text-green-600" };
+        return {
+          text: "Consultation Approved - Chat Available",
+          color: "text-green-600",
+          icon: <Check className="w-4 h-4 mr-1" />,
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200"
+        };
       case "pending":
-        return { text: "Pending Approval", color: "text-amber-600" };
+        return {
+          text: "Pending Approval",
+          color: "text-amber-600",
+          icon: <Clock className="w-4 h-4 mr-1" />,
+          bgColor: "bg-amber-50",
+          borderColor: "border-amber-200"
+        };
       case "rejected":
-        return { text: "Consultation Rejected", color: "text-red-600" };
+        return {
+          text: "Consultation Rejected",
+          color: "text-red-600",
+          icon: <AlertCircle className="w-4 h-4 mr-1" />,
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200"
+        };
       default:
-        return { text: "Request Consultation", color: "text-gray-600" };
+        return {
+          text: "Request Consultation",
+          color: "text-gray-600",
+          icon: <Calendar className="w-4 h-4 mr-1" />,
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-200"
+        };
     }
   };
 
@@ -381,7 +460,7 @@ export default function ConsultDoctor() {
     <div className="min-h-screen bg-white">
       <Toaster position="bottom-right" />
 
-      {/* Custom confirmation modal */}
+      {/* Consultation Request Modal */}
       {modalData && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-sm mx-4 border border-gray-200">
@@ -391,11 +470,11 @@ export default function ConsultDoctor() {
             
             <div className="mb-4">
               <p className="text-gray-600 mb-2">
-                Dr. {modalData.doctor.doctorProfile?.fullName} is not available right now.
+                Request consultation with Dr. {modalData.doctor.doctorProfile?.fullName}
               </p>
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <p className="text-sm font-medium text-blue-800">
-                  Next Available Slot:
+                  Selected Slot:
                 </p>
                 <p className="text-sm text-blue-700">
                   {modalData.slot.day}, {new Date(modalData.slot.dateISO).toLocaleDateString()}
@@ -405,6 +484,9 @@ export default function ConsultDoctor() {
                 </p>
                 <p className="text-sm text-blue-700 mt-1">
                   Fee: ₹{modalData.doctor.doctorProfile?.fee || 0}
+                </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 Chat will be available immediately after doctor approves your request
                 </p>
               </div>
             </div>
@@ -450,7 +532,7 @@ export default function ConsultDoctor() {
                 {activeChat.doctorProfile?.fullName}
               </h2>
               <p className="text-xs text-gray-600">
-                {consultationStatus[activeChat._id] === "approved" ? "Online" : "Offline"}
+                {isConsultationApproved(activeChat._id) ? "Online" : "Offline"}
               </p>
             </div>
           </div>
@@ -466,7 +548,7 @@ export default function ConsultDoctor() {
       )}
       
       <div className="flex h-screen">
-        {/* Sidebar - White Theme */}
+        {/* Sidebar */}
         <div
           className={`bg-white h-full w-full md:w-96 flex-shrink-0 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
             activeChat ? "-translate-x-full md:translate-x-0" : "translate-x-0"
@@ -517,7 +599,7 @@ export default function ConsultDoctor() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredDoctors.map((doctor) => {
-                  const statusInfo = getConsultationStatusText(doctor._id);
+                  const statusDisplay = getConsultationStatusDisplay(doctor._id);
                   return (
                     <div
                       key={doctor._id}
@@ -567,27 +649,14 @@ export default function ConsultDoctor() {
                           </p>
 
                           {/* Consultation Status */}
-                          <p className={`text-sm font-medium mt-1 ${statusInfo.color}`}>
-                            {statusInfo.text}
-                          </p>
-
-                          {/* Availability Status */}
-                          {doctor.schedule && (
-                            isDoctorAvailableNow(doctor.schedule) ? (
-                              <p className="text-sm text-green-600 mt-1">
-                                Available now
-                              </p>
-                            ) : (
-                              (() => {
-                                const nxt = findNextAvailableSlot(doctor.schedule);
-                                return nxt ? (
-                                  <p className="text-sm text-amber-600 mt-1">
-                                    Next: {nxt.day} {new Date(nxt.dateISO).toLocaleDateString()} {nxt.startTime}
-                                  </p>
-                                ) : null;
-                              })()
-                            )
-                          )}
+                          <div className={`mt-2 p-2 rounded-lg border ${statusDisplay.bgColor} ${statusDisplay.borderColor}`}>
+                            <div className="flex items-center text-sm font-medium">
+                              {statusDisplay.icon}
+                              <span className={statusDisplay.color}>
+                                {statusDisplay.text}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       {messages[doctor._id]?.length > 0 && (
@@ -605,7 +674,7 @@ export default function ConsultDoctor() {
           </div>
         </div>
 
-        {/* Chat panel - White Theme */}
+        {/* Chat panel */}
         <div
           className={`flex-1 flex flex-col h-full ${
             activeChat ? "block" : "hidden md:block"
@@ -633,9 +702,9 @@ export default function ConsultDoctor() {
                     </h2>
                     <p className="text-sm text-gray-600">
                       {activeChat.doctorProfile?.specialization} • {
-                        consultationStatus[activeChat._id] === "approved" 
-                          ? "Online" 
-                          : "Consultation Pending"
+                        isConsultationApproved(activeChat._id) 
+                          ? "Chat Available" 
+                          : getConsultationStatusDisplay(activeChat._id).text
                       }
                     </p>
                   </div>
@@ -715,9 +784,9 @@ export default function ConsultDoctor() {
                         Dr. {activeChat.doctorProfile?.fullName}
                       </p>
                       <p className="text-sm">
-                        {consultationStatus[activeChat._id] === "approved" 
+                        {isConsultationApproved(activeChat._id) 
                           ? "Send a message to start the conversation" 
-                          : "Waiting for consultation approval"}
+                          : getConsultationStatusDisplay(activeChat._id).text}
                       </p>
                     </div>
                   </div>
@@ -737,16 +806,16 @@ export default function ConsultDoctor() {
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder={
-                        consultationStatus[activeChat?._id] === "approved" 
+                        isConsultationApproved(activeChat?._id) 
                           ? "Type a message..." 
                           : "Chat will be available after consultation approval"
                       }
-                      disabled={consultationStatus[activeChat?._id] !== "approved"}
+                      disabled={!isConsultationApproved(activeChat?._id)}
                       className="w-full bg-transparent border-none text-gray-900 placeholder-gray-500 px-4 py-3 text-sm focus:outline-none resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
                       rows="1"
                     />
                   </div>
-                  {message.trim() && consultationStatus[activeChat?._id] === "approved" ? (
+                  {message.trim() && isConsultationApproved(activeChat?._id) ? (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -759,13 +828,13 @@ export default function ConsultDoctor() {
                     <div className="flex items-center gap-1">
                       <button 
                         className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                        disabled={consultationStatus[activeChat?._id] !== "approved"}
+                        disabled={!isConsultationApproved(activeChat?._id)}
                       >
                         <Smile className="w-5 h-5" />
                       </button>
                       <button 
                         className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                        disabled={consultationStatus[activeChat?._id] !== "approved"}
+                        disabled={!isConsultationApproved(activeChat?._id)}
                       >
                         <Mic className="w-5 h-5" />
                       </button>
