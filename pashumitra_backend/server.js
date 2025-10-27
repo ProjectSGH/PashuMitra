@@ -21,6 +21,7 @@ import Notification from "./routes/Common/NotificationRoutes.js";
 import medicineRoutes from "./routes/MedicalStore/medicineRoutes.js";
 import MedicalscheduleRoutes from "./routes/MedicalStore/scheduleRoutes.js";
 import UserVerificationRoutes from "./routes/Common/userVerificationRoutes.js";
+import GetStoreRoutes from "./routes/Farmer/GetStoreRoutes.js";
 
 // Admin Routes
 import adminUserVerificationRoutes from "./routes/Admin/UserVerification_Admin.js";
@@ -56,6 +57,7 @@ app.use("/api/consultations", consultationRoutes);
 app.use("/api/notifications", Notification);
 app.use("/api/medicineRoutes", medicineRoutes);
 app.use("/api/MedicalscheduleRoutes", MedicalscheduleRoutes);
+app.use("/api/stores", GetStoreRoutes);
 
 // Admin routes
 app.use("/api/admin/verification", adminUserVerificationRoutes);
