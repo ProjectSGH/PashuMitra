@@ -5,6 +5,7 @@ import Doctor from "../../models/Doctor/DoctorModel.js";
 import Notification from "../../models/Common/notificationModel.js"; // optional
 import User from "../../models/UserModel.js";
 import Farmer from "../../models/Farmer/FarmerModel.js";
+import PDFDocument from "pdfkit";
 
 const router = express.Router();
 
@@ -120,7 +121,7 @@ router.get("/status/:doctorId/:farmerUserId", async (req, res) => {
   }
 });
 
-// ✅ Get all consultations for a farmer - FIXED FOR CORRECT DATA MODEL
+// ✅ Get all consultations for a farmer - FIXED DOCTOR LOOKUP
 router.get("/farmer/:farmerUserId", async (req, res) => {
   try {
     const { farmerUserId } = req.params;
@@ -136,7 +137,9 @@ router.get("/farmer/:farmerUserId", async (req, res) => {
       farmerId: farmerProfile._id
     }).sort({ createdAt: -1 });
 
-    // Manually populate doctor information with CORRECT data structure
+    console.log(`Found ${consultations.length} consultations for farmer ${farmerUserId}`);
+
+    // Manually populate doctor information with CORRECT lookup
     const consultationsWithDoctors = await Promise.all(
       consultations.map(async (consultation) => {
         let doctorInfo = {
@@ -146,13 +149,15 @@ router.get("/farmer/:farmerUserId", async (req, res) => {
           fee: 0
         };
 
-        // Manually lookup doctor if doctorId exists
+        // Manually lookup doctor using userId (since doctorId stores User ID)
         if (consultation.doctorId) {
           try {
-            // CORRECTED: Directly use Doctor_User model which contains the profile data
-            const doctor = await Doctor.findById(consultation.doctorId);
+            console.log(`Looking up doctor with User ID: ${consultation.doctorId}`);
             
-            console.log("Found doctor:", doctor); // Debug log
+            // CORRECTED: Find Doctor document by userId field
+            const doctor = await Doctor.findOne({ userId: consultation.doctorId });
+            
+            console.log("Doctor lookup result:", doctor);
             
             if (doctor) {
               doctorInfo = {
@@ -161,10 +166,27 @@ router.get("/farmer/:farmerUserId", async (req, res) => {
                 experience: doctor.experience || 0,
                 fee: doctor.fee || 0
               };
+              console.log(`Found doctor: ${doctorInfo.fullName}`);
+            } else {
+              console.log(`Doctor not found with User ID: ${consultation.doctorId}`);
+              
+              // Fallback: Try direct ID lookup in case some records use different structure
+              const doctorById = await Doctor.findById(consultation.doctorId);
+              if (doctorById) {
+                doctorInfo = {
+                  fullName: doctorById.fullName || "Unknown Doctor",
+                  specialization: doctorById.specialization || "General Practitioner",
+                  experience: doctorById.experience || 0,
+                  fee: doctorById.fee || 0
+                };
+                console.log(`Found doctor by direct ID: ${doctorInfo.fullName}`);
+              }
             }
           } catch (doctorErr) {
             console.error(`Error fetching doctor ${consultation.doctorId}:`, doctorErr);
           }
+        } else {
+          console.log("No doctorId found for consultation:", consultation._id);
         }
 
         return {
@@ -192,6 +214,7 @@ router.get("/farmer/:farmerUserId", async (req, res) => {
       })
     );
 
+    console.log("Final consultations data:", consultationsWithDoctors);
     res.json(consultationsWithDoctors);
   } catch (err) {
     console.error("Error fetching farmer consultations:", err);
@@ -365,29 +388,45 @@ router.put("/confirm", async (req, res) => {
   }
 });
 
-
-// ConsultationRoutes.js - FIXED ROUTES
-
-// ✅ Get consultation details by ID - FIXED FOR CORRECT DATA MODEL
+// ✅ Get consultation details by ID - FIXED
 router.get("/:id", async (req, res) => {
   try {
     const consultation = await ConsultationRequest.findById(req.params.id)
       .populate({
         path: "farmerId",
         select: "fullName userId animals"
-      })
-      .populate({
-        path: "doctorId",
-        select: "fullName specialization experience fee" // CORRECTED: Direct fields from Doctor_User
       });
+      // Remove the doctorId populate since it won't work with your structure
 
     if (!consultation) {
       return res.status(404).json({ error: "Consultation not found" });
     }
 
+    console.log("Consultation doctorId:", consultation.doctorId);
+
     // Get user details for farmer
     const farmerUser = await User.findById(consultation.farmerId.userId).select("email phone");
     
+    // Handle doctor data properly - lookup by userId
+    let doctorName = "Unknown Doctor";
+    let doctorSpecialization = "General";
+    
+    if (consultation.doctorId) {
+      try {
+        // Lookup Doctor document by userId field
+        const doctor = await Doctor.findOne({ userId: consultation.doctorId });
+        if (doctor) {
+          doctorName = doctor.fullName || "Unknown Doctor";
+          doctorSpecialization = doctor.specialization || "General";
+          console.log(`Found doctor: ${doctorName}`);
+        } else {
+          console.log(`Doctor not found with userId: ${consultation.doctorId}`);
+        }
+      } catch (doctorErr) {
+        console.error("Error fetching doctor:", doctorErr);
+      }
+    }
+
     const consultationData = {
       id: consultation._id,
       farmerName: consultation.farmerId.fullName,
@@ -396,9 +435,8 @@ router.get("/:id", async (req, res) => {
       animalType: consultation.farmerId.animals?.[0]?.animalType || "Not specified",
       animalBreed: consultation.farmerId.animals?.[0]?.breed || "Not specified",
       animalAge: consultation.farmerId.animals?.[0]?.age || "Not specified",
-      // CORRECTED: Direct fields from doctorId (Doctor_User)
-      doctorName: consultation.doctorId?.fullName || "Unknown Doctor",
-      doctorSpecialization: consultation.doctorId?.specialization || "General",
+      doctorName: doctorName,
+      doctorSpecialization: doctorSpecialization,
       date: consultation.date,
       startTime: consultation.startTime,
       endTime: consultation.endTime,
@@ -656,5 +694,220 @@ router.put("/:id/schedule-followup", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ✅ Generate and download prescription PDF - FIXED VERSION
+router.get("/:id/prescription", async (req, res) => {
+  try {
+    const consultation = await ConsultationRequest.findById(req.params.id)
+      .populate({
+        path: "farmerId",
+        select: "fullName userId animals"
+      });
+
+    if (!consultation) {
+      return res.status(404).json({ error: "Consultation not found" });
+    }
+
+    console.log("Consultation found for prescription:", consultation._id);
+
+    // Get doctor information
+    let doctorName = "Unknown Doctor";
+    let doctorSpecialization = "General";
+    
+    if (consultation.doctorId) {
+      try {
+        const doctor = await Doctor.findOne({ userId: consultation.doctorId });
+        if (doctor) {
+          doctorName = doctor.fullName || "Unknown Doctor";
+          doctorSpecialization = doctor.specialization || "General";
+          console.log(`Found doctor: ${doctorName}`);
+        } else {
+          console.log(`Doctor not found with userId: ${consultation.doctorId}`);
+        }
+      } catch (doctorErr) {
+        console.error("Error fetching doctor:", doctorErr);
+      }
+    }
+
+    // Create PDF document
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Set response headers
+    const fileName = `Prescription_${doctorName.replace(/\s+/g, '_')}_${new Date(consultation.date).toISOString().split('T')[0]}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    
+    // Pipe PDF to response
+    doc.pipe(res);
+
+    // Add content to PDF using the helper function
+    addPrescriptionContent(doc, consultation, doctorName, doctorSpecialization);
+
+    // Finalize PDF
+    doc.end();
+
+  } catch (err) {
+    console.error("Error generating prescription PDF:", err);
+    console.error("Error details:", err.message);
+    res.status(500).json({ error: "Failed to generate prescription PDF" });
+  }
+});
+
+// ✅ Helper function to add prescription content - FIXED
+const addPrescriptionContent = (doc, consultation, doctorName, doctorSpecialization) => {
+  try {
+    const farmerName = consultation.farmerId?.fullName || 'Patient';
+    const date = new Date(consultation.date).toLocaleDateString();
+
+    // Header
+    doc.fontSize(20).font('Helvetica-Bold').fillColor('#1e40af')
+       .text('MEDICAL PRESCRIPTION', { align: 'center' });
+    
+    doc.moveDown(0.5);
+    
+    // Patient Information
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#374151')
+       .text('PATIENT INFORMATION:');
+    
+    doc.font('Helvetica').fillColor('#000000')
+       .text(`Name: ${farmerName}`);
+    doc.text(`Animal Type: ${consultation.farmerId?.animals?.[0]?.animalType || 'Not specified'}`);
+    doc.text(`Breed: ${consultation.farmerId?.animals?.[0]?.breed || 'Not specified'}`);
+    doc.text(`Age: ${consultation.farmerId?.animals?.[0]?.age || 'Not specified'}`);
+    
+    doc.moveDown();
+
+    // Prescription Details
+    doc.font('Helvetica-Bold').fillColor('#374151')
+       .text('PRESCRIPTION DETAILS:');
+    
+    doc.font('Helvetica').fillColor('#000000')
+       .text(`Date: ${date}`);
+    doc.text(`Time: ${consultation.startTime}`);
+    doc.text(`Consultation ID: ${consultation._id}`);
+    doc.text(`Fee: ₹${consultation.fee || 0}`);
+    
+    doc.moveDown();
+
+    // Doctor Information
+    doc.font('Helvetica-Bold').fillColor('#1e40af')
+       .text('PRESCRIBING VETERINARIAN:');
+    
+    doc.font('Helvetica').fillColor('#000000')
+       .text(`Dr. ${doctorName}`);
+    doc.text(`Specialization: ${doctorSpecialization}`);
+    doc.text(`Duration: ${consultation.consultationDuration || 0} minutes`);
+    
+    doc.moveDown();
+
+    // Symptoms
+    if (consultation.symptoms) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('SYMPTOMS REPORTED:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.symptoms, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Diagnosis
+    if (consultation.diagnosis) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('DIAGNOSIS:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.diagnosis, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Medications
+    if (consultation.medicationsPrescribed && consultation.medicationsPrescribed.length > 0) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('PRESCRIBED MEDICATIONS:');
+      
+      consultation.medicationsPrescribed.forEach((med, index) => {
+        doc.font('Helvetica').fillColor('#000000')
+           .text(`${index + 1}. ${med.name || 'Unnamed Medication'}`);
+        doc.text(`   Dosage: ${med.dosage || 'Not specified'}`);
+        doc.text(`   Duration: ${med.duration || 'Not specified'}`);
+        doc.text(`   Instructions: ${med.instructions || 'Not specified'}`);
+        doc.moveDown(0.5);
+      });
+      doc.moveDown();
+    }
+
+    // Treatment Plan
+    if (consultation.treatmentPlan) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('TREATMENT PLAN:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.treatmentPlan, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Recommendations
+    if (consultation.recommendations) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('RECOMMENDATIONS:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.recommendations, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Doctor's Notes
+    if (consultation.consultationNotes) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text("DOCTOR'S NOTES:");
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.consultationNotes, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Next Steps
+    if (consultation.nextSteps) {
+      doc.font('Helvetica-Bold').fillColor('#374151')
+         .text('NEXT STEPS:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(consultation.nextSteps, { width: 500 });
+      doc.moveDown();
+    }
+
+    // Follow-up Information
+    if (consultation.followUpDate) {
+      doc.font('Helvetica-Bold').fillColor('#92400e')
+         .text('FOLLOW-UP APPOINTMENT:');
+      doc.font('Helvetica').fillColor('#000000')
+         .text(`Scheduled for: ${new Date(consultation.followUpDate).toLocaleDateString()}`);
+      if (consultation.followUpNotes) {
+        doc.text(`Notes: ${consultation.followUpNotes}`);
+      }
+      doc.moveDown();
+    }
+
+    // Footer
+    const bottomY = doc.page.height - 100;
+    doc.y = bottomY;
+    
+    doc.fontSize(10).fillColor('#6b7280')
+       .text(`Generated by PashuMitra • ${new Date().toLocaleDateString()}`, { align: 'center' });
+    
+    doc.moveDown(0.5);
+    doc.fontSize(8).fillColor('#9ca3af')
+       .text('This is a computer-generated prescription', { align: 'center' });
+
+    // Signatures
+    doc.y = bottomY + 30;
+    doc.fontSize(10).fillColor('#374151')
+       .text('Veterinarian\'s Signature:', 50, doc.y)
+       .text('_________________________', 50, doc.y + 15)
+       .text(`Dr. ${doctorName}`, 50, doc.y + 30);
+    
+    doc.text('Patient\'s Acknowledgement:', doc.page.width - 200, doc.y)
+       .text('_________________________', doc.page.width - 200, doc.y + 15)
+       .text(farmerName, doc.page.width - 200, doc.y + 30);
+
+  } catch (error) {
+    console.error('Error in addPrescriptionContent:', error);
+    doc.text('Error generating prescription content. Please try again.');
+  }
+};
 
 export default router;

@@ -15,10 +15,11 @@ import {
   Download,
   Eye,
   ChevronRight,
-  FileDown
+  FileDown,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { PrescriptionService } from "../../hooks/Prescrition";
 
 export default function FarmerConsultationHistory() {
   const [consultations, setConsultations] = useState([]);
@@ -38,7 +39,7 @@ export default function FarmerConsultationHistory() {
       const response = await axios.get(
         `http://localhost:5000/api/consultations/farmer/${farmerId}`
       );
-      console.log("Consultations data:", response.data); // Debug log
+      // console.log("Consultations data:", response.data); // Debug log
       setConsultations(response.data || []);
     } catch (err) {
       console.error("Error fetching consultation history:", err);
@@ -68,38 +69,82 @@ export default function FarmerConsultationHistory() {
     }
   };
 
-  // Download prescription as PDF
-  const downloadPrescription = (consultation) => {
-    // This would generate a PDF - you can use libraries like jsPDF or html2pdf
-    toast.success("Prescription download feature coming soon!");
-  };
+  // In your component, update the downloadPrescription function:
+const downloadPrescription = async (consultation) => {
+  try {
+    // console.log("Consultation object:", consultation);
+    
+    // Check if consultation exists and has an ID
+    if (!consultation) {
+      toast.error("No consultation data available");
+      return;
+    }
 
-  // Get doctor information - UPDATED to handle null doctorId
-  const getDoctorInfo = (consultation) => {
-    // First check if we have doctorInfo from the backend
-     if (consultation.doctorInfo) {
-    return {
-      name: consultation.doctorInfo.fullName,
-      specialization: consultation.doctorInfo.specialization
-    };
+    const consultationId = consultation._id || consultation.id;
+    // console.log("Consultation ID:", consultationId);
+    
+    if (!consultationId) {
+      toast.error("Invalid consultation data - missing ID");
+      return;
+    }
+
+    // Show loading state
+    toast.loading('Generating prescription...', { id: 'prescription' });
+    
+    // Use the backend service
+    await PrescriptionService.downloadPrescription(consultationId);
+    
+    toast.success('Prescription downloaded successfully!', { id: 'prescription' });
+  } catch (error) {
+    console.error('Error downloading prescription:', error);
+    toast.error(error.message || 'Failed to download prescription', { id: 'prescription' });
   }
+};
+
+  // Get doctor information - IMPROVED to handle various data structures
+  const getDoctorInfo = (consultation) => {
+    // console.log("Consultation data for doctor info:", consultation);
+
+    // First check if we have doctorInfo from the backend
+    if (
+      consultation.doctorInfo &&
+      consultation.doctorInfo.fullName !== "Doctor Not Available"
+    ) {
+      return {
+        name: consultation.doctorInfo.fullName,
+        specialization: consultation.doctorInfo.specialization,
+      };
+    }
+
+    // Check if we have direct doctor data (from individual consultation fetch)
+    if (
+      consultation.doctorName &&
+      consultation.doctorName !== "Unknown Doctor"
+    ) {
+      return {
+        name: consultation.doctorName,
+        specialization: consultation.doctorSpecialization || "General",
+      };
+    }
+
     // Final fallback
     return {
       name: "Doctor Not Available",
-      specialization: "Unknown"
+      specialization: "Unknown",
     };
   };
 
   // Filter consultations - UPDATED
-  const filteredConsultations = consultations.filter(consultation => {
+  const filteredConsultations = consultations.filter((consultation) => {
     const doctorInfo = getDoctorInfo(consultation);
     const doctorName = doctorInfo.name.toLowerCase();
-    
-    const matchesSearch = doctorName.includes(searchTerm.toLowerCase()) ||
+
+    const matchesSearch =
+      doctorName.includes(searchTerm.toLowerCase()) ||
       consultation.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || 
-      consultation.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || consultation.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -112,35 +157,35 @@ export default function FarmerConsultationHistory() {
           text: "Completed",
           color: "text-green-800",
           bgColor: "bg-green-100",
-          icon: <CheckCircle className="w-4 h-4" />
+          icon: <CheckCircle className="w-4 h-4" />,
         };
       case "approved":
         return {
           text: "Active",
           color: "text-blue-800",
           bgColor: "bg-blue-100",
-          icon: <Clock className="w-4 h-4" />
+          icon: <Clock className="w-4 h-4" />,
         };
       case "pending":
         return {
           text: "Pending",
           color: "text-yellow-800",
           bgColor: "bg-yellow-100",
-          icon: <Clock className="w-4 h-4" />
+          icon: <Clock className="w-4 h-4" />,
         };
       case "follow_up":
         return {
           text: "Follow-up Required",
           color: "text-orange-800",
           bgColor: "bg-orange-100",
-          icon: <AlertCircle className="w-4 h-4" />
+          icon: <AlertCircle className="w-4 h-4" />,
         };
       default:
         return {
           text: status || "Unknown",
           color: "text-gray-800",
           bgColor: "bg-gray-100",
-          icon: <AlertCircle className="w-4 h-4" />
+          icon: <AlertCircle className="w-4 h-4" />,
         };
     }
   };
@@ -161,7 +206,7 @@ export default function FarmerConsultationHistory() {
             <ChevronRight className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="p-6 space-y-6">
           {selectedConsultation ? (
             <>
@@ -174,13 +219,18 @@ export default function FarmerConsultationHistory() {
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Doctor Name</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        Doctor Name
+                      </label>
                       <p className="text-gray-900">
-                        {selectedConsultation.doctorName || "Doctor Not Available"}
+                        {selectedConsultation.doctorName ||
+                          "Doctor Not Available"}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Specialization</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        Specialization
+                      </label>
                       <p className="text-gray-900">
                         {selectedConsultation.doctorSpecialization || "Unknown"}
                       </p>
@@ -195,26 +245,49 @@ export default function FarmerConsultationHistory() {
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Date & Time</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        Date & Time
+                      </label>
                       <p className="text-gray-900">
-                        {new Date(selectedConsultation.date).toLocaleDateString()} at {selectedConsultation.startTime}
+                        {new Date(
+                          selectedConsultation.date
+                        ).toLocaleDateString()}{" "}
+                        at {selectedConsultation.startTime}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Status</label>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getStatusDisplay(selectedConsultation.status).bgColor} ${getStatusDisplay(selectedConsultation.status).color}`}>
+                      <label className="text-sm font-medium text-gray-700">
+                        Status
+                      </label>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${
+                          getStatusDisplay(selectedConsultation.status).bgColor
+                        } ${
+                          getStatusDisplay(selectedConsultation.status).color
+                        }`}
+                      >
                         {getStatusDisplay(selectedConsultation.status).icon}
                         {getStatusDisplay(selectedConsultation.status).text}
                       </span>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Duration</label>
-                      <p className="text-gray-900">{selectedConsultation.consultationDuration || 0} minutes</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Duration
+                      </label>
+                      <p className="text-gray-900">
+                        {selectedConsultation.consultationDuration || 0} minutes
+                      </p>
                     </div>
                     {selectedConsultation.followUpDate && (
                       <div>
-                        <label className="text-sm font-medium text-gray-700">Follow-up Date</label>
-                        <p className="text-gray-900">{new Date(selectedConsultation.followUpDate).toLocaleDateString()}</p>
+                        <label className="text-sm font-medium text-gray-700">
+                          Follow-up Date
+                        </label>
+                        <p className="text-gray-900">
+                          {new Date(
+                            selectedConsultation.followUpDate
+                          ).toLocaleDateString()}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -230,76 +303,120 @@ export default function FarmerConsultationHistory() {
                 <div className="space-y-4">
                   {selectedConsultation.symptoms && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Symptoms Reported</label>
-                      <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">{selectedConsultation.symptoms}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Symptoms Reported
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">
+                        {selectedConsultation.symptoms}
+                      </p>
                     </div>
                   )}
 
                   {selectedConsultation.diagnosis && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Diagnosis</label>
-                      <p className="text-gray-900 mt-1 bg-blue-50 p-3 rounded-lg border border-blue-100">{selectedConsultation.diagnosis}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Diagnosis
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        {selectedConsultation.diagnosis}
+                      </p>
                     </div>
                   )}
 
                   {selectedConsultation.consultationNotes && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Doctor's Notes</label>
-                      <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">{selectedConsultation.consultationNotes}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Doctor's Notes
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg whitespace-pre-wrap">
+                        {selectedConsultation.consultationNotes}
+                      </p>
                     </div>
                   )}
 
                   {selectedConsultation.treatmentPlan && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Treatment Plan</label>
-                      <p className="text-gray-900 mt-1 bg-green-50 p-3 rounded-lg border border-green-100 whitespace-pre-wrap">{selectedConsultation.treatmentPlan}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Treatment Plan
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-green-50 p-3 rounded-lg border border-green-100 whitespace-pre-wrap">
+                        {selectedConsultation.treatmentPlan}
+                      </p>
                     </div>
                   )}
 
-                  {selectedConsultation.medicationsPrescribed && selectedConsultation.medicationsPrescribed.length > 0 && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                        <Pill className="w-4 h-4" />
-                        Medications Prescribed
-                      </label>
-                      <div className="space-y-3">
-                        {selectedConsultation.medicationsPrescribed.map((med, index) => (
-                          <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Pill className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium text-gray-900">{med.name || "Unnamed Medication"}</span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-600 font-medium">Dosage:</span>
-                                <p className="text-gray-900 mt-1">{med.dosage || "Not specified"}</p>
+                  {selectedConsultation.medicationsPrescribed &&
+                    selectedConsultation.medicationsPrescribed.length > 0 && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Pill className="w-4 h-4" />
+                          Medications Prescribed
+                        </label>
+                        <div className="space-y-3">
+                          {selectedConsultation.medicationsPrescribed.map(
+                            (med, index) => (
+                              <div
+                                key={index}
+                                className="border rounded-lg p-4 bg-white shadow-sm"
+                              >
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Pill className="w-4 h-4 text-blue-500" />
+                                  <span className="font-medium text-gray-900">
+                                    {med.name || "Unnamed Medication"}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-gray-600 font-medium">
+                                      Dosage:
+                                    </span>
+                                    <p className="text-gray-900 mt-1">
+                                      {med.dosage || "Not specified"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600 font-medium">
+                                      Duration:
+                                    </span>
+                                    <p className="text-gray-900 mt-1">
+                                      {med.duration || "Not specified"}
+                                    </p>
+                                  </div>
+                                  <div className="md:col-span-1">
+                                    <span className="text-gray-600 font-medium">
+                                      Instructions:
+                                    </span>
+                                    <p className="text-gray-900 mt-1">
+                                      {med.instructions || "Not specified"}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-gray-600 font-medium">Duration:</span>
-                                <p className="text-gray-900 mt-1">{med.duration || "Not specified"}</p>
-                              </div>
-                              <div className="md:col-span-1">
-                                <span className="text-gray-600 font-medium">Instructions:</span>
-                                <p className="text-gray-900 mt-1">{med.instructions || "Not specified"}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {selectedConsultation.recommendations && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Recommendations</label>
-                      <p className="text-gray-900 mt-1 bg-yellow-50 p-3 rounded-lg border border-yellow-100 whitespace-pre-wrap">{selectedConsultation.recommendations}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Recommendations
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-yellow-50 p-3 rounded-lg border border-yellow-100 whitespace-pre-wrap">
+                        {selectedConsultation.recommendations}
+                      </p>
                     </div>
                   )}
 
                   {selectedConsultation.nextSteps && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Next Steps</label>
-                      <p className="text-gray-900 mt-1 bg-purple-50 p-3 rounded-lg border border-purple-100 whitespace-pre-wrap">{selectedConsultation.nextSteps}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Next Steps
+                      </label>
+                      <p className="text-gray-900 mt-1 bg-purple-50 p-3 rounded-lg border border-purple-100 whitespace-pre-wrap">
+                        {selectedConsultation.nextSteps}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -344,8 +461,12 @@ export default function FarmerConsultationHistory() {
       >
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">My Consultations</h1>
-          <p className="text-gray-600 text-sm md:text-base">View your consultation history and prescriptions</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            My Consultations
+          </h1>
+          <p className="text-gray-600 text-sm md:text-base">
+            View your consultation history and prescriptions
+          </p>
         </div>
 
         {/* Search and Filter Section */}
@@ -411,8 +532,8 @@ export default function FarmerConsultationHistory() {
                 <FileText className="w-8 h-8 text-gray-400" />
               </div>
               <p className="text-gray-500">
-                {searchTerm || statusFilter !== "all" 
-                  ? "No consultations found matching your criteria." 
+                {searchTerm || statusFilter !== "all"
+                  ? "No consultations found matching your criteria."
                   : "You haven't had any consultations yet."}
               </p>
             </div>
@@ -449,7 +570,9 @@ export default function FarmerConsultationHistory() {
                             {doctorInfo.specialization}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold rounded-full ${statusDisplay.bgColor} ${statusDisplay.color}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold rounded-full ${statusDisplay.bgColor} ${statusDisplay.color}`}
+                        >
                           {statusDisplay.icon}
                           {statusDisplay.text}
                         </span>
@@ -458,7 +581,9 @@ export default function FarmerConsultationHistory() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div className="flex items-center gap-2 text-gray-600">
                           <Calendar className="w-4 h-4" />
-                          <span>{new Date(consultation.date).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(consultation.date).toLocaleDateString()}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
                           <Clock className="w-4 h-4" />
@@ -467,7 +592,9 @@ export default function FarmerConsultationHistory() {
                         {consultation.diagnosis && (
                           <div className="flex items-center gap-2 text-gray-600">
                             <Stethoscope className="w-4 h-4" />
-                            <span className="truncate">{consultation.diagnosis}</span>
+                            <span className="truncate">
+                              {consultation.diagnosis}
+                            </span>
                           </div>
                         )}
                       </div>
