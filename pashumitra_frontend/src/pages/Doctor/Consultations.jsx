@@ -29,6 +29,7 @@ export default function DoctorChat() {
   const [searchTerm, setSearchTerm] = useState("");
   const [consultations, setConsultations] = useState({});
   const [consultationDetails, setConsultationDetails] = useState({});
+  const [statusFilter, setStatusFilter] = useState("active"); // "active", "completed", "all"
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -56,22 +57,24 @@ export default function DoctorChat() {
     }
 
     socket.on("receiveMessage", (newMessage) => {
-      console.log("Socket received message:", newMessage);
+      // console.log("Socket received message:", newMessage);
       const farmerKey = newMessage.farmerId?.toString();
-      
+
       // Prevent duplicates by checking if message already exists
       setMessages((prev) => {
         const existingMessages = prev[farmerKey] || [];
-        const isDuplicate = existingMessages.some(msg => 
-          msg._id === newMessage._id || 
-          (msg.timestamp === newMessage.timestamp && msg.message === newMessage.message)
+        const isDuplicate = existingMessages.some(
+          (msg) =>
+            msg._id === newMessage._id ||
+            (msg.timestamp === newMessage.timestamp &&
+              msg.message === newMessage.message)
         );
-        
+
         if (isDuplicate) {
-          console.log("Duplicate message detected, skipping");
+          // console.log("Duplicate message detected, skipping");
           return prev;
         }
-        
+
         return {
           ...prev,
           [farmerKey]: [...existingMessages, newMessage],
@@ -94,7 +97,9 @@ export default function DoctorChat() {
         );
 
         if (data.status === "approved") {
-          toast.success("Consultation approved successfully! Chat is now available.");
+          toast.success(
+            "Consultation approved successfully! Chat is now available."
+          );
         } else if (data.status === "rejected") {
           toast.error("Consultation rejected");
         }
@@ -110,15 +115,17 @@ export default function DoctorChat() {
     return () => socket.disconnect();
   }, [doctorId]);
 
-  // Fetch farmers & consultations - FIXED: Use proper farmer user ID
+  // ✅ CORRECTED: Group consultations by farmer, show only one entry per farmer
   const fetchFarmersAndConsultations = async () => {
     try {
       console.log("Fetching consultations for doctor:", doctorId);
+
+      // Fetch ALL consultations (not just pending)
       const consultRes = await axios.get(
-        `http://localhost:5000/api/consultations/doctor/${doctorId}/requests`
+        `http://localhost:5000/api/consultations/doctor/${doctorId}/requests?status=all`
       );
 
-      console.log("Consultations API response:", consultRes.data);
+      console.log("All consultations API response:", consultRes.data);
 
       if (!consultRes.data || consultRes.data.length === 0) {
         console.log("No consultation requests found");
@@ -127,45 +134,79 @@ export default function DoctorChat() {
         return;
       }
 
-      // Create a map to avoid duplicates - Use farmerUserId for chat
+      // Group consultations by farmerUserId
       const farmersMap = new Map();
 
       consultRes.data
-        .filter((c) => c && c._id && c.farmerUserId) // Only include items with farmerUserId
+        .filter((c) => c && c._id && c.farmerUserId && c.requestId)
         .forEach((c) => {
-          const farmerUserKey = c.farmerUserId;
-          
-          if (!farmersMap.has(farmerUserKey)) {
-            farmersMap.set(farmerUserKey, {
-              _id: farmerUserKey, // This is the user ID for chat
-              requestId: c._id,
+          const farmerUserId = c.farmerUserId;
+
+          if (!farmersMap.has(farmerUserId)) {
+            // First time seeing this farmer - create entry
+            farmersMap.set(farmerUserId, {
+              _id: farmerUserId, // Use farmerUserId as the main ID for chat
+              farmerUserId: farmerUserId,
               fullName: c.fullName || "Unknown Farmer",
               email: c.email || "",
               phone: c.phone || "No phone",
-              status: c.status || "pending",
-              consultationDate: c.date,
-              startTime: c.startTime,
-              endTime: c.endTime,
-              fee: c.fee || 0,
+              consultations: [], // Array to store all consultations for this farmer
+              latestConsultation: null, // Track the most recent consultation
             });
+          }
+
+          const farmer = farmersMap.get(farmerUserId);
+          const consultation = {
+            requestId: c.requestId,
+            status: c.status || "pending",
+            consultationDate: c.date,
+            startTime: c.startTime,
+            endTime: c.endTime,
+            fee: c.fee || 0,
+            createdAt: c.createdAt,
+          };
+
+          farmer.consultations.push(consultation);
+
+          // Update latest consultation if this one is newer
+          if (
+            !farmer.latestConsultation ||
+            new Date(c.createdAt) >
+              new Date(farmer.latestConsultation.createdAt)
+          ) {
+            farmer.latestConsultation = consultation;
           }
         });
 
-      const farmersList = Array.from(farmersMap.values());
-      console.log("Processed farmers list for chat:", farmersList);
+      // Convert map to array and set the main consultation status based on latest consultation
+      const farmersList = Array.from(farmersMap.values()).map((farmer) => ({
+        ...farmer,
+        // Use the latest consultation for main status and chat availability
+        requestId: farmer.latestConsultation?.requestId,
+        status: farmer.latestConsultation?.status || "none",
+        consultationDate: farmer.latestConsultation?.consultationDate,
+        startTime: farmer.latestConsultation?.startTime,
+        endTime: farmer.latestConsultation?.endTime,
+        fee: farmer.latestConsultation?.fee || 0,
+      }));
+
+      console.log("Processed farmers list (grouped by farmer):", farmersList);
 
       const consultMap = {};
       const detailsMap = {};
 
-      farmersList.forEach((f) => {
-        if (f.requestId) {
-          consultMap[f.requestId] = f.status;
-          detailsMap[f.requestId] = {
-            date: f.consultationDate,
-            startTime: f.startTime,
-            endTime: f.endTime,
-          };
-        }
+      // Create consultation maps for all consultations (not just latest)
+      farmersList.forEach((farmer) => {
+        farmer.consultations.forEach((consultation) => {
+          if (consultation.requestId) {
+            consultMap[consultation.requestId] = consultation.status;
+            detailsMap[consultation.requestId] = {
+              date: consultation.consultationDate,
+              startTime: consultation.startTime,
+              endTime: consultation.endTime,
+            };
+          }
+        });
       });
 
       setConsultations(consultMap);
@@ -185,17 +226,37 @@ export default function DoctorChat() {
     }
   }, [doctorId]);
 
-  // Check if chat is allowed
+  // ✅ CORRECTED: Check if farmer has ANY approved consultation
   const isChatAvailable = (farmer) => {
-    if (!farmer.requestId || consultations[farmer.requestId] !== "approved") {
+    if (!farmer.consultations || farmer.consultations.length === 0) {
       return false;
     }
-    return true;
-  };
 
-  // Open chat
+    // Check if any consultation is approved
+    const hasApprovedConsultation = farmer.consultations.some(
+      (consultation) => consultations[consultation.requestId] === "approved"
+    );
+
+    if (hasApprovedConsultation) {
+      return true;
+    }
+
+    // Check if all consultations are completed
+    const allCompleted = farmer.consultations.every(
+      (consultation) => consultations[consultation.requestId] === "completed"
+    );
+
+    if (allCompleted) {
+      return "completed";
+    }
+
+    return false;
+  };
+  // ✅ CORRECTED: Use farmerUserId for all chat operations
   const openChat = (farmer) => {
-    if (farmer.requestId && !isChatAvailable(farmer)) {
+    const chatStatus = isChatAvailable(farmer);
+
+    if (chatStatus === false) {
       toast.error(
         "Chat will be available after you approve the consultation.",
         { duration: 4000, position: "bottom-right" }
@@ -203,46 +264,56 @@ export default function DoctorChat() {
       return;
     }
 
-    const farmerId = farmer._id.toString();
+    if (chatStatus === "completed") {
+      toast.info(
+        "This consultation is completed. Approve a new request to continue chatting.",
+        { duration: 4000, position: "bottom-right" }
+      );
+      return;
+    }
+
+    // Use farmerUserId for all chat operations
+    const farmerUserId = farmer.farmerUserId.toString();
     setSelectedFarmer(farmer);
     setActiveChat(farmer);
     setShowSidebar(false);
 
     if (socketRef.current) {
       socketRef.current.emit("joinRoom", {
-        farmerId,
+        farmerId: farmerUserId,
         doctorId,
       });
     }
 
-    fetchMessages(farmerId);
+    fetchMessages(farmerUserId);
   };
-
-  // Fetch messages - FIXED: Remove duplicate socket emission
-  const fetchMessages = async (farmerId) => {
+  // ✅ CORRECTED: Use farmerUserId for messages
+  const fetchMessages = async (farmerUserId) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/chat/messages/${farmerId}/${doctorId}`
+        `http://localhost:5000/api/chat/messages/${farmerUserId}/${doctorId}`
       );
       console.log("Fetched messages:", res.data);
-      setMessages((prev) => ({ ...prev, [farmerId]: res.data }));
+      setMessages((prev) => ({ ...prev, [farmerUserId]: res.data }));
     } catch (err) {
       console.error("Error fetching messages:", err);
     }
   };
 
-  // Send message - FIXED: Remove duplicate emission
+  // ✅ CORRECTED: Use farmerUserId for all message operations
   const handleSendMessage = async () => {
     if (!selectedFarmer || !message.trim()) return;
 
     if (!isChatAvailable(selectedFarmer)) {
-      toast.error("You can only send messages after approving the consultation.");
+      toast.error(
+        "You can only send messages after approving the consultation."
+      );
       return;
     }
 
     try {
       const newMessage = {
-        farmerId: selectedFarmer._id.toString(),
+        farmerId: selectedFarmer.farmerUserId.toString(), // Use farmerUserId
         doctorId,
         sender: "doctor",
         message,
@@ -250,59 +321,72 @@ export default function DoctorChat() {
 
       console.log("Sending message:", newMessage);
 
-      // Send to backend - the backend will handle socket emission
+      // Send to backend
       await axios.post("http://localhost:5000/api/chat/send", newMessage);
 
-      // DO NOT emit via socket here - backend already does it
-      // This was causing duplicate messages
-
       setMessage("");
-      
+
       // Refresh messages to get the latest from DB
       setTimeout(() => {
-        fetchMessages(selectedFarmer._id.toString());
+        fetchMessages(selectedFarmer.farmerUserId.toString());
       }, 100);
-      
     } catch (err) {
       console.error("Error sending message:", err);
       toast.error("Failed to send message");
     }
   };
 
-  // Confirm / Approve consultation
-  const handleConfirmConsultation = async (requestId, farmerId) => {
+  // ✅ CORRECTED: Use the proper IDs
+  const handleConfirmConsultation = async (farmer) => {
     try {
-      console.log("Approving consultation:", requestId);
+      console.log("Farmer object for approval:", farmer);
+
+      if (!farmer.requestId) {
+        console.error("No requestId found for farmer:", farmer);
+        toast.error("No consultation request found to approve");
+        return;
+      }
+
+      console.log("Approving consultation with requestId:", farmer.requestId);
+      console.log("Farmer user ID:", farmer.farmerUserId);
 
       const response = await axios.put(
-        `http://localhost:5000/api/consultations/${requestId}/approve`
+        `http://localhost:5000/api/consultations/${farmer.requestId}/approve`
       );
 
       console.log("Approval response:", response.data);
 
-      setConsultations((prev) => ({ ...prev, [requestId]: "approved" }));
+      // Update state
+      setConsultations((prev) => ({ ...prev, [farmer.requestId]: "approved" }));
       setFarmers((prev) =>
         prev.map((f) =>
-          f.requestId === requestId ? { ...f, status: "approved" } : f
+          f.requestId === farmer.requestId ? { ...f, status: "approved" } : f
         )
       );
 
+      // Emit socket event
       if (socketRef.current) {
         socketRef.current.emit("consultationApproved", {
-          requestId,
-          farmerId,
-          doctorId,
+          requestId: farmer.requestId,
+          farmerId: farmer.farmerUserId, // Use farmerUserId for socket
+          doctorId: doctorId,
           status: "approved",
         });
       }
 
-      toast.success("Consultation approved successfully! Chat is now available.", {
-        duration: 4000,
-        position: "bottom-right",
-      });
+      toast.success(
+        "Consultation approved successfully! Chat is now available.",
+        {
+          duration: 4000,
+          position: "bottom-right",
+        }
+      );
     } catch (err) {
       console.error("Approval error:", err);
-      const errorMessage = err.response?.data?.error || "Failed to approve consultation";
+      console.error("Error details:", err.response?.data);
+
+      const errorMessage =
+        err.response?.data?.error || "Failed to approve consultation";
       toast.error(errorMessage, {
         duration: 5000,
         position: "bottom-right",
@@ -310,24 +394,33 @@ export default function DoctorChat() {
     }
   };
 
-  const handleRejectConsultation = async (requestId, farmerId) => {
+  // ✅ CORRECTED: Update reject function to use farmer object
+  const handleRejectConsultation = async (farmer) => {
     try {
+      console.log("Rejecting consultation for farmer:", farmer);
+
+      if (!farmer.requestId) {
+        console.error("No requestId found for farmer:", farmer);
+        toast.error("No consultation request found to reject");
+        return;
+      }
+
       await axios.put(
-        `http://localhost:5000/api/consultations/${requestId}/reject`
+        `http://localhost:5000/api/consultations/${farmer.requestId}/reject`
       );
 
-      setConsultations((prev) => ({ ...prev, [requestId]: "rejected" }));
+      setConsultations((prev) => ({ ...prev, [farmer.requestId]: "rejected" }));
       setFarmers((prev) =>
         prev.map((f) =>
-          f.requestId === requestId ? { ...f, status: "rejected" } : f
+          f.requestId === farmer.requestId ? { ...f, status: "rejected" } : f
         )
       );
 
       if (socketRef.current) {
         socketRef.current.emit("consultationRejected", {
-          requestId,
-          farmerId,
-          doctorId,
+          requestId: farmer.requestId,
+          farmerId: farmer.farmerUserId,
+          doctorId: doctorId,
           status: "rejected",
         });
       }
@@ -337,11 +430,10 @@ export default function DoctorChat() {
         position: "bottom-right",
       });
     } catch (err) {
-      console.error(err);
+      console.error("Error rejecting consultation:", err);
       toast.error("Failed to reject consultation");
     }
   };
-
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -352,11 +444,11 @@ export default function DoctorChat() {
   // FIXED: Better date formatting with validation
   const formatTime = (date) => {
     if (!date) return "";
-    
+
     try {
       const dateObj = new Date(date);
       if (isNaN(dateObj.getTime())) return "";
-      
+
       return dateObj.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -369,11 +461,11 @@ export default function DoctorChat() {
 
   const formatMessageTime = (date) => {
     if (!date) return "Invalid Date";
-    
+
     try {
       const dateObj = new Date(date);
       if (isNaN(dateObj.getTime())) return "Invalid Date";
-      
+
       return dateObj.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -463,6 +555,23 @@ export default function DoctorChat() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
             </div>
+            {/* // In your sidebar header, add this after the search input: */}
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Status:
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
+              >
+                <option value="active">Active (Pending & Approved)</option>
+                <option value="pending">Pending Only</option>
+                <option value="approved">Approved Only</option>
+                <option value="completed">Completed</option>
+                <option value="all">All Consultations</option>
+              </select>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -490,8 +599,12 @@ export default function DoctorChat() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredFarmers.map((farmer) => {
-                  const uniqueKey = `${farmer._id}-${farmer.requestId || "no-request"}`;
-                  const isApproved = farmer.requestId && consultations[farmer.requestId] === "approved";
+                  const uniqueKey = `${farmer._id}-${
+                    farmer.requestId || "no-request"
+                  }`;
+                  const isApproved =
+                    farmer.requestId &&
+                    consultations[farmer.requestId] === "approved";
 
                   return (
                     <div
@@ -513,9 +626,11 @@ export default function DoctorChat() {
                               {farmer.fullName}
                             </h3>
                             <span className="text-xs text-gray-500">
-                              {messages[farmer._id]?.length > 0 &&
+                              {messages[farmer.farmerUserId]?.length > 0 &&
                                 formatTime(
-                                  messages[farmer._id][messages[farmer._id].length - 1]?.timestamp
+                                  messages[farmer.farmerUserId][
+                                    messages[farmer.farmerUserId].length - 1
+                                  ]?.timestamp
                                 )}
                             </span>
                           </div>
@@ -528,29 +643,64 @@ export default function DoctorChat() {
 
                           {/* Consultation status */}
                           <div className="mt-1">
-                            {farmer.requestId && consultations[farmer.requestId] === "pending" && (
-                              <p className="text-sm text-amber-600 font-medium">
-                                Pending approval
-                              </p>
-                            )}
-                            {farmer.requestId && consultations[farmer.requestId] === "approved" && (
-                              <div>
-                                <p className="text-sm text-green-600 font-medium">
-                                  ✅ Consultation Approved - Chat Available
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Scheduled:{" "}
-                                  {new Date(farmer.consultationDate).toLocaleDateString()}{" "}
-                                  at {farmer.startTime}
-                                </p>
+                            {farmer.consultations &&
+                            farmer.consultations.length > 0 ? (
+                              <div className="space-y-1">
+                                {/* Show latest consultation status */}
+                                {farmer.latestConsultation && (
+                                  <div>
+                                    <p
+                                      className={`text-sm font-medium ${
+                                        consultations[
+                                          farmer.latestConsultation.requestId
+                                        ] === "approved"
+                                          ? "text-green-600"
+                                          : consultations[
+                                              farmer.latestConsultation
+                                                .requestId
+                                            ] === "pending"
+                                          ? "text-amber-600"
+                                          : consultations[
+                                              farmer.latestConsultation
+                                                .requestId
+                                            ] === "completed"
+                                          ? "text-blue-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {consultations[
+                                        farmer.latestConsultation.requestId
+                                      ] === "approved"
+                                        ? "✅ Chat Available"
+                                        : consultations[
+                                            farmer.latestConsultation.requestId
+                                          ] === "pending"
+                                        ? "⏳ Pending approval"
+                                        : consultations[
+                                            farmer.latestConsultation.requestId
+                                          ] === "completed"
+                                        ? "✅ Consultation Completed"
+                                        : "❌ Consultation Rejected"}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Latest:{" "}
+                                      {new Date(
+                                        farmer.latestConsultation.consultationDate
+                                      ).toLocaleDateString()}{" "}
+                                      at {farmer.latestConsultation.startTime}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Show consultation count */}
+                                {farmer.consultations.length > 1 && (
+                                  <p className="text-xs text-gray-500">
+                                    {farmer.consultations.length}{" "}
+                                    consultation(s) total
+                                  </p>
+                                )}
                               </div>
-                            )}
-                            {farmer.requestId && consultations[farmer.requestId] === "rejected" && (
-                              <p className="text-sm text-red-600 font-medium">
-                                Consultation rejected
-                              </p>
-                            )}
-                            {!farmer.requestId && (
+                            ) : (
                               <p className="text-sm text-gray-500">
                                 No active consultation
                               </p>
@@ -560,37 +710,64 @@ export default function DoctorChat() {
                       </div>
 
                       {/* Last message preview */}
-                      {messages[farmer._id]?.length > 0 && (
+                      {messages[farmer.farmerUserId]?.length > 0 && (
                         <p className="truncate text-sm text-gray-600 mt-2 ml-15">
                           {
-                            messages[farmer._id][messages[farmer._id].length - 1]?.message
+                            messages[farmer.farmerUserId][
+                              messages[farmer.farmerUserId].length - 1
+                            ]?.message
                           }
                         </p>
                       )}
 
-                      {/* Consultation buttons */}
-                      {farmer.requestId && consultations[farmer.requestId] === "pending" && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleConfirmConsultation(farmer.requestId, farmer._id);
-                            }}
-                            className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors font-medium"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRejectConsultation(farmer.requestId, farmer._id);
-                            }}
-                            className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 transition-colors font-medium"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
+                      {/* Consultation buttons - Show if any consultation is pending */}
+                      {farmer.consultations &&
+                        farmer.consultations.some(
+                          (consultation) =>
+                            consultations[consultation.requestId] === "pending"
+                        ) && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Approve the latest pending consultation
+                                const pendingConsultation =
+                                  farmer.consultations.find(
+                                    (c) =>
+                                      consultations[c.requestId] === "pending"
+                                  );
+                                if (pendingConsultation) {
+                                  handleConfirmConsultation({
+                                    ...farmer,
+                                    requestId: pendingConsultation.requestId,
+                                  });
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors font-medium"
+                            >
+                              Approve Latest
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const pendingConsultation =
+                                  farmer.consultations.find(
+                                    (c) =>
+                                      consultations[c.requestId] === "pending"
+                                  );
+                                if (pendingConsultation) {
+                                  handleRejectConsultation({
+                                    ...farmer,
+                                    requestId: pendingConsultation.requestId,
+                                  });
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 transition-colors font-medium"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
                     </div>
                   );
                 })}
@@ -652,11 +829,9 @@ export default function DoctorChat() {
                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                 }}
               >
-                {messages[selectedFarmer?._id?.toString()]?.length > 0 ? (
-                  messages[selectedFarmer._id.toString()]?.map((msg, index) => {
-                    // Debug log to see what we're rendering
-                    console.log(`Rendering message ${index}:`, msg);
-                    
+                {selectedFarmer &&
+                messages[selectedFarmer.farmerUserId]?.length > 0 ? (
+                  messages[selectedFarmer.farmerUserId]?.map((msg, index) => {
                     return (
                       <motion.div
                         key={msg._id || `${msg.timestamp}-${index}`}
@@ -664,12 +839,16 @@ export default function DoctorChat() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
                         className={`flex ${
-                          msg.sender === "doctor" ? "justify-end" : "justify-start"
+                          msg.sender === "doctor"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
                         <div
                           className={`flex flex-col max-w-[70%] ${
-                            msg.sender === "doctor" ? "items-end" : "items-start"
+                            msg.sender === "doctor"
+                              ? "items-end"
+                              : "items-start"
                           }`}
                         >
                           <div
@@ -702,10 +881,11 @@ export default function DoctorChat() {
                         <User2 className="w-10 h-10 text-green-600" />
                       </div>
                       <p className="text-lg font-medium text-gray-900 mb-2">
-                        {activeChat.fullName}
+                        {activeChat?.fullName}
                       </p>
                       <p className="text-sm">
-                        {consultations[activeChat.requestId] === "approved"
+                        {activeChat &&
+                        consultations[activeChat.requestId] === "approved"
                           ? "Send a message to start the conversation"
                           : "Approve the consultation to enable chat"}
                       </p>

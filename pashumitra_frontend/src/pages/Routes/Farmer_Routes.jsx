@@ -9,6 +9,7 @@ import Awareness from "../Farmer/Awareness_Farmer";
 import CommunityMedicineBank from "../Farmer/ComunityMedicineBank_Farmer";
 import UserProfile from "../Farmer/UserProfile_Farmer";
 import Contact from "../ContactUsForm";
+import ConsultationHistory from "../Farmer/ConsultationHistory_Farmer";
 import FarmerNotificationsPage from "../Farmer/Notification_Farmer";
 
 const FarmerRoutes = (
@@ -21,6 +22,7 @@ const FarmerRoutes = (
       <Route path="doctor-consult" element={<ConsultDoctor />} />
       <Route path="awareness" element={<Awareness />} />
       <Route path="community-bank" element={<CommunityMedicineBank />} />
+      <Route path="my-consultations" element={<ConsultationHistory />} />
       <Route path="contact" element={<Contact />} />
       <Route path="profile" element={<UserProfile />} />
       <Route path="notifications" element={<FarmerNotificationsPage />} />

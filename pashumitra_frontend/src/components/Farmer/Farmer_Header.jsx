@@ -90,6 +90,7 @@ const fetchNotifications = async () => {
     { name: "Search Medicine", href: "/farmer/medicine-search" },
     { name: "Nearby Stores", href: "/farmer/nearbystore" },
     { name: "Consult Doctor", href: "/farmer/doctor-consult" },
+    { name: "My Consultations", href: "/farmer/my-consultations" },
     { name: "Awareness", href: "/farmer/awareness" },
     { name: "Community Bank", href: "/farmer/community-bank" },
     { name: "Contact Us", href: "/farmer/contact" },
@@ -107,7 +108,7 @@ const fetchNotifications = async () => {
           {/* Logo */}
           <motion.div whileHover={{ scale: 1.05 }} className="flex-shrink-0">
             <h1
-              className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
+              className="font-bold text-blue-600 cursor-pointer flex items-center gap-2"
               onClick={() => navigate("/")}
             >
               <img
