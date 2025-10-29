@@ -9,10 +9,20 @@ import PDFDocument from "pdfkit";
 
 const router = express.Router();
 
-// ✅ Create consultation request
+// ✅ Create consultation request - UPDATED to include animal details and symptoms
 router.post("/", async (req, res) => {
   try {
-    const { doctorId, farmerId, date, startTime, endTime } = req.body;
+    const { 
+      doctorId, 
+      farmerId, 
+      date, 
+      startTime, 
+      endTime,
+      animalType,
+      animalBreed,
+      animalAge,
+      symptoms
+    } = req.body;
 
     // 0️⃣ Fetch Farmer document using userId (farmerId comes from request)
     const farmerProfile = await Farmer.findOne({ userId: farmerId });
@@ -48,7 +58,7 @@ router.post("/", async (req, res) => {
     const doctorProfile = await Doctor.findById(doctorId);
     const fee = doctorProfile?.fee || 0;
 
-    // 4️⃣ Create ConsultationRequest
+    // 4️⃣ Create ConsultationRequest with new fields
     const reqDoc = await ConsultationRequest.create({
       doctorId,
       farmerId: farmerProfile._id,
@@ -57,6 +67,14 @@ router.post("/", async (req, res) => {
       endTime,
       fee,
       status: "pending",
+      // NEW FIELDS
+      symptoms: symptoms || "",
+      // Store animal details in consultation (they might be different from farmer profile)
+      animalDetails: {
+        animalType: animalType || "Not specified",
+        animalBreed: animalBreed || "Not specified",
+        animalAge: animalAge || "Not specified"
+      }
     });
 
     // 5️⃣ Optional notification for doctor
@@ -64,7 +82,7 @@ router.post("/", async (req, res) => {
       await Notification.create({
         userId: doctorId,
         title: "New Consultation Request",
-        message: `New request on ${new Date(date).toDateString()} at ${startTime}`,
+        message: `New consultation request from ${farmerProfile.fullName} for ${animalType || 'animal'}`,
         type: "consultation",
       });
     }
@@ -222,7 +240,7 @@ router.get("/farmer/:farmerUserId", async (req, res) => {
   }
 });
 
-// ✅ Doctor -> list requests - UPDATED: Include all statuses
+// ✅ Doctor -> list requests - UPDATED: Include animal details
 router.get("/doctor/:doctorId/requests", async (req, res) => {
   try {
     const { status } = req.query;
@@ -262,7 +280,12 @@ router.get("/doctor/:doctorId/requests", async (req, res) => {
             endTime: r.endTime,
             fee: r.fee,
             createdAt: r.createdAt,
-            updatedAt: r.updatedAt
+            updatedAt: r.updatedAt,
+            symptoms: r.symptoms || "",
+            // FIX: Include animal details from consultation request
+            animalType: r.animalDetails?.animalType || "Not specified",
+            animalBreed: r.animalDetails?.animalBreed || "Not specified",
+            animalAge: r.animalDetails?.animalAge || "Not specified",
           };
         }
 
@@ -286,7 +309,12 @@ router.get("/doctor/:doctorId/requests", async (req, res) => {
           // Include consultation details for completed ones
           consultationNotes: r.consultationNotes || "",
           diagnosis: r.diagnosis || "",
-          treatmentPlan: r.treatmentPlan || ""
+          treatmentPlan: r.treatmentPlan || "",
+          // FIX: Include animal details from consultation request
+          symptoms: r.symptoms || "",
+          animalType: r.animalDetails?.animalType || "Not specified",
+          animalBreed: r.animalDetails?.animalBreed || "Not specified",
+          animalAge: r.animalDetails?.animalAge || "Not specified",
         };
       })
     );
@@ -388,7 +416,7 @@ router.put("/confirm", async (req, res) => {
   }
 });
 
-// ✅ Get consultation details by ID - FIXED
+// ✅ Get consultation details by ID - UPDATED to include consultation animal details
 router.get("/:id", async (req, res) => {
   try {
     const consultation = await ConsultationRequest.findById(req.params.id)
@@ -396,7 +424,6 @@ router.get("/:id", async (req, res) => {
         path: "farmerId",
         select: "fullName userId animals"
       });
-      // Remove the doctorId populate since it won't work with your structure
 
     if (!consultation) {
       return res.status(404).json({ error: "Consultation not found" });
@@ -427,14 +454,18 @@ router.get("/:id", async (req, res) => {
       }
     }
 
+    // FIX: Get animal details from consultation request (priority) or farmer profile
+    const animalDetails = consultation.animalDetails || {};
+
     const consultationData = {
       id: consultation._id,
       farmerName: consultation.farmerId.fullName,
       farmerEmail: farmerUser?.email || "",
       farmerPhone: farmerUser?.phone || "",
-      animalType: consultation.farmerId.animals?.[0]?.animalType || "Not specified",
-      animalBreed: consultation.farmerId.animals?.[0]?.breed || "Not specified",
-      animalAge: consultation.farmerId.animals?.[0]?.age || "Not specified",
+      // FIX: Use animal details from consultation request first, then fallback to farmer profile
+      animalType: animalDetails.animalType || consultation.farmerId.animals?.[0]?.animalType || "Not specified",
+      animalBreed: animalDetails.animalBreed || consultation.farmerId.animals?.[0]?.breed || "Not specified",
+      animalAge: animalDetails.animalAge || consultation.farmerId.animals?.[0]?.age || "Not specified",
       doctorName: doctorName,
       doctorSpecialization: doctorSpecialization,
       date: consultation.date,
@@ -463,7 +494,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ✅ Get consultation history for doctor - FIXED
+// ✅ Get consultation history for doctor - UPDATED to include animal details and symptoms
 router.get("/doctor/:doctorId/history", async (req, res) => {
   try {
     const { doctorId } = req.params;
@@ -497,6 +528,9 @@ router.get("/doctor/:doctorId/history", async (req, res) => {
       consultations.map(async (consultation) => {
         const farmerUser = await User.findById(consultation.farmerId.userId).select("email phone");
         
+        // FIX: Get animal details from consultation request instead of farmer profile
+        const animalDetails = consultation.animalDetails || {};
+        
         return {
           id: consultation._id,
           farmerId: consultation.farmerId._id,
@@ -504,7 +538,12 @@ router.get("/doctor/:doctorId/history", async (req, res) => {
           farmerName: consultation.farmerId.fullName,
           farmerEmail: farmerUser?.email || "",
           farmerPhone: farmerUser?.phone || "",
-          animalType: consultation.farmerId.animals?.[0]?.animalType || "Not specified",
+          // FIX: Use animal details from consultation request
+          animalType: animalDetails.animalType || consultation.farmerId.animals?.[0]?.animalType || "Not specified",
+          animalBreed: animalDetails.animalBreed || consultation.farmerId.animals?.[0]?.breed || "Not specified",
+          animalAge: animalDetails.animalAge || consultation.farmerId.animals?.[0]?.age || "Not specified",
+          // FIX: Include symptoms from consultation
+          symptoms: consultation.symptoms || "No symptoms recorded",
           issue: consultation.diagnosis || consultation.consultationNotes || "General consultation",
           treatmentDate: consultation.date.toLocaleDateString('en-GB'),
           startTime: consultation.startTime,

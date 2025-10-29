@@ -71,27 +71,32 @@ export default function ConsultDoctor() {
     // Listen for consultation status updates
     socket.on("consultationStatusChanged", (data) => {
       if (data.doctorId) {
-        setConsultationStatus(prev => ({
+        setConsultationStatus((prev) => ({
           ...prev,
-          [data.doctorId]: data.status
+          [data.doctorId]: data.status,
         }));
-        
+
         // Update consultation details if available
         if (data.consultationDetails) {
-          setConsultationDetails(prev => ({
+          setConsultationDetails((prev) => ({
             ...prev,
-            [data.doctorId]: data.consultationDetails
+            [data.doctorId]: data.consultationDetails,
           }));
         }
 
         if (data.status === "approved") {
-          toast.success(`Consultation with Dr. ${data.doctorName} has been approved! Chat is now available.`);
-          
+          toast.success(
+            `Consultation with Dr. ${data.doctorName} has been approved! Chat is now available.`
+          );
+
           // Auto-open chat if this doctor is selected
           if (selectedDoctor?._id === data.doctorId) {
             setActiveChat(selectedDoctor);
             if (socketRef.current) {
-              socketRef.current.emit("joinRoom", { farmerId, doctorId: data.doctorId });
+              socketRef.current.emit("joinRoom", {
+                farmerId,
+                doctorId: data.doctorId,
+              });
             }
             fetchMessages(data.doctorId);
           }
@@ -130,31 +135,36 @@ export default function ConsultDoctor() {
               const schedRes = await axios.get(
                 `http://localhost:5000/api/schedules/${doc._id}`
               );
-              
+
               // Fetch consultation status for each doctor
               const consultationData = await fetchConsultationStatus(doc._id);
-              
+
               // Update states
-              setConsultationStatus(prev => ({
+              setConsultationStatus((prev) => ({
                 ...prev,
-                [doc._id]: consultationData.status
+                [doc._id]: consultationData.status,
               }));
-              
+
               if (consultationData.consultation) {
-                setConsultationDetails(prev => ({
+                setConsultationDetails((prev) => ({
                   ...prev,
-                  [doc._id]: consultationData.consultation
+                  [doc._id]: consultationData.consultation,
                 }));
               }
 
-              return { 
-                ...doc, 
+              return {
+                ...doc,
                 schedule: schedRes.data,
                 consultationStatus: consultationData.status,
-                consultation: consultationData.consultation
+                consultation: consultationData.consultation,
               };
             } catch {
-              return { ...doc, schedule: null, consultationStatus: "none", consultation: null };
+              return {
+                ...doc,
+                schedule: null,
+                consultationStatus: "none",
+                consultation: null,
+              };
             }
           })
         );
@@ -172,7 +182,7 @@ export default function ConsultDoctor() {
         setLoading(false);
       }
     };
-    
+
     if (farmerId) {
       fetchDoctors();
     }
@@ -185,7 +195,13 @@ export default function ConsultDoctor() {
   };
 
   const weekdayNames = [
-    "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
   ];
 
   const isDoctorAvailableNow = (schedule) => {
@@ -212,13 +228,17 @@ export default function ConsultDoctor() {
       if (ds && ds.available && ds.startTime) {
         const [h, m] = ds.startTime.split(":").map(Number);
         const slotDate = new Date(
-          check.getFullYear(), check.getMonth(), check.getDate(), h, m
+          check.getFullYear(),
+          check.getMonth(),
+          check.getDate(),
+          h,
+          m
         );
         return {
           day: dayName,
           dateISO: slotDate.toISOString(),
           startTime: ds.startTime,
-          endTime: ds.endTime || `${h + 1}:${m.toString().padStart(2, '0')}`,
+          endTime: ds.endTime || `${h + 1}:${m.toString().padStart(2, "0")}`,
         };
       }
     }
@@ -231,6 +251,7 @@ export default function ConsultDoctor() {
     return consultation && consultation.status === "approved";
   };
 
+  // Update the openChat function to initialize form data
   const openChat = async (doctor) => {
     setSelectedDoctor(doctor);
     const status = consultationStatus[doctor._id];
@@ -239,60 +260,88 @@ export default function ConsultDoctor() {
     console.log("Opening chat:", {
       doctor: doctor.doctorProfile?.fullName,
       status,
-      consultationApproved
+      consultationApproved,
     });
 
     if (status === "approved") {
       // Consultation is approved - open chat immediately
       setActiveChat(doctor);
       setShowSidebar(false);
-      
+
       if (socketRef.current) {
         socketRef.current.emit("joinRoom", { farmerId, doctorId: doctor._id });
       }
       fetchMessages(doctor._id);
-      
+
       toast.success("Chat session started!");
     } else if (status === "pending") {
-      toast.error("Your consultation request is pending approval. Please wait for the doctor to approve it.");
+      toast.error(
+        "Your consultation request is pending approval. Please wait for the doctor to approve it."
+      );
     } else if (status === "rejected") {
-      toast.error("Your consultation request was rejected. Please request a new consultation.");
+      toast.error(
+        "Your consultation request was rejected. Please request a new consultation."
+      );
     } else {
-      // No consultation - show request modal
+      // No consultation - show request modal with form
       const nextSlot = findNextAvailableSlot(doctor.schedule);
       if (!nextSlot) {
         toast.error("Doctor is not available and no slots configured.");
         return;
       }
-      setModalData({ doctor, slot: nextSlot });
+
+      // Initialize modal with empty form fields
+      setModalData({
+        doctor,
+        slot: nextSlot,
+        animalType: "",
+        animalBreed: "",
+        animalAge: "",
+        symptoms: "",
+      });
     }
   };
-
+  // Update the confirmConsultation function to send form data
   const confirmConsultation = async () => {
-    const { doctor, slot } = modalData;
-    
+    const { doctor, slot, animalType, animalBreed, animalAge, symptoms } =
+      modalData;
+
+    // Validate required fields
+    if (!animalType || !symptoms) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
     try {
       const payload = {
         doctorId: doctor._id,
         farmerId,
-        date: slot.dateISO.split('T')[0], // Send only date part
+        date: slot.dateISO.split("T")[0], // Send only date part
         startTime: slot.startTime,
         endTime: slot.endTime,
+        // NEW FIELDS
+        animalType,
+        animalBreed,
+        animalAge,
+        symptoms,
       };
-      
-      console.log("Sending consultation request:", payload);
-      
-      const response = await axios.post("http://localhost:5000/api/consultations", payload);
+
+      console.log("Sending consultation request with details:", payload);
+
+      const response = await axios.post(
+        "http://localhost:5000/api/consultations",
+        payload
+      );
 
       // Update consultation status
-      setConsultationStatus(prev => ({
+      setConsultationStatus((prev) => ({
         ...prev,
-        [doctor._id]: "pending"
+        [doctor._id]: "pending",
       }));
 
-      setConsultationDetails(prev => ({
+      setConsultationDetails((prev) => ({
         ...prev,
-        [doctor._id]: response.data
+        [doctor._id]: response.data,
       }));
 
       // Emit socket event for real-time notification to doctor
@@ -302,32 +351,37 @@ export default function ConsultDoctor() {
           farmerId,
           date: payload.date,
           startTime: payload.startTime,
-          doctorName: doctor.doctorProfile?.fullName
+          doctorName: doctor.doctorProfile?.fullName,
+          animalType: payload.animalType,
+          symptoms: payload.symptoms,
         });
       }
 
       toast.success(
-        `Consultation requested for ${slot.day} ${new Date(slot.dateISO).toLocaleDateString()} at ${slot.startTime}. Waiting for doctor approval.`
+        `Consultation requested for your ${animalType}. Waiting for doctor approval.`
       );
 
       setModalData(null);
       setShowSidebar(false);
-      
     } catch (err) {
       console.error("Consultation request error:", err);
-      
+
       if (err.response?.status === 409) {
-        const errorMessage = err.response.data.message || "You already have a pending consultation with this doctor.";
+        const errorMessage =
+          err.response.data.message ||
+          "You already have a pending consultation with this doctor.";
         toast.error(errorMessage);
-        
-        setConsultationStatus(prev => ({
+
+        setConsultationStatus((prev) => ({
           ...prev,
-          [doctor._id]: "pending"
+          [doctor._id]: "pending",
         }));
       } else if (err.response?.status === 404) {
         toast.error("Farmer profile not found. Please try again.");
       } else {
-        const errorMsg = err.response?.data?.error || "Failed to request consultation. Please try again.";
+        const errorMsg =
+          err.response?.data?.error ||
+          "Failed to request consultation. Please try again.";
         toast.error(errorMsg);
       }
     }
@@ -374,7 +428,6 @@ export default function ConsultDoctor() {
       }
 
       setMessage("");
-      
     } catch (err) {
       console.error("Error sending message:", err);
       toast.error("Failed to send message");
@@ -390,12 +443,15 @@ export default function ConsultDoctor() {
 
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], {
-      hour: "2-digit", minute: "2-digit", hour12: true,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
 
   const formatMessageTime = (date) =>
     new Date(date).toLocaleTimeString([], {
-      hour: "2-digit", minute: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
   const StatusIcon = ({ seen }) =>
@@ -417,7 +473,7 @@ export default function ConsultDoctor() {
           color: "text-green-600",
           icon: <Check className="w-4 h-4 mr-1" />,
           bgColor: "bg-green-50",
-          borderColor: "border-green-200"
+          borderColor: "border-green-200",
         };
       case "pending":
         return {
@@ -425,7 +481,7 @@ export default function ConsultDoctor() {
           color: "text-amber-600",
           icon: <Clock className="w-4 h-4 mr-1" />,
           bgColor: "bg-amber-50",
-          borderColor: "border-amber-200"
+          borderColor: "border-amber-200",
         };
       case "rejected":
         return {
@@ -433,7 +489,7 @@ export default function ConsultDoctor() {
           color: "text-red-600",
           icon: <AlertCircle className="w-4 h-4 mr-1" />,
           bgColor: "bg-red-50",
-          borderColor: "border-red-200"
+          borderColor: "border-red-200",
         };
       default:
         return {
@@ -441,7 +497,7 @@ export default function ConsultDoctor() {
           color: "text-gray-600",
           icon: <Calendar className="w-4 h-4 mr-1" />,
           bgColor: "bg-gray-50",
-          borderColor: "border-gray-200"
+          borderColor: "border-gray-200",
         };
     }
   };
@@ -459,25 +515,25 @@ export default function ConsultDoctor() {
   return (
     <div className="min-h-screen bg-white">
       <Toaster position="bottom-right" />
-
-      {/* Consultation Request Modal */}
       {modalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-sm mx-4 border border-gray-200">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-auto border border-gray-200 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">
               Request Consultation
             </h2>
-            
+
             <div className="mb-4">
               <p className="text-gray-600 mb-2">
-                Request consultation with Dr. {modalData.doctor.doctorProfile?.fullName}
+                Request consultation with{" "}
+                <strong>Dr. {modalData.doctor.doctorProfile?.fullName}</strong>
               </p>
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
                 <p className="text-sm font-medium text-blue-800">
                   Selected Slot:
                 </p>
                 <p className="text-sm text-blue-700">
-                  {modalData.slot.day}, {new Date(modalData.slot.dateISO).toLocaleDateString()}
+                  {modalData.slot.day},{" "}
+                  {new Date(modalData.slot.dateISO).toLocaleDateString()}
                 </p>
                 <p className="text-sm text-blue-700">
                   {modalData.slot.startTime} - {modalData.slot.endTime}
@@ -485,13 +541,106 @@ export default function ConsultDoctor() {
                 <p className="text-sm text-blue-700 mt-1">
                   Fee: ₹{modalData.doctor.doctorProfile?.fee || 0}
                 </p>
-                <p className="text-xs text-blue-600 mt-2">
-                  💡 Chat will be available immediately after doctor approves your request
+              </div>
+            </div>
+
+            {/* Animal Details and Symptoms Form */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Animal Details
+              </h3>
+
+              {/* Animal Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Animal Type *
+                </label>
+                <select
+                  value={modalData.animalType || ""}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      animalType: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  required
+                >
+                  <option value="">Select Animal Type</option>
+                  <option value="Cow">Cow</option>
+                  <option value="Buffalo">Buffalo</option>
+                  <option value="Goat">Goat</option>
+                  <option value="Sheep">Sheep</option>
+                  <option value="Poultry">Poultry</option>
+                  <option value="Horse">Horse</option>
+                  <option value="Pig">Pig</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Animal Breed */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Breed
+                </label>
+                <input
+                  type="text"
+                  value={modalData.animalBreed || ""}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      animalBreed: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., Holstein, Murrah, Boer, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* Animal Age */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Age
+                </label>
+                <input
+                  type="text"
+                  value={modalData.animalAge || ""}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      animalAge: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., 2 years, 6 months, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* Symptoms */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Symptoms / Issues *
+                </label>
+                <textarea
+                  value={modalData.symptoms || ""}
+                  onChange={(e) =>
+                    setModalData((prev) => ({
+                      ...prev,
+                      symptoms: e.target.value,
+                    }))
+                  }
+                  placeholder="Describe the symptoms, behavior changes, or issues you're observing..."
+                  rows="4"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Please provide detailed symptoms for better diagnosis
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 mt-6">
               <button
                 onClick={cancelConsultation}
                 className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium"
@@ -500,11 +649,17 @@ export default function ConsultDoctor() {
               </button>
               <button
                 onClick={confirmConsultation}
-                className="flex-1 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors font-medium"
+                disabled={!modalData.animalType || !modalData.symptoms}
+                className="flex-1 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
               >
                 Request Consultation
               </button>
             </div>
+
+            <p className="text-xs text-blue-600 mt-3">
+              💡 Chat will be available immediately after doctor approves your
+              request
+            </p>
           </div>
         </div>
       )}
@@ -512,7 +667,10 @@ export default function ConsultDoctor() {
       {/* Mobile header */}
       {activeChat && (
         <div className="md:hidden flex items-center justify-between p-3 bg-green-50 border-b border-gray-200">
-          <button onClick={() => setActiveChat(null)} className="p-2 text-gray-600">
+          <button
+            onClick={() => setActiveChat(null)}
+            className="p-2 text-gray-600"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
@@ -546,7 +704,7 @@ export default function ConsultDoctor() {
           </div>
         </div>
       )}
-      
+
       <div className="flex h-screen">
         {/* Sidebar */}
         <div
@@ -591,7 +749,9 @@ export default function ConsultDoctor() {
           {/* Doctors list */}
           <div className="overflow-y-auto h-full pb-20 bg-white">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">Loading doctors...</div>
+              <div className="p-4 text-center text-gray-500">
+                Loading doctors...
+              </div>
             ) : filteredDoctors.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 {searchTerm ? "No doctors found" : "No doctors available"}
@@ -599,13 +759,15 @@ export default function ConsultDoctor() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {filteredDoctors.map((doctor) => {
-                  const statusDisplay = getConsultationStatusDisplay(doctor._id);
+                  const statusDisplay = getConsultationStatusDisplay(
+                    doctor._id
+                  );
                   return (
                     <div
                       key={doctor._id}
                       className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors border-l-2 ${
-                        selectedDoctor?._id === doctor._id 
-                          ? "bg-blue-50 border-l-blue-500" 
+                        selectedDoctor?._id === doctor._id
+                          ? "bg-blue-50 border-l-blue-500"
                           : "border-l-transparent"
                       }`}
                       onClick={() => openChat(doctor)}
@@ -637,7 +799,9 @@ export default function ConsultDoctor() {
                             <span className="text-xs text-gray-500">
                               {messages[doctor._id]?.length > 0 &&
                                 formatTime(
-                                  messages[doctor._id][messages[doctor._id].length - 1]?.timestamp
+                                  messages[doctor._id][
+                                    messages[doctor._id].length - 1
+                                  ]?.timestamp
                                 )}
                             </span>
                           </div>
@@ -645,11 +809,14 @@ export default function ConsultDoctor() {
                             {doctor.doctorProfile?.specialization}
                           </p>
                           <p className="truncate text-sm text-gray-500">
-                            {doctor.doctorProfile?.experience} yrs • ₹{doctor.doctorProfile?.fee || 0}
+                            {doctor.doctorProfile?.experience} yrs • ₹
+                            {doctor.doctorProfile?.fee || 0}
                           </p>
 
                           {/* Consultation Status */}
-                          <div className={`mt-2 p-2 rounded-lg border ${statusDisplay.bgColor} ${statusDisplay.borderColor}`}>
+                          <div
+                            className={`mt-2 p-2 rounded-lg border ${statusDisplay.bgColor} ${statusDisplay.borderColor}`}
+                          >
                             <div className="flex items-center text-sm font-medium">
                               {statusDisplay.icon}
                               <span className={statusDisplay.color}>
@@ -662,7 +829,9 @@ export default function ConsultDoctor() {
                       {messages[doctor._id]?.length > 0 && (
                         <p className="truncate text-sm text-gray-600 mt-2 ml-15">
                           {
-                            messages[doctor._id][messages[doctor._id].length - 1]?.message
+                            messages[doctor._id][
+                              messages[doctor._id].length - 1
+                            ]?.message
                           }
                         </p>
                       )}
@@ -701,11 +870,10 @@ export default function ConsultDoctor() {
                       {activeChat.doctorProfile?.fullName}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {activeChat.doctorProfile?.specialization} • {
-                        isConsultationApproved(activeChat._id) 
-                          ? "Chat Available" 
-                          : getConsultationStatusDisplay(activeChat._id).text
-                      }
+                      {activeChat.doctorProfile?.specialization} •{" "}
+                      {isConsultationApproved(activeChat._id)
+                        ? "Chat Available"
+                        : getConsultationStatusDisplay(activeChat._id).text}
                     </p>
                   </div>
                 </div>
@@ -731,9 +899,9 @@ export default function ConsultDoctor() {
               {/* Messages Area */}
               <div
                 className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50"
-                style={{ 
+                style={{
                   maxHeight: "calc(100vh - 140px)",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                 }}
               >
                 {messages[selectedDoctor?._id]?.length > 0 ? (
@@ -761,7 +929,9 @@ export default function ConsultDoctor() {
                               : "bg-white text-gray-900 rounded-bl-md border border-gray-200"
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                          <p className="text-sm whitespace-pre-wrap">
+                            {msg.message}
+                          </p>
                         </div>
                         <div className="flex items-center mt-1 space-x-1 px-1">
                           <span className="text-xs text-gray-500">
@@ -784,8 +954,8 @@ export default function ConsultDoctor() {
                         Dr. {activeChat.doctorProfile?.fullName}
                       </p>
                       <p className="text-sm">
-                        {isConsultationApproved(activeChat._id) 
-                          ? "Send a message to start the conversation" 
+                        {isConsultationApproved(activeChat._id)
+                          ? "Send a message to start the conversation"
                           : getConsultationStatusDisplay(activeChat._id).text}
                       </p>
                     </div>
@@ -806,8 +976,8 @@ export default function ConsultDoctor() {
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder={
-                        isConsultationApproved(activeChat?._id) 
-                          ? "Type a message..." 
+                        isConsultationApproved(activeChat?._id)
+                          ? "Type a message..."
                           : "Chat will be available after consultation approval"
                       }
                       disabled={!isConsultationApproved(activeChat?._id)}
@@ -826,13 +996,13 @@ export default function ConsultDoctor() {
                     </motion.button>
                   ) : (
                     <div className="flex items-center gap-1">
-                      <button 
+                      <button
                         className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
                         disabled={!isConsultationApproved(activeChat?._id)}
                       >
                         <Smile className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
                         disabled={!isConsultationApproved(activeChat?._id)}
                       >

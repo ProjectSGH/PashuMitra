@@ -1,30 +1,30 @@
-"use client"
-import { useState, useEffect, useCallback } from "react"
-import { motion } from "framer-motion"
-import { 
-  Search, 
-  Eye, 
-  UserCheck, 
-  Filter, 
-  Calendar, 
-  Clock, 
-  Pill, 
-  Edit, 
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  Eye,
+  UserCheck,
+  Filter,
+  Calendar,
+  Clock,
+  Pill,
+  Edit,
   ClipboardList,
   X,
   CheckCircle,
   AlertCircle,
   FileText,
-  Stethoscope
-} from "lucide-react"
-import axios from "axios"
-import { toast } from "react-hot-toast"
+  Stethoscope,
+} from "lucide-react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 // Separate Consultation Details Modal Component
-const ConsultationDetailsModal = ({ 
-  selectedConsultation, 
-  onClose, 
-  onEdit 
+const ConsultationDetailsModal = ({
+  selectedConsultation,
+  onClose,
+  onEdit,
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -33,73 +33,117 @@ const ConsultationDetailsModal = ({
           <FileText className="w-6 h-6" />
           Consultation Details
         </h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700"
-        >
+        <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
           <X className="w-6 h-6" />
         </button>
       </div>
-      
+
       <div className="p-6 space-y-6">
         {selectedConsultation ? (
           <>
             {/* Patient Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Patient Information
+                </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Farmer Name</label>
-                    <p className="text-gray-900">{selectedConsultation.farmerName || "N/A"}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Farmer Name
+                    </label>
+                    <p className="text-gray-900">
+                      {selectedConsultation.farmerName || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Contact</label>
-                    <p className="text-gray-900">{selectedConsultation.farmerEmail || "N/A"}</p>
-                    <p className="text-gray-600 text-sm">{selectedConsultation.farmerPhone || "N/A"}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Contact
+                    </label>
+                    <p className="text-gray-900">
+                      {selectedConsultation.farmerEmail || "N/A"}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      {selectedConsultation.farmerPhone || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Animal</label>
-                    <p className="text-gray-900">{selectedConsultation.animalType || "N/A"}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Animal
+                    </label>
+                    <p className="text-gray-900">
+                      {selectedConsultation.animalType || "N/A"}
+                    </p>
                     {selectedConsultation.animalBreed && (
-                      <p className="text-gray-600 text-sm">Breed: {selectedConsultation.animalBreed}</p>
+                      <p className="text-gray-600 text-sm">
+                        Breed: {selectedConsultation.animalBreed}
+                      </p>
                     )}
                     {selectedConsultation.animalAge && (
-                      <p className="text-gray-600 text-sm">Age: {selectedConsultation.animalAge}</p>
+                      <p className="text-gray-600 text-sm">
+                        Age: {selectedConsultation.animalAge}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Consultation Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Consultation Details
+                </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Date & Time</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Date & Time
+                    </label>
                     <p className="text-gray-900">
-                      {selectedConsultation.date ? new Date(selectedConsultation.date).toLocaleDateString() : "N/A"} at {selectedConsultation.startTime || "N/A"}
+                      {selectedConsultation.date
+                        ? new Date(
+                            selectedConsultation.date
+                          ).toLocaleDateString()
+                        : "N/A"}{" "}
+                      at {selectedConsultation.startTime || "N/A"}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Status</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      selectedConsultation.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      selectedConsultation.status === 'follow_up' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
-                      {selectedConsultation.status === 'completed' ? 'Completed' : 
-                       selectedConsultation.status === 'follow_up' ? 'Follow-up Required' : 
-                       selectedConsultation.status || 'Unknown'}
+                    <label className="text-sm font-medium text-gray-700">
+                      Status
+                    </label>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedConsultation.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : selectedConsultation.status === "follow_up"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {selectedConsultation.status === "completed"
+                        ? "Completed"
+                        : selectedConsultation.status === "follow_up"
+                        ? "Follow-up Required"
+                        : selectedConsultation.status || "Unknown"}
                     </span>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Duration</label>
-                    <p className="text-gray-900">{selectedConsultation.consultationDuration || 0} minutes</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Duration
+                    </label>
+                    <p className="text-gray-900">
+                      {selectedConsultation.consultationDuration || 0} minutes
+                    </p>
                   </div>
                   {selectedConsultation.followUpDate && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Follow-up Date</label>
-                      <p className="text-gray-900">{new Date(selectedConsultation.followUpDate).toLocaleDateString()}</p>
+                      <label className="text-sm font-medium text-gray-700">
+                        Follow-up Date
+                      </label>
+                      <p className="text-gray-900">
+                        {new Date(
+                          selectedConsultation.followUpDate
+                        ).toLocaleDateString()}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -108,77 +152,123 @@ const ConsultationDetailsModal = ({
 
             {/* Medical Information */}
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Medical Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Medical Information
+              </h3>
               <div className="space-y-4">
                 {selectedConsultation.symptoms && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Symptoms</label>
-                    <p className="text-gray-900 mt-1">{selectedConsultation.symptoms}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Symptoms
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedConsultation.symptoms}
+                    </p>
                   </div>
                 )}
 
                 {selectedConsultation.diagnosis && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Diagnosis</label>
-                    <p className="text-gray-900 mt-1">{selectedConsultation.diagnosis}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Diagnosis
+                    </label>
+                    <p className="text-gray-900 mt-1">
+                      {selectedConsultation.diagnosis}
+                    </p>
                   </div>
                 )}
 
                 {selectedConsultation.consultationNotes && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Consultation Notes</label>
-                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedConsultation.consultationNotes}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Consultation Notes
+                    </label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">
+                      {selectedConsultation.consultationNotes}
+                    </p>
                   </div>
                 )}
 
                 {selectedConsultation.treatmentPlan && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Treatment Plan</label>
-                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedConsultation.treatmentPlan}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Treatment Plan
+                    </label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">
+                      {selectedConsultation.treatmentPlan}
+                    </p>
                   </div>
                 )}
 
-                {selectedConsultation.medicationsPrescribed && selectedConsultation.medicationsPrescribed.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2">Medications Prescribed</label>
-                    <div className="space-y-2">
-                      {selectedConsultation.medicationsPrescribed.map((med, index) => (
-                        <div key={index} className="border rounded p-3 bg-gray-50">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Pill className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium text-gray-900">{med.name || "Unnamed Medication"}</span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                            <div>
-                              <span className="text-gray-600">Dosage:</span>
-                              <p className="text-gray-900">{med.dosage || "N/A"}</p>
+                {selectedConsultation.medicationsPrescribed &&
+                  selectedConsultation.medicationsPrescribed.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2">
+                        Medications Prescribed
+                      </label>
+                      <div className="space-y-2">
+                        {selectedConsultation.medicationsPrescribed.map(
+                          (med, index) => (
+                            <div
+                              key={index}
+                              className="border rounded p-3 bg-gray-50"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <Pill className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium text-gray-900">
+                                  {med.name || "Unnamed Medication"}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Dosage:</span>
+                                  <p className="text-gray-900">
+                                    {med.dosage || "N/A"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">
+                                    Duration:
+                                  </span>
+                                  <p className="text-gray-900">
+                                    {med.duration || "N/A"}
+                                  </p>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <span className="text-gray-600">
+                                    Instructions:
+                                  </span>
+                                  <p className="text-gray-900">
+                                    {med.instructions || "N/A"}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-600">Duration:</span>
-                              <p className="text-gray-900">{med.duration || "N/A"}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <span className="text-gray-600">Instructions:</span>
-                              <p className="text-gray-900">{med.instructions || "N/A"}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {selectedConsultation.recommendations && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Recommendations</label>
-                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedConsultation.recommendations}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Recommendations
+                    </label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">
+                      {selectedConsultation.recommendations}
+                    </p>
                   </div>
                 )}
 
                 {selectedConsultation.nextSteps && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Next Steps</label>
-                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{selectedConsultation.nextSteps}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Next Steps
+                    </label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">
+                      {selectedConsultation.nextSteps}
+                    </p>
                   </div>
                 )}
               </div>
@@ -194,8 +284,8 @@ const ConsultationDetailsModal = ({
       <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
         <button
           onClick={() => {
-            onClose()
-            onEdit()
+            onClose();
+            onEdit();
           }}
           className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
         >
@@ -211,61 +301,65 @@ const ConsultationDetailsModal = ({
       </div>
     </div>
   </div>
-)
+);
 
 // Separate Consultation Edit Modal Component
-const ConsultationEditModal = ({ 
-  selectedConsultation, 
-  consultationData, 
-  onClose, 
+const ConsultationEditModal = ({
+  selectedConsultation,
+  consultationData,
+  onClose,
   onUpdate,
   onConsultationDataChange,
-  isSubmitting 
+  isSubmitting,
 }) => {
   // Local handlers that don't cause re-renders
   const handleTextChange = (field, value) => {
     onConsultationDataChange({
       ...consultationData,
-      [field]: value
-    })
-  }
+      [field]: value,
+    });
+  };
 
   const handleMedicationChange = (index, field, value) => {
-    const updatedMedications = consultationData.medicationsPrescribed.map((med, i) =>
-      i === index ? { ...med, [field]: value } : med
-    )
-    
+    const updatedMedications = consultationData.medicationsPrescribed.map(
+      (med, i) => (i === index ? { ...med, [field]: value } : med)
+    );
+
     onConsultationDataChange({
       ...consultationData,
-      medicationsPrescribed: updatedMedications
-    })
-  }
+      medicationsPrescribed: updatedMedications,
+    });
+  };
 
   const handleAddMedication = () => {
     const newMedications = [
       ...consultationData.medicationsPrescribed,
-      { name: "", dosage: "", duration: "", instructions: "" }
-    ]
-    
+      { name: "", dosage: "", duration: "", instructions: "" },
+    ];
+
     onConsultationDataChange({
       ...consultationData,
-      medicationsPrescribed: newMedications
-    })
-  }
+      medicationsPrescribed: newMedications,
+    });
+  };
 
   const handleRemoveMedication = (index) => {
-    let newMedications
+    let newMedications;
     if (consultationData.medicationsPrescribed.length <= 1) {
-      newMedications = [{ name: "", dosage: "", duration: "", instructions: "" }]
+      newMedications = [
+        { name: "", dosage: "", duration: "", instructions: "" },
+      ];
     } else {
-      newMedications = consultationData.medicationsPrescribed.filter((_, i) => i !== index)
+      newMedications = consultationData.medicationsPrescribed.filter(
+        (_, i) => i !== index
+      );
     }
-    
+
     onConsultationDataChange({
       ...consultationData,
-      medicationsPrescribed: newMedications
-    })
-  }
+      medicationsPrescribed: newMedications,
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -273,7 +367,8 @@ const ConsultationEditModal = ({
         <div className="p-6 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardList className="w-6 h-6" />
-            Edit Consultation - {selectedConsultation?.farmerName || "Unknown Farmer"}
+            Edit Consultation -{" "}
+            {selectedConsultation?.farmerName || "Unknown Farmer"}
           </h2>
           <button
             onClick={onClose}
@@ -283,7 +378,7 @@ const ConsultationEditModal = ({
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="p-6 space-y-6">
           {/* Symptoms */}
           <div>
@@ -293,7 +388,7 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.symptoms}
-              onChange={(e) => handleTextChange('symptoms', e.target.value)}
+              onChange={(e) => handleTextChange("symptoms", e.target.value)}
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Describe the symptoms observed..."
@@ -308,7 +403,7 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.diagnosis}
-              onChange={(e) => handleTextChange('diagnosis', e.target.value)}
+              onChange={(e) => handleTextChange("diagnosis", e.target.value)}
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter diagnosis..."
@@ -323,7 +418,9 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.consultationNotes}
-              onChange={(e) => handleTextChange('consultationNotes', e.target.value)}
+              onChange={(e) =>
+                handleTextChange("consultationNotes", e.target.value)
+              }
               rows="3"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter consultation notes, observations, and findings..."
@@ -338,7 +435,9 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.treatmentPlan}
-              onChange={(e) => handleTextChange('treatmentPlan', e.target.value)}
+              onChange={(e) =>
+                handleTextChange("treatmentPlan", e.target.value)
+              }
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter treatment plan..."
@@ -363,7 +462,10 @@ const ConsultationEditModal = ({
               </button>
             </div>
             {consultationData.medicationsPrescribed.map((med, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 p-3 border rounded relative">
+              <div
+                key={index}
+                className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 p-3 border rounded relative"
+              >
                 <button
                   onClick={() => handleRemoveMedication(index)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 disabled:opacity-50"
@@ -376,7 +478,9 @@ const ConsultationEditModal = ({
                   type="text"
                   placeholder="Medication name"
                   value={med.name}
-                  onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
+                  onChange={(e) =>
+                    handleMedicationChange(index, "name", e.target.value)
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   disabled={isSubmitting}
                 />
@@ -384,7 +488,9 @@ const ConsultationEditModal = ({
                   type="text"
                   placeholder="Dosage"
                   value={med.dosage}
-                  onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
+                  onChange={(e) =>
+                    handleMedicationChange(index, "dosage", e.target.value)
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   disabled={isSubmitting}
                 />
@@ -392,7 +498,9 @@ const ConsultationEditModal = ({
                   type="text"
                   placeholder="Duration"
                   value={med.duration}
-                  onChange={(e) => handleMedicationChange(index, 'duration', e.target.value)}
+                  onChange={(e) =>
+                    handleMedicationChange(index, "duration", e.target.value)
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   disabled={isSubmitting}
                 />
@@ -400,7 +508,13 @@ const ConsultationEditModal = ({
                   type="text"
                   placeholder="Instructions"
                   value={med.instructions}
-                  onChange={(e) => handleMedicationChange(index, 'instructions', e.target.value)}
+                  onChange={(e) =>
+                    handleMedicationChange(
+                      index,
+                      "instructions",
+                      e.target.value
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   disabled={isSubmitting}
                 />
@@ -415,7 +529,9 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.recommendations}
-              onChange={(e) => handleTextChange('recommendations', e.target.value)}
+              onChange={(e) =>
+                handleTextChange("recommendations", e.target.value)
+              }
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               placeholder="Enter recommendations..."
@@ -430,7 +546,7 @@ const ConsultationEditModal = ({
             </label>
             <textarea
               value={consultationData.nextSteps}
-              onChange={(e) => handleTextChange('nextSteps', e.target.value)}
+              onChange={(e) => handleTextChange("nextSteps", e.target.value)}
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               placeholder="Enter next steps and recommendations..."
@@ -448,7 +564,12 @@ const ConsultationEditModal = ({
               <input
                 type="number"
                 value={consultationData.consultationDuration}
-                onChange={(e) => handleTextChange('consultationDuration', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleTextChange(
+                    "consultationDuration",
+                    parseInt(e.target.value) || 0
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 min="1"
                 disabled={isSubmitting}
@@ -462,7 +583,9 @@ const ConsultationEditModal = ({
               <input
                 type="date"
                 value={consultationData.followUpDate}
-                onChange={(e) => handleTextChange('followUpDate', e.target.value)}
+                onChange={(e) =>
+                  handleTextChange("followUpDate", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 disabled={isSubmitting}
               />
@@ -476,7 +599,7 @@ const ConsultationEditModal = ({
             </label>
             <select
               value={consultationData.status}
-              onChange={(e) => handleTextChange('status', e.target.value)}
+              onChange={(e) => handleTextChange("status", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               disabled={isSubmitting}
             >
@@ -510,22 +633,22 @@ const ConsultationEditModal = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Separate Follow Up Modal Component
-const FollowUpModal = ({ 
-  followUpData, 
-  onClose, 
+const FollowUpModal = ({
+  followUpData,
+  onClose,
   onSchedule,
-  onFollowUpDataChange 
+  onFollowUpDataChange,
 }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-lg max-w-md w-full">
       <div className="p-6 border-b">
         <h2 className="text-xl font-bold text-gray-900">Schedule Follow-up</h2>
       </div>
-      
+
       <div className="p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -535,7 +658,12 @@ const FollowUpModal = ({
           <input
             type="date"
             value={followUpData.followUpDate}
-            onChange={(e) => onFollowUpDataChange({ ...followUpData, followUpDate: e.target.value })}
+            onChange={(e) =>
+              onFollowUpDataChange({
+                ...followUpData,
+                followUpDate: e.target.value,
+              })
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -546,7 +674,9 @@ const FollowUpModal = ({
           </label>
           <textarea
             value={followUpData.notes}
-            onChange={(e) => onFollowUpDataChange({ ...followUpData, notes: e.target.value })}
+            onChange={(e) =>
+              onFollowUpDataChange({ ...followUpData, notes: e.target.value })
+            }
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Any additional notes for the follow-up..."
@@ -570,19 +700,19 @@ const FollowUpModal = ({
       </div>
     </div>
   </div>
-)
+);
 
 // Main Component
 export default function PatientHistory() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [patientData, setPatientData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedConsultation, setSelectedConsultation] = useState(null)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showFollowUpModal, setShowFollowUpModal] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [patientData, setPatientData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedConsultation, setSelectedConsultation] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [consultationData, setConsultationData] = useState({
     consultationNotes: "",
@@ -590,155 +720,210 @@ export default function PatientHistory() {
     treatmentPlan: "",
     nextSteps: "",
     followUpDate: "",
-    medicationsPrescribed: [{ name: "", dosage: "", duration: "", instructions: "" }],
+    medicationsPrescribed: [
+      { name: "", dosage: "", duration: "", instructions: "" },
+    ],
     consultationDuration: 30,
     status: "completed",
     symptoms: "",
-    recommendations: ""
-  })
+    recommendations: "",
+  });
 
   const [followUpData, setFollowUpData] = useState({
     followUpDate: "",
-    notes: ""
-  })
+    notes: "",
+  });
 
-  const user = JSON.parse(localStorage.getItem("user"))
-  const doctorId = user?._id
+  const user = JSON.parse(localStorage.getItem("user"));
+  const doctorId = user?._id;
 
-  // Fetch consultation history
+  // Fetch consultation history with animal details and symptoms
   const fetchConsultationHistory = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await axios.get(
         `http://localhost:5000/api/consultations/doctor/${doctorId}/history`,
         {
           params: {
             status: statusFilter,
-            search: searchTerm
-          }
+            search: searchTerm,
+          },
         }
-      )
-      setPatientData(response.data.consultations || [])
+      );
+
+      console.log("🔍 RAW API RESPONSE:", response.data);
+
+      // Check if we have consultations and what animal data they contain
+      if (
+        response.data.consultations &&
+        response.data.consultations.length > 0
+      ) {
+        console.log(
+          "📋 First consultation object:",
+          response.data.consultations[0]
+        );
+        console.log("🐾 Animal details in first consultation:", {
+          animalType: response.data.consultations[0].animalType,
+          animalBreed: response.data.consultations[0].animalBreed,
+          animalAge: response.data.consultations[0].animalAge,
+          symptoms: response.data.consultations[0].symptoms,
+        });
+      }
+
+      // Process the data to ensure animal details and symptoms are included
+      const processedData = (response.data.consultations || []).map(
+        (consultation) => ({
+          ...consultation,
+          // Ensure animal details are properly set
+          animalType: consultation.animalType || "Not specified",
+          animalBreed: consultation.animalBreed || "Not specified",
+          animalAge: consultation.animalAge || "Not specified",
+          symptoms: consultation.symptoms || "No symptoms recorded",
+          // Ensure status display is set
+          statusDisplay:
+            consultation.status === "completed"
+              ? "Completed"
+              : consultation.status === "follow_up"
+              ? "Follow-up Required"
+              : consultation.status === "approved"
+              ? "Active"
+              : "Pending",
+          statusColor:
+            consultation.status === "completed"
+              ? "bg-green-100 text-green-800"
+              : consultation.status === "follow_up"
+              ? "bg-yellow-100 text-yellow-800"
+              : consultation.status === "approved"
+              ? "bg-blue-100 text-blue-800"
+              : "bg-gray-100 text-gray-800",
+        })
+      );
+
+      console.log("✅ Processed consultation data:", processedData);
+      setPatientData(processedData);
     } catch (err) {
-      console.error("Error fetching consultation history:", err)
-      toast.error("Failed to load patient history")
+      console.error("❌ Error fetching consultation history:", err);
+      toast.error("Failed to load patient history");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (doctorId) {
-      fetchConsultationHistory()
+      fetchConsultationHistory();
     }
-  }, [doctorId, statusFilter, searchTerm])
+  }, [doctorId, statusFilter, searchTerm]);
 
   // Fetch consultation details
   const fetchConsultationDetails = async (consultationId) => {
     try {
-      console.log("Fetching consultation details for:", consultationId)
+      console.log("Fetching consultation details for:", consultationId);
       const response = await axios.get(
         `http://localhost:5000/api/consultations/${consultationId}`
-      )
-      console.log("Consultation details:", response.data)
-      setSelectedConsultation(response.data)
-      setShowDetailsModal(true)
+      );
+      console.log("Consultation details:", response.data);
+      setSelectedConsultation(response.data);
+      setShowDetailsModal(true);
     } catch (err) {
-      console.error("Error fetching consultation details:", err)
-      console.error("Error response:", err.response?.data)
-      toast.error("Failed to load consultation details. Please try again.")
+      console.error("Error fetching consultation details:", err);
+      console.error("Error response:", err.response?.data);
+      toast.error("Failed to load consultation details. Please try again.");
     }
-  }
+  };
 
   // Fetch consultation for editing
   const fetchConsultationForEdit = async (consultationId) => {
     try {
-      console.log("Fetching consultation for edit:", consultationId)
+      console.log("Fetching consultation for edit:", consultationId);
       const response = await axios.get(
         `http://localhost:5000/api/consultations/${consultationId}`
-      )
-      console.log("Consultation for edit:", response.data)
-      
-      setSelectedConsultation(response.data)
+      );
+      console.log("Consultation for edit:", response.data);
+
+      setSelectedConsultation(response.data);
       setConsultationData({
         consultationNotes: response.data.consultationNotes || "",
         diagnosis: response.data.diagnosis || "",
         treatmentPlan: response.data.treatmentPlan || "",
         nextSteps: response.data.nextSteps || "",
-        followUpDate: response.data.followUpDate ? response.data.followUpDate.split('T')[0] : "",
-        medicationsPrescribed: response.data.medicationsPrescribed?.length > 0 
-          ? response.data.medicationsPrescribed 
-          : [{ name: "", dosage: "", duration: "", instructions: "" }],
+        followUpDate: response.data.followUpDate
+          ? response.data.followUpDate.split("T")[0]
+          : "",
+        medicationsPrescribed:
+          response.data.medicationsPrescribed?.length > 0
+            ? response.data.medicationsPrescribed
+            : [{ name: "", dosage: "", duration: "", instructions: "" }],
         consultationDuration: response.data.consultationDuration || 30,
         status: response.data.status || "completed",
         symptoms: response.data.symptoms || "",
-        recommendations: response.data.recommendations || ""
-      })
-      setShowEditModal(true)
+        recommendations: response.data.recommendations || "",
+      });
+      setShowEditModal(true);
     } catch (err) {
-      console.error("Error fetching consultation for edit:", err)
-      console.error("Error response:", err.response?.data)
-      toast.error("Failed to load consultation data. Please try again.")
+      console.error("Error fetching consultation for edit:", err);
+      console.error("Error response:", err.response?.data);
+      toast.error("Failed to load consultation data. Please try again.");
     }
-  }
+  };
 
   // Update consultation
   const handleUpdateConsultation = async () => {
-    if (!selectedConsultation) return
+    if (!selectedConsultation) return;
 
     try {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       const response = await axios.put(
         `http://localhost:5000/api/consultations/${selectedConsultation.id}/update`,
         consultationData
-      )
+      );
 
-      toast.success("Consultation updated successfully!")
-      setShowEditModal(false)
-      fetchConsultationHistory()
+      toast.success("Consultation updated successfully!");
+      setShowEditModal(false);
+      fetchConsultationHistory();
     } catch (err) {
-      console.error("Error updating consultation:", err)
-      console.error("Error response:", err.response?.data)
-      toast.error("Failed to update consultation")
+      console.error("Error updating consultation:", err);
+      console.error("Error response:", err.response?.data);
+      toast.error("Failed to update consultation");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Schedule follow-up
   const handleScheduleFollowUp = async () => {
-    if (!selectedConsultation) return
+    if (!selectedConsultation) return;
 
     try {
       await axios.put(
         `http://localhost:5000/api/consultations/${selectedConsultation.id}/schedule-followup`,
         followUpData
-      )
-      
-      toast.success("Follow-up scheduled successfully!")
-      setShowFollowUpModal(false)
-      setFollowUpData({ followUpDate: "", notes: "" })
-      fetchConsultationHistory()
+      );
+
+      toast.success("Follow-up scheduled successfully!");
+      setShowFollowUpModal(false);
+      setFollowUpData({ followUpDate: "", notes: "" });
+      fetchConsultationHistory();
     } catch (err) {
-      console.error("Error scheduling follow-up:", err)
-      toast.error("Failed to schedule follow-up")
+      console.error("Error scheduling follow-up:", err);
+      toast.error("Failed to schedule follow-up");
     }
-  }
+  };
 
   // Complete consultation
   const handleCompleteConsultation = async (consultationId) => {
     try {
       await axios.put(
         `http://localhost:5000/api/consultations/${consultationId}/complete`
-      )
-      
-      toast.success("Consultation marked as completed!")
-      fetchConsultationHistory()
+      );
+
+      toast.success("Consultation marked as completed!");
+      fetchConsultationHistory();
     } catch (err) {
-      console.error("Error completing consultation:", err)
-      toast.error("Failed to complete consultation")
+      console.error("Error completing consultation:", err);
+      toast.error("Failed to complete consultation");
     }
-  }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -748,7 +933,7 @@ export default function PatientHistory() {
         staggerChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -759,7 +944,7 @@ export default function PatientHistory() {
         duration: 0.5,
       },
     },
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
@@ -768,10 +953,13 @@ export default function PatientHistory() {
         <ConsultationDetailsModal
           selectedConsultation={selectedConsultation}
           onClose={() => setShowDetailsModal(false)}
-          onEdit={() => selectedConsultation && fetchConsultationForEdit(selectedConsultation.id)}
+          onEdit={() =>
+            selectedConsultation &&
+            fetchConsultationForEdit(selectedConsultation.id)
+          }
         />
       )}
-      
+
       {showEditModal && (
         <ConsultationEditModal
           selectedConsultation={selectedConsultation}
@@ -782,7 +970,7 @@ export default function PatientHistory() {
           isSubmitting={isSubmitting}
         />
       )}
-      
+
       {showFollowUpModal && (
         <FollowUpModal
           followUpData={followUpData}
@@ -800,8 +988,12 @@ export default function PatientHistory() {
       >
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Patient History & Consultations</h1>
-          <p className="text-gray-600 text-sm md:text-base">Manage and review all patient consultations and treatment records</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            Patient History & Consultations
+          </h1>
+          <p className="text-gray-600 text-sm md:text-base">
+            Manage and review all patient consultations and treatment records
+          </p>
         </div>
 
         {/* Search and Filter Section */}
@@ -817,13 +1009,12 @@ export default function PatientHistory() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by farmer name..."
+                placeholder="Search by farmer name, animal type, or symptoms..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
               />
             </div>
-
             {/* Status Filter */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -863,7 +1054,10 @@ export default function PatientHistory() {
                         Farmer Name
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Animal Type
+                        Animal Details
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Symptoms
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Issue/Diagnosis
@@ -889,18 +1083,58 @@ export default function PatientHistory() {
                         className="hover:bg-gray-50"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{patient.farmerName}</div>
-                          <div className="text-sm text-gray-500">{patient.farmerEmail}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{patient.animalType}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {patient.farmerName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {patient.farmerEmail}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {patient.farmerPhone}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 max-w-xs truncate">{patient.issue}</div>
+                          <div className="text-sm text-gray-900">
+                            <div className="font-medium">
+                              {patient.animalType}
+                            </div>
+                            {patient.animalBreed &&
+                              patient.animalBreed !== "Not specified" && (
+                                <div className="text-gray-600 text-xs">
+                                  Breed: {patient.animalBreed}
+                                </div>
+                              )}
+                            {patient.animalAge &&
+                              patient.animalAge !== "Not specified" && (
+                                <div className="text-gray-600 text-xs">
+                                  Age: {patient.animalAge}
+                                </div>
+                              )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 max-w-xs">
+                          <div
+                            className="text-sm text-gray-900 line-clamp-2"
+                            title={patient.symptoms}
+                          >
+                            {patient.symptoms}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 max-w-xs">
+                          <div
+                            className="text-sm text-gray-900 truncate"
+                            title={patient.issue}
+                          >
+                            {patient.issue}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{patient.treatmentDate}</div>
-                          <div className="text-sm text-gray-500">{patient.startTime}</div>
+                          <div className="text-sm text-gray-900">
+                            {patient.treatmentDate}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {patient.startTime}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -910,6 +1144,7 @@ export default function PatientHistory() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                          {/* Your existing action buttons */}
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -928,24 +1163,26 @@ export default function PatientHistory() {
                             <Edit className="w-4 h-4" />
                             Edit
                           </motion.button>
-                          {patient.status === 'approved' && (
+                          {patient.status === "approved" && (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => handleCompleteConsultation(patient.id)}
+                              onClick={() =>
+                                handleCompleteConsultation(patient.id)
+                              }
                               className="text-purple-600 hover:text-purple-900 inline-flex items-center gap-1"
                             >
                               <CheckCircle className="w-4 h-4" />
                               Complete
                             </motion.button>
                           )}
-                          {patient.status === 'completed' && (
+                          {patient.status === "completed" && (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => {
-                                setSelectedConsultation(patient)
-                                setShowFollowUpModal(true)
+                                setSelectedConsultation(patient);
+                                setShowFollowUpModal(true);
                               }}
                               className="text-orange-600 hover:text-orange-900 inline-flex items-center gap-1"
                             >
@@ -959,7 +1196,6 @@ export default function PatientHistory() {
                   </tbody>
                 </table>
               </div>
-
               {/* Mobile Cards */}
               <div className="md:hidden">
                 {patientData.map((patient) => (
@@ -969,24 +1205,75 @@ export default function PatientHistory() {
                     className="p-4 border-b border-gray-200 last:border-b-0"
                   >
                     <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{patient.farmerName}</h3>
-                        <p className="text-sm text-gray-500">{patient.farmerEmail}</p>
-                        <p className="text-sm text-gray-600">{patient.animalType}</p>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {patient.farmerName}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {patient.farmerEmail}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {patient.farmerPhone}
+                        </p>
                       </div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${patient.statusColor}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${patient.statusColor}`}
+                      >
                         {patient.statusDisplay}
                       </span>
                     </div>
 
+                    {/* Animal Details */}
+                    <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">
+                        Animal Details
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-blue-700 font-medium">
+                            Type:
+                          </span>
+                          <p className="text-blue-800">{patient.animalType}</p>
+                        </div>
+                        <div>
+                          <span className="text-blue-700 font-medium">
+                            Breed:
+                          </span>
+                          <p className="text-blue-800">{patient.animalBreed}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-blue-700 font-medium">
+                            Age:
+                          </span>
+                          <p className="text-blue-800">{patient.animalAge}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Symptoms */}
+                    <div className="mb-3 p-3 bg-amber-50 rounded-lg">
+                      <h4 className="text-sm font-medium text-amber-900 mb-1">
+                        Symptoms
+                      </h4>
+                      <p className="text-sm text-amber-800">
+                        {patient.symptoms}
+                      </p>
+                    </div>
+
                     <div className="space-y-2 mb-4">
                       <div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Issue:</span>
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Issue/Diagnosis:
+                        </span>
                         <p className="text-sm text-gray-900">{patient.issue}</p>
                       </div>
                       <div>
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Date:</span>
-                        <p className="text-sm text-gray-900">{patient.treatmentDate} at {patient.startTime}</p>
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date:
+                        </span>
+                        <p className="text-sm text-gray-900">
+                          {patient.treatmentDate} at {patient.startTime}
+                        </p>
                       </div>
                     </div>
 
@@ -1009,7 +1296,7 @@ export default function PatientHistory() {
                         <Edit className="w-4 h-4" />
                         Edit
                       </motion.button>
-                      {patient.status === 'approved' && (
+                      {patient.status === "approved" && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
@@ -1020,18 +1307,37 @@ export default function PatientHistory() {
                           Complete
                         </motion.button>
                       )}
+                      {patient.status === "completed" && (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            setSelectedConsultation(patient);
+                            setShowFollowUpModal(true);
+                          }}
+                          className="flex-1 bg-orange-50 text-orange-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors duration-200 inline-flex items-center justify-center gap-1"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                          Follow-up
+                        </motion.button>
+                      )}
                     </div>
                   </motion.div>
                 ))}
               </div>
-
               {/* Empty State */}
               {patientData.length === 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-12"
+                >
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <FileText className="w-8 h-8 text-gray-400" />
                   </div>
-                  <p className="text-gray-500">No consultation records found matching your criteria.</p>
+                  <p className="text-gray-500">
+                    No consultation records found matching your criteria.
+                  </p>
                 </motion.div>
               )}
             </>
@@ -1039,5 +1345,5 @@ export default function PatientHistory() {
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

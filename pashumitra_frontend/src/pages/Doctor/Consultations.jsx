@@ -115,7 +115,7 @@ export default function DoctorChat() {
     return () => socket.disconnect();
   }, [doctorId]);
 
-  // ✅ CORRECTED: Group consultations by farmer, show only one entry per farmer
+  // ✅ CORRECTED: Group consultations by farmer and include consultation details
   const fetchFarmersAndConsultations = async () => {
     try {
       console.log("Fetching consultations for doctor:", doctorId);
@@ -164,6 +164,11 @@ export default function DoctorChat() {
             endTime: c.endTime,
             fee: c.fee || 0,
             createdAt: c.createdAt,
+            // FIX: Use animal details from the API response
+            symptoms: c.symptoms || "",
+            animalType: c.animalType || "Not specified",
+            animalBreed: c.animalBreed || "Not specified",
+            animalAge: c.animalAge || "Not specified",
           };
 
           farmer.consultations.push(consultation);
@@ -188,9 +193,17 @@ export default function DoctorChat() {
         startTime: farmer.latestConsultation?.startTime,
         endTime: farmer.latestConsultation?.endTime,
         fee: farmer.latestConsultation?.fee || 0,
+        // FIX: Include latest consultation details from the API
+        symptoms: farmer.latestConsultation?.symptoms || "",
+        animalType: farmer.latestConsultation?.animalType || "Not specified",
+        animalBreed: farmer.latestConsultation?.animalBreed || "Not specified",
+        animalAge: farmer.latestConsultation?.animalAge || "Not specified",
       }));
 
-      console.log("Processed farmers list (grouped by farmer):", farmersList);
+      console.log(
+        "Processed farmers list with consultation details:",
+        farmersList
+      );
 
       const consultMap = {};
       const detailsMap = {};
@@ -204,6 +217,10 @@ export default function DoctorChat() {
               date: consultation.consultationDate,
               startTime: consultation.startTime,
               endTime: consultation.endTime,
+              symptoms: consultation.symptoms,
+              animalType: consultation.animalType,
+              animalBreed: consultation.animalBreed,
+              animalAge: consultation.animalAge,
             };
           }
         });
@@ -602,9 +619,6 @@ export default function DoctorChat() {
                   const uniqueKey = `${farmer._id}-${
                     farmer.requestId || "no-request"
                   }`;
-                  const isApproved =
-                    farmer.requestId &&
-                    consultations[farmer.requestId] === "approved";
 
                   return (
                     <div
@@ -626,12 +640,11 @@ export default function DoctorChat() {
                               {farmer.fullName}
                             </h3>
                             <span className="text-xs text-gray-500">
-                              {messages[farmer.farmerUserId]?.length > 0 &&
-                                formatTime(
-                                  messages[farmer.farmerUserId][
-                                    messages[farmer.farmerUserId].length - 1
-                                  ]?.timestamp
-                                )}
+                              {farmer.consultationDate
+                                ? new Date(
+                                    farmer.consultationDate
+                                  ).toLocaleDateString()
+                                : ""}
                             </span>
                           </div>
                           <p className="truncate text-sm text-gray-600">
@@ -641,70 +654,54 @@ export default function DoctorChat() {
                             {farmer.phone}
                           </p>
 
-                          {/* Consultation status */}
-                          <div className="mt-1">
-                            {farmer.consultations &&
-                            farmer.consultations.length > 0 ? (
-                              <div className="space-y-1">
-                                {/* Show latest consultation status */}
-                                {farmer.latestConsultation && (
-                                  <div>
-                                    <p
-                                      className={`text-sm font-medium ${
-                                        consultations[
-                                          farmer.latestConsultation.requestId
-                                        ] === "approved"
-                                          ? "text-green-600"
-                                          : consultations[
-                                              farmer.latestConsultation
-                                                .requestId
-                                            ] === "pending"
-                                          ? "text-amber-600"
-                                          : consultations[
-                                              farmer.latestConsultation
-                                                .requestId
-                                            ] === "completed"
-                                          ? "text-blue-600"
-                                          : "text-red-600"
-                                      }`}
-                                    >
-                                      {consultations[
-                                        farmer.latestConsultation.requestId
-                                      ] === "approved"
-                                        ? "✅ Chat Available"
-                                        : consultations[
-                                            farmer.latestConsultation.requestId
-                                          ] === "pending"
-                                        ? "⏳ Pending approval"
-                                        : consultations[
-                                            farmer.latestConsultation.requestId
-                                          ] === "completed"
-                                        ? "✅ Consultation Completed"
-                                        : "❌ Consultation Rejected"}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      Latest:{" "}
-                                      {new Date(
-                                        farmer.latestConsultation.consultationDate
-                                      ).toLocaleDateString()}{" "}
-                                      at {farmer.latestConsultation.startTime}
-                                    </p>
-                                  </div>
-                                )}
+                          {/* SIMPLIFIED: Always show animal details if available */}
+                          <div className="mt-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Animal: {farmer.animalType}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Breed: {farmer.animalBreed}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Age: {farmer.animalAge}
+                              </span>
+                            </div>
 
-                                {/* Show consultation count */}
-                                {farmer.consultations.length > 1 && (
-                                  <p className="text-xs text-gray-500">
-                                    {farmer.consultations.length}{" "}
-                                    consultation(s) total
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-gray-500">
-                                No active consultation
-                              </p>
-                            )}
+                            {/* Show symptoms if available */}
+                            {farmer.symptoms &&
+                              farmer.symptoms !== "Not specified" && (
+                                <div className="bg-amber-50 p-2 rounded border border-amber-200">
+                                  <div className="font-medium text-amber-700 text-xs mb-1">
+                                    Symptoms:
+                                  </div>
+                                  <div className="text-amber-600 text-xs">
+                                    {farmer.symptoms}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Consultation Status */}
+                            <div className="mt-2">
+                              <span
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  farmer.status === "approved"
+                                    ? "bg-green-100 text-green-800"
+                                    : farmer.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : farmer.status === "completed"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {farmer.status === "approved" && "✅ Approved"}
+                                {farmer.status === "pending" &&
+                                  "⏳ Pending Approval"}
+                                {farmer.status === "completed" &&
+                                  "✅ Completed"}
+                                {farmer.status === "rejected" && "❌ Rejected"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -730,7 +727,6 @@ export default function DoctorChat() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Approve the latest pending consultation
                                 const pendingConsultation =
                                   farmer.consultations.find(
                                     (c) =>
@@ -790,16 +786,48 @@ export default function DoctorChat() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
                     <User2 className="h-6 w-6 text-white" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="font-semibold text-gray-900">
                       {activeChat.fullName}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {activeChat.email} •{" "}
-                      {consultations[activeChat.requestId] === "approved"
-                        ? "Online - Chat Available"
-                        : "Chat not available"}
+                      {activeChat.email} • {activeChat.phone}
                     </p>
+
+                    {/* ALWAYS show animal details in chat header */}
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                      <div className="bg-blue-50 p-1 rounded text-center">
+                        <div className="font-medium text-blue-700">Animal</div>
+                        <div className="text-blue-600">
+                          {activeChat.animalType}
+                        </div>
+                      </div>
+                      <div className="bg-green-50 p-1 rounded text-center">
+                        <div className="font-medium text-green-700">Breed</div>
+                        <div className="text-green-600">
+                          {activeChat.animalBreed}
+                        </div>
+                      </div>
+                      <div className="bg-purple-50 p-1 rounded text-center">
+                        <div className="font-medium text-purple-700">Age</div>
+                        <div className="text-purple-600">
+                          {activeChat.animalAge}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Show symptoms if available */}
+                    {activeChat.symptoms &&
+                      activeChat.symptoms !== "Not specified" && (
+                        <div className="mt-2 bg-amber-50 p-2 rounded border border-amber-200">
+                          <div className="font-medium text-amber-700 text-xs">
+                            Symptoms:
+                          </div>
+                          <div className="text-amber-600 text-xs mt-1">
+                            {activeChat.symptoms}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
 
@@ -876,17 +904,83 @@ export default function DoctorChat() {
                   })
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                    <div className="text-center">
+                    <div className="text-center max-w-md">
                       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <User2 className="w-10 h-10 text-green-600" />
                       </div>
                       <p className="text-lg font-medium text-gray-900 mb-2">
                         {activeChat?.fullName}
                       </p>
+
+                      {/* Show consultation details for pending requests */}
+                      {consultations[activeChat?.requestId] === "pending" && (
+                        <div className="mb-4 p-4 bg-white rounded-lg border border-gray-200 text-left">
+                          <h4 className="font-semibold text-gray-900 mb-2">
+                            Consultation Request Details
+                          </h4>
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">
+                                Animal:
+                              </span>
+                              <p className="text-sm text-gray-600">
+                                {activeChat.animalType}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">
+                                Breed:
+                              </span>
+                              <p className="text-sm text-gray-600">
+                                {activeChat.animalBreed}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">
+                                Age:
+                              </span>
+                              <p className="text-sm text-gray-600">
+                                {activeChat.animalAge}
+                              </p>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-sm font-medium text-gray-700">
+                                Symptoms:
+                              </span>
+                              <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-2 rounded">
+                                {activeChat.symptoms || "No symptoms provided"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action buttons for pending consultations */}
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() =>
+                                handleConfirmConsultation(activeChat)
+                              }
+                              className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                            >
+                              Approve Consultation
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleRejectConsultation(activeChat)
+                              }
+                              className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <p className="text-sm">
                         {activeChat &&
                         consultations[activeChat.requestId] === "approved"
                           ? "Send a message to start the conversation"
+                          : consultations[activeChat.requestId] === "pending"
+                          ? "Review the consultation request details above"
                           : "Approve the consultation to enable chat"}
                       </p>
                     </div>

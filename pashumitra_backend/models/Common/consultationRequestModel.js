@@ -71,6 +71,11 @@ const ConsultationRequestSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    animalDetails: {
+      animalType: String,
+      animalBreed: String,
+      animalAge: String
+    },
     recommendations: {
       type: String,
       default: ""
