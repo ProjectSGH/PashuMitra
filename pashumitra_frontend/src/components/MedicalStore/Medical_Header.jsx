@@ -14,7 +14,7 @@ export default function Header() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const userId = localStorage.getItem("userId"); // or wherever you store logged-in user's id
+  const userId = localStorage.getItem("userId");
 
   const handleLogout = () => {
     setIsLoggingOut(true);
@@ -25,16 +25,18 @@ export default function Header() {
     }, 600);
   };
 
-  // Fetch unread notifications count from backend
+  // ✅ FIXED: Correct notification endpoint
   const fetchUnreadCount = async () => {
     try {
       if (!userId) return;
       const response = await axios.get(
-        `/api/user/notifications/unreadCount/${userId}`
+        `http://localhost:5000/api/notifications/unreadCount/${userId}` // Fixed URL
       );
       setUnreadCount(response.data.count);
     } catch (err) {
       console.error("Error fetching unread notifications:", err);
+      // Set to 0 if there's an error to avoid breaking the UI
+      setUnreadCount(0);
     }
   };
 
@@ -48,7 +50,7 @@ export default function Header() {
 
   const navItems = [
     { name: "Home", href: "/medicalstore/home" },
-    { name: "inventory", href: "/medicalstore/inventory" },
+    { name: "Inventory", href: "/medicalstore/inventory" },
     { name: "Requests", href: "/medicalstore/requests" },
     { name: "Transfer", href: "/medicalstore/transfer" },
     { name: "Transport", href: "/medicalstore/transport" },
@@ -69,9 +71,9 @@ export default function Header() {
           <motion.div className="flex-shrink-0">
             <h1
               className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center gap-2"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/medicalstore/home")}
             >
-              <img src={resources.Logo.src} alt="FarmerCare Logo" className="h-8" />
+              <img src={resources.Logo.src} alt="PashuMitra Logo" className="h-8" />
               PashuMitra - Medical Store Portal
             </h1>
           </motion.div>
@@ -110,11 +112,11 @@ export default function Header() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate("/medicalstore/notifications")}
-              className="relative cursor-pointer"
+              className="relative cursor-pointer p-2"
             >
               <Bell className="h-6 w-6 text-gray-600" />
               {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
@@ -125,7 +127,7 @@ export default function Header() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate("/medicalstore/profile")}
-              className="p-1"
+              className="p-2"
             >
               <User className="h-6 w-6 text-gray-600 cursor-pointer" />
             </motion.button>
@@ -195,16 +197,16 @@ export default function Header() {
             })}
 
             {/* Mobile Icons */}
-            <div className="flex items-center space-x-4 px-3 py-2">
+            <div className="flex items-center space-x-4 px-3 py-2 border-t border-gray-200 mt-2 pt-4">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate("/medicalstore/notifications")}
-                className="relative p-1"
+                className="relative p-2"
               >
                 <Bell className="h-6 w-6 text-gray-600" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
@@ -214,9 +216,17 @@ export default function Header() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate("/medicalstore/profile")}
-                className="p-1"
+                className="p-2"
               >
                 <User className="h-6 w-6 text-gray-600 cursor-pointer" />
+              </motion.button>
+
+              <motion.button
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
               </motion.button>
             </div>
           </div>

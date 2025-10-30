@@ -1,13 +1,36 @@
-import mongoose from "mongoose"
+// models/MedicalStore/Medicine.js
+import mongoose from "mongoose";
 
-const medicineSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  category: String,
-  quantity: Number,
-  status: { type: String, default: "In Stock" },
-  expiry: String,
-  price: Number,
-  supplier: String,
-}, { timestamps: true })
+const medicineSchema = new mongoose.Schema(
+  {
+    medicineId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "medicines_list",
+      required: true 
+    },
+    storeId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", // Change this to match your user model
+      required: true 
+    },
+    name: { type: String, required: true, trim: true },
+    category: { type: String, trim: true },
+    type: { type: String, trim: true }, 
+    composition: { type: String, trim: true }, 
+    quantity: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ["In Stock", "Out of Stock", "Expired"],
+      default: "In Stock",
+    },
+    expiry: { type: String }, 
+    price: { type: Number, default: 0 },
+    supplier: { type: String, trim: true },
+    manufacturer: { type: String, trim: true },
+    description: { type: String, trim: true },
+    expiryRange: { type: String, trim: true }
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model("Medicine", medicineSchema)
+export default mongoose.model("medicines", medicineSchema);
