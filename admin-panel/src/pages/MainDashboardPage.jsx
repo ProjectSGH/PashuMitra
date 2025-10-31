@@ -20,6 +20,7 @@ import {
   XCircle,
   ChevronDown,
   ChevronRight,
+  Verified
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ import DoctorsPage from "./DoctorPage";
 import MedicalStoresPage from "./MedicalStorePage";
 import VerificationsPage from "./VerificationPage";
 import NotificationsPage from "./NotificationPage";
+import MedicineVerificationPage from "./MedicineVerificationPage";
 import SettingsPage from "./SettingPage";
 
 const AdminDashboard = ({onLogout}) => {
@@ -60,6 +62,11 @@ const AdminDashboard = ({onLogout}) => {
       icon: Bell,
       label: "Notifications",
       active: activePage === "Notifications",
+    },
+    {
+      icon: Verified,
+      label: "Medicine Verifications",
+      active: activePage === "Medicine Verifications",
     },
     { icon: Settings, label: "Settings", active: activePage === "Settings" },
   ];
@@ -188,6 +195,8 @@ const AdminDashboard = ({onLogout}) => {
         return <VerificationsPage />;
       case "Notifications":
         return <NotificationsPage />;
+      case "Medicine Verifications":
+        return <MedicineVerificationPage />;
       case "Settings":
         return <SettingsPage />;
       default:
