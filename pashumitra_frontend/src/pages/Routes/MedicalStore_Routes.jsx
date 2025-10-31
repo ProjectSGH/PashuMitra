@@ -20,7 +20,7 @@ const MedicalStoreRoutes = (
       <Route path="Requests" element={<MedicineRequests />} />
       <Route path="Transfer" element={<TransferManagement />} />
       <Route path="Transport" element={<TransportManagement />} />
-      <Route path="community-bank" element={<CommunityMedicineBank />} />
+      <Route path="communityBank" element={<CommunityMedicineBank />} />
       <Route path="Profile" element={<StoreProfileSettings />} />
       <Route path="Contact" element={<ContactUs />} />
       <Route path="notifications" element={<StoreNotificationsPage />} />
