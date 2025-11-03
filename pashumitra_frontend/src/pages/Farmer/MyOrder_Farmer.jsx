@@ -80,7 +80,7 @@ export default function FarmerOrders() {
       
       // Fetch regular medicine orders - CORRECTED ENDPOINT
       const regularResponse = await axios.get(
-        `http://localhost:5000/api/regular-medicine-orders/farmer/${farmerId}`
+        `http://localhost:5000/api/medicine-orders/farmer/${farmerId}`
       );
 
       const communityOrders = (communityResponse.data.data || []).map(
@@ -131,7 +131,7 @@ export default function FarmerOrders() {
     try {
       const endpoint = orderType === "community" 
         ? `http://localhost:5000/api/community-medicine-orders/${orderId}/cancel`
-        : `http://localhost:5000/api/regular-medicine-orders/${orderId}/cancel`;
+        : `http://localhost:5000/api/medicine-orders/${orderId}/cancel`;
 
       const response = await axios.patch(
         endpoint,

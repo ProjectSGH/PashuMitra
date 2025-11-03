@@ -330,48 +330,6 @@ export default function CommunityMedicineBank() {
             medicines you need for free.
           </p>
 
-          {/* Farmer Welcome Message */}
-          {farmerData ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto mb-4">
-              <p className="text-green-800 text-sm">
-                ✅{" "}
-                <strong>Welcome, {farmerData.name || farmerData.email}!</strong>{" "}
-                You can request available medicines below.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-2xl mx-auto mb-4">
-              <p className="text-yellow-800 text-sm">
-                ⚠️ <strong>Please login as a farmer</strong> to request
-                medicines from the community bank.
-              </p>
-            </div>
-          )}
-
-          {/* Navigation Tabs - Only Available Medicines for Farmers */}
-          <div className="flex justify-center">
-            <div className="bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab("available")}
-                className={`px-6 py-2 rounded-md transition-all duration-300 ${
-                  activeTab === "available"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Available Medicines
-              </button>
-              <button
-                onClick={() => {
-                  toast.error("Only medical stores can donate medicines");
-                }}
-                className="px-6 py-2 rounded-md transition-all duration-300 text-gray-400 cursor-not-allowed"
-                disabled
-              >
-                Donate Medicine
-              </button>
-            </div>
-          </div>
         </div>
       </motion.div>
 
