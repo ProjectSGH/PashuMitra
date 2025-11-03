@@ -91,6 +91,7 @@ const fetchNotifications = async () => {
     { name: "Nearby Stores", href: "/farmer/nearbystore" },
     { name: "Consult Doctor", href: "/farmer/doctor-consult" },
     { name: "My Consultations", href: "/farmer/my-consultations" },
+    { name: "My Orders", href: "/farmer/my-orders" },
     { name: "Awareness", href: "/farmer/awareness" },
     { name: "Community Bank", href: "/farmer/community-bank" },
     { name: "Contact Us", href: "/farmer/contact" },

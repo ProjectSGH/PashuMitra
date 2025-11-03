@@ -11,6 +11,7 @@ import UserProfile from "../Farmer/UserProfile_Farmer";
 import Contact from "../ContactUsForm";
 import ConsultationHistory from "../Farmer/ConsultationHistory_Farmer";
 import FarmerNotificationsPage from "../Farmer/Notification_Farmer";
+import FarmerOrders from "../Farmer/MyOrder_Farmer";
 
 const FarmerRoutes = (
   <Route element={<ProtectedRoute role="Farmer" />}>
@@ -25,6 +26,7 @@ const FarmerRoutes = (
       <Route path="my-consultations" element={<ConsultationHistory />} />
       <Route path="contact" element={<Contact />} />
       <Route path="profile" element={<UserProfile />} />
+      <Route path="my-orders" element={<FarmerOrders />} />
       <Route path="notifications" element={<FarmerNotificationsPage />} />
     </Route>
   </Route>
