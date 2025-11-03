@@ -9,6 +9,7 @@ import {
   Users,
   Tractor,
   Stethoscope,
+  ListOrdered,
   Store,
   Shield,
   Bell,
@@ -30,6 +31,7 @@ import DoctorsPage from "./DoctorPage";
 import MedicalStoresPage from "./MedicalStorePage";
 import VerificationsPage from "./VerificationPage";
 import NotificationsPage from "./NotificationPage";
+import AdminOrders from "./AdminOrders";
 import MedicineVerificationPage from "./MedicineVerificationPage";
 import SettingsPage from "./SettingPage";
 
@@ -68,6 +70,11 @@ const AdminDashboard = ({onLogout}) => {
       label: "Medicine Verifications",
       active: activePage === "Medicine Verifications",
     },
+    {
+      icon: ListOrdered,
+      label: "Orders",
+      active: activePage === "Orders",
+    },
     { icon: Settings, label: "Settings", active: activePage === "Settings" },
   ];
 
@@ -75,75 +82,6 @@ const AdminDashboard = ({onLogout}) => {
     { icon: Tractor, label: "Veterinary Farmer", page: "Farmers" },
     { icon: Stethoscope, label: "Veterinary Doctor", page: "Doctors" },
     { icon: Store, label: "Medical Store", page: "Medical Stores" },
-  ];
-
-  const statsCards = [
-    {
-      title: "Total Farmers",
-      value: "2,847",
-      subtitle: "Registered farmers",
-      change: "+12% from last month",
-      changeType: "positive",
-      icon: Tractor,
-      color: "blue",
-    },
-    {
-      title: "Total Doctors",
-      value: "1,256",
-      subtitle: "Verified doctors",
-      change: "+8% from last month",
-      changeType: "positive",
-      icon: Stethoscope,
-      color: "blue",
-    },
-    {
-      title: "Medical Stores",
-      value: "743",
-      subtitle: "Registered stores",
-      change: "+15% from last month",
-      changeType: "positive",
-      icon: Store,
-      color: "blue",
-    },
-    {
-      title: "Pending Verifications",
-      value: "127",
-      subtitle: "Awaiting approval",
-      change: "23 new today",
-      changeType: "neutral",
-      icon: Clock,
-      color: "orange",
-    },
-  ];
-
-  const verifications = [
-    {
-      id: 1,
-      name: "Dr. Rajesh Kumar",
-      role: "Doctor",
-      email: "rajesh.kumar@email.com",
-      submitted: "1/15/2024",
-      status: "Pending",
-      statusColor: "orange",
-    },
-    {
-      id: 2,
-      name: "Ram Singh",
-      role: "Farmer",
-      email: "ram.singh@email.com",
-      submitted: "1/14/2024",
-      status: "Approved",
-      statusColor: "green",
-    },
-    {
-      id: 3,
-      name: "MediCare Pharmacy",
-      role: "Medical Store",
-      email: "info@medicare.com",
-      submitted: "1/14/2024",
-      status: "Rejected",
-      statusColor: "red",
-    },
   ];
 
   const handleNavigation = (page) => {
@@ -195,6 +133,8 @@ const AdminDashboard = ({onLogout}) => {
         return <VerificationsPage />;
       case "Notifications":
         return <NotificationsPage />;
+      case "Orders":
+        return <AdminOrders />;
       case "Medicine Verifications":
         return <MedicineVerificationPage />;
       case "Settings":

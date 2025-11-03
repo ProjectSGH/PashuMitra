@@ -34,6 +34,7 @@ import AdminUserRoute from "./routes/Admin/AdminUserRoute.js";
 import adminNotificationRoutes from "./routes/Admin/NotificationRoute_Admin.js";
 import adminAuthRoutes from "./routes/Admin/AdminAuth.js";
 import adminMedicineVerificationRoutes from "./routes/Admin/MedicineVerification_Admin.js";
+import adminOrderRoutes from "./routes/Admin/AdminOrderRoute.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -75,6 +76,7 @@ app.use("/api/admin", AdminUserRoute);
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin/communitymedicines", adminMedicineVerificationRoutes);
+app.use("/api/admin/orders", adminOrderRoutes);
 
 // ✅ ADD HEALTH CHECK
 app.get("/api/health", (req, res) => {
