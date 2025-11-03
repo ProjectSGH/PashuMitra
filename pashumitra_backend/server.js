@@ -25,6 +25,7 @@ import UserVerificationRoutes from "./routes/Common/userVerificationRoutes.js";
 import GetStoreRoutes from "./routes/Farmer/GetStoreRoutes.js";
 import communityMedicineRoutes from "./routes/MedicalStore/communityMedicineRoutes.js";
 import CommunityMedicineOrderRoute from "./routes/MedicalStore/communityMedicineOrderRoute.js";
+import medicineOrderRoutes from "./routes/MedicalStore/MedicineOrderRoute.js";
 
 
 // Admin Routes
@@ -66,6 +67,7 @@ app.use("/api/MedicalscheduleRoutes", MedicalscheduleRoutes);
 app.use("/api/stores", GetStoreRoutes);
 app.use("/api/community-medicines", communityMedicineRoutes);
 app.use("/api/community-medicine-orders", CommunityMedicineOrderRoute);
+app.use("/api/medicine-orders", medicineOrderRoutes);
 
 // Admin routes
 app.use("/api/admin/verification", adminUserVerificationRoutes);

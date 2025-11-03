@@ -10,7 +10,7 @@ const medicineSchema = new mongoose.Schema(
     },
     storeId: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: "User", // Change this to match your user model
+      ref: "User",
       required: true 
     },
     name: { type: String, required: true, trim: true },
@@ -28,7 +28,10 @@ const medicineSchema = new mongoose.Schema(
     supplier: { type: String, trim: true },
     manufacturer: { type: String, trim: true },
     description: { type: String, trim: true },
-    expiryRange: { type: String, trim: true }
+    expiryRange: { type: String, trim: true },
+    // Additional fields for better inventory management
+    minStockLevel: { type: Number, default: 10 },
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

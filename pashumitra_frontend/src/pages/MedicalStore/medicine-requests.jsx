@@ -2,85 +2,56 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, MapPin, Check, X, CheckCircle, XCircle, Package, DollarSign, Clock } from "lucide-react"
+import { User, MapPin, Check, X, CheckCircle, XCircle, Package, DollarSign, Clock, Truck, Phone } from "lucide-react"
 import axios from "axios"
 import toast from "react-hot-toast"
 
-const regularMedicineRequests = [
-  {
-    id: 1,
-    type: "regular",
-    name: "John Smith",
-    organization: "Green Valley Farm",
-    priority: "high",
-    status: "pending",
-    medicine: "Antibiotics for Cattle",
-    quantity: "50 units",
-    price: "₹2,500",
-    date: "2024-01-15",
-    distance: "15 miles away",
-    rejectionReason: null,
-  },
-  {
-    id: 2,
-    type: "regular",
-    name: "Sarah Johnson",
-    organization: "Sunrise Agriculture",
-    priority: "medium",
-    status: "pending",
-    medicine: "Vitamins for Poultry",
-    quantity: "100 units",
-    price: "₹1,800",
-    date: "2024-01-15",
-    distance: "8 miles away",
-    rejectionReason: null,
-  },
-  {
-    id: 3,
-    type: "regular",
-    name: "Mike Davis",
-    organization: "Valley Ranch",
-    priority: "low",
-    status: "accepted",
-    medicine: "Deworming Medicine",
-    quantity: "25 units",
-    price: "₹750",
-    date: "2024-01-14",
-    distance: "22 miles away",
-    rejectionReason: null,
-  },
-]
-
-const filterTabs = ["All", "Pending", "Accepted", "Rejected"]
+const filterTabs = ["All", "Pending", "Approved", "Rejected", "Completed", "Transferred"]
 const requestTypes = ["All", "Community Bank", "Regular Medicine"]
 
 export default function MedicineRequests() {
   const [activeFilter, setActiveFilter] = useState("All")
   const [activeType, setActiveType] = useState("All")
   const [communityRequests, setCommunityRequests] = useState([])
+  const [regularRequests, setRegularRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [storeData, setStoreData] = useState(null)
+  const [transferModal, setTransferModal] = useState({ open: false, order: null })
 
   useEffect(() => {
     // Get store data from localStorage
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.role === "MedicalStore") {
       setStoreData(user);
-      fetchCommunityRequests(user._id);
+      fetchAllRequests(user._id);
     }
   }, [])
 
-  const fetchCommunityRequests = async (storeId) => {
+  const fetchAllRequests = async (storeId) => {
     try {
       setLoading(true)
-      const response = await axios.get(`http://localhost:5000/api/community-medicine-orders/store/${storeId}?status=pending`)
+      await Promise.all([
+        fetchCommunityRequests(storeId),
+        fetchRegularRequests(storeId)
+      ])
+    } catch (error) {
+      console.error("Error fetching requests:", error)
+      toast.error("Failed to load medicine requests")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchCommunityRequests = async (storeId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/community-medicine-orders/store/${storeId}`)
       
       const formattedRequests = response.data.data.map(order => ({
         id: order._id,
         type: "community",
         name: order.farmerName,
         organization: order.organizationName || "Community Request",
-        priority: "medium",
+        priority: getPriorityLevel(order),
         status: order.status,
         medicine: order.medicineName,
         quantity: `${order.quantityRequested} units`,
@@ -95,9 +66,50 @@ export default function MedicineRequests() {
     } catch (error) {
       console.error("Error fetching community requests:", error)
       toast.error("Failed to load community medicine requests")
-    } finally {
-      setLoading(false)
     }
+  }
+
+  const fetchRegularRequests = async (storeId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/medicine-orders/store/${storeId}`)
+      
+      const formattedRequests = response.data.data.map(order => ({
+        id: order._id,
+        type: "regular",
+        name: order.farmerName,
+        organization: "Regular Order",
+        priority: getPriorityLevel(order),
+        status: order.status,
+        medicine: order.medicineName,
+        quantity: `${order.quantityRequested} units`,
+        price: `₹${order.totalPrice}`,
+        date: new Date(order.requestDate).toLocaleDateString(),
+        distance: order.farmerLocation || "Location not specified",
+        rejectionReason: order.storeNotes || null,
+        originalData: order,
+        animalDetails: {
+          type: order.animalType,
+          count: order.animalCount,
+          weight: order.animalWeight,
+          age: order.animalAge,
+          symptoms: order.symptoms
+        },
+        deliveryOption: order.deliveryOption,
+        deliveryAddress: order.deliveryAddress
+      }))
+
+      setRegularRequests(formattedRequests)
+    } catch (error) {
+      console.error("Error fetching regular requests:", error)
+      toast.error("Failed to load regular medicine requests")
+    }
+  }
+
+  const getPriorityLevel = (order) => {
+    // High priority for large quantities or urgent delivery
+    if (order.quantityRequested > 50) return "high"
+    if (order.deliveryOption === "delivery") return "medium"
+    return "low"
   }
 
   const handleAcceptCommunity = async (requestId) => {
@@ -108,14 +120,13 @@ export default function MedicineRequests() {
 
       if (response.data.success) {
         toast.success("Community medicine request approved!")
-        // Refresh the list
         if (storeData) {
-          fetchCommunityRequests(storeData._id)
+          fetchAllRequests(storeData._id)
         }
       }
     } catch (error) {
       console.error("Error approving community request:", error)
-      toast.error("Failed to approve request")
+      toast.error(error.response?.data?.message || "Failed to approve request")
     }
   }
 
@@ -127,9 +138,8 @@ export default function MedicineRequests() {
 
       if (response.data.success) {
         toast.success("Community medicine request rejected!")
-        // Refresh the list
         if (storeData) {
-          fetchCommunityRequests(storeData._id)
+          fetchAllRequests(storeData._id)
         }
       }
     } catch (error) {
@@ -138,16 +148,88 @@ export default function MedicineRequests() {
     }
   }
 
-  const handleAcceptRegular = (id) => {
-    // Static handling for regular medicine requests
-    toast.success("Regular medicine request accepted!")
-    // In real implementation, you would make API call here
+  const handleAcceptRegular = async (requestId, expectedDeliveryDate) => {
+    try {
+      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/approve`, {
+        storeNotes: "Order approved successfully",
+        expectedDeliveryDate
+      })
+
+      if (response.data.success) {
+        toast.success("Regular medicine request approved!")
+        if (storeData) {
+          fetchAllRequests(storeData._id)
+        }
+      }
+    } catch (error) {
+      console.error("Error approving regular request:", error)
+      toast.error(error.response?.data?.message || "Failed to approve request")
+    }
   }
 
-  const handleRejectRegular = (id) => {
-    // Static handling for regular medicine requests
-    toast.success("Regular medicine request rejected!")
-    // In real implementation, you would make API call here
+  const handleRejectRegular = async (requestId) => {
+    try {
+      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/reject`, {
+        storeNotes: "Request rejected by store"
+      })
+
+      if (response.data.success) {
+        toast.success("Regular medicine request rejected!")
+        if (storeData) {
+          fetchAllRequests(storeData._id)
+        }
+      }
+    } catch (error) {
+      console.error("Error rejecting regular request:", error)
+      toast.error("Failed to reject request")
+    }
+  }
+
+  const handleTransferOrder = async (requestId, targetStoreName, transferReason) => {
+    try {
+      // In a real app, you would have a store selection mechanism
+      // For now, using a placeholder store ID
+      const targetStoreId = "65a1b2c3d4e5f67890123456" // This should come from store selection
+
+      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/transfer`, {
+        targetStoreId,
+        targetStoreName,
+        transferReason
+      })
+
+      if (response.data.success) {
+        toast.success("Order transferred successfully!")
+        setTransferModal({ open: false, order: null })
+        if (storeData) {
+          fetchAllRequests(storeData._id)
+        }
+      }
+    } catch (error) {
+      console.error("Error transferring order:", error)
+      toast.error("Failed to transfer order")
+    }
+  }
+
+  const handleCompleteOrder = async (requestId, orderType) => {
+    try {
+      const endpoint = orderType === "community" 
+        ? `http://localhost:5000/api/community-medicine-orders/${requestId}/complete`
+        : `http://localhost:5000/api/medicine-orders/${requestId}/complete`
+
+      const response = await axios.patch(endpoint, {
+        storeNotes: "Order completed successfully"
+      })
+
+      if (response.data.success) {
+        toast.success("Order marked as completed!")
+        if (storeData) {
+          fetchAllRequests(storeData._id)
+        }
+      }
+    } catch (error) {
+      console.error("Error completing order:", error)
+      toast.error("Failed to complete order")
+    }
   }
 
   const getPriorityColor = (priority) => {
@@ -172,6 +254,10 @@ export default function MedicineRequests() {
         return "text-green-600 bg-green-50 border-green-200"
       case "rejected":
         return "text-red-600 bg-red-50 border-red-200"
+      case "completed":
+        return "text-purple-600 bg-purple-50 border-purple-200"
+      case "transferred":
+        return "text-orange-600 bg-orange-50 border-orange-200"
       default:
         return "text-gray-600 bg-gray-50 border-gray-200"
     }
@@ -200,14 +286,16 @@ export default function MedicineRequests() {
   }
 
   // Combine both types of requests
-  const allRequests = [...communityRequests, ...regularMedicineRequests]
+  const allRequests = [...communityRequests, ...regularRequests]
 
   const filteredRequests = allRequests.filter((request) => {
     // Filter by status
     const statusMatch = activeFilter === "All" || 
       (activeFilter === "Pending" && request.status === "pending") ||
-      (activeFilter === "Accepted" && (request.status === "accepted" || request.status === "approved")) ||
-      (activeFilter === "Rejected" && request.status === "rejected")
+      (activeFilter === "Approved" && request.status === "approved") ||
+      (activeFilter === "Rejected" && request.status === "rejected") ||
+      (activeFilter === "Completed" && request.status === "completed") ||
+      (activeFilter === "Transferred" && request.status === "transferred")
     
     // Filter by type
     const typeMatch = activeType === "All" || 
@@ -217,8 +305,71 @@ export default function MedicineRequests() {
     return statusMatch && typeMatch
   })
 
+  const TransferModal = () => {
+    const [targetStore, setTargetStore] = useState("")
+    const [reason, setReason] = useState("")
+
+    const handleSubmit = () => {
+      if (!targetStore || !reason) {
+        toast.error("Please fill in all fields")
+        return
+      }
+      handleTransferOrder(transferModal.order.id, targetStore, reason)
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Transfer Order</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Target Store Name
+              </label>
+              <input
+                type="text"
+                value={targetStore}
+                onChange={(e) => setTargetStore(e.target.value)}
+                placeholder="Enter store name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Transfer Reason
+              </label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Why are you transferring this order?"
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => setTransferModal({ open: false, order: null })}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+            >
+              Transfer Order
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      {transferModal.open && <TransferModal />}
+      
       <div className="mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
@@ -278,6 +429,32 @@ export default function MedicineRequests() {
           </div>
         </div>
 
+        {/* Statistics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+            <div className="text-2xl font-bold text-gray-900">{allRequests.length}</div>
+            <div className="text-sm text-gray-600">Total Requests</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+            <div className="text-2xl font-bold text-yellow-600">
+              {allRequests.filter(r => r.status === 'pending').length}
+            </div>
+            <div className="text-sm text-gray-600">Pending</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {allRequests.filter(r => r.type === 'regular').length}
+            </div>
+            <div className="text-sm text-gray-600">Regular Orders</div>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {allRequests.filter(r => r.type === 'community').length}
+            </div>
+            <div className="text-sm text-gray-600">Community Orders</div>
+          </div>
+        </div>
+
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-12">
@@ -305,6 +482,7 @@ export default function MedicineRequests() {
                     <div>
                       <h3 className="font-medium text-gray-900">{request.name}</h3>
                       <p className="text-sm text-gray-600">{request.organization}</p>
+                      <p className="text-xs text-gray-500">{request.date}</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
@@ -312,7 +490,7 @@ export default function MedicineRequests() {
                       className={`px-2 py-1 text-xs font-medium rounded-full border flex items-center gap-1 ${getTypeColor(request.type)}`}
                     >
                       {getTypeIcon(request.type)}
-                      {request.type === "community" ? "Community Bank" : "Regular Medicine"}
+                      {request.type === "community" ? "Community" : "Regular"}
                     </span>
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(request.priority)}`}
@@ -347,6 +525,30 @@ export default function MedicineRequests() {
                     </div>
                   </div>
 
+                  {/* Animal Details for Regular Orders */}
+                  {request.type === "regular" && request.animalDetails && (
+                    <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-600 font-medium mb-1">Animal Details:</p>
+                      <div className="text-xs text-blue-700 space-y-1">
+                        <div><strong>Type:</strong> {request.animalDetails.type}</div>
+                        <div><strong>Count:</strong> {request.animalDetails.count} animals</div>
+                        {request.animalDetails.weight && <div><strong>Weight:</strong> {request.animalDetails.weight} kg</div>}
+                        {request.animalDetails.age && <div><strong>Age:</strong> {request.animalDetails.age}</div>}
+                        {request.animalDetails.symptoms && <div><strong>Symptoms:</strong> {request.animalDetails.symptoms}</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Delivery Info for Regular Orders */}
+                  {request.type === "regular" && request.deliveryOption && (
+                    <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-xs text-green-700">
+                        <strong>Delivery:</strong> {request.deliveryOption === "delivery" ? "Home Delivery" : "Store Pickup"}
+                        {request.deliveryAddress && ` - ${request.deliveryAddress}`}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
                     <MapPin size={14} />
                     {request.distance}
@@ -377,54 +579,109 @@ export default function MedicineRequests() {
                   </div>
                 )}
 
+                {/* Transfer Details */}
+                {request.status === "transferred" && request.originalData?.transferredToStore && (
+                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-600 font-medium mb-1">Transferred to:</p>
+                    <p className="text-sm text-orange-700">{request.originalData.transferredToStore.storeName}</p>
+                    {request.originalData.transferredToStore.transferReason && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        <strong>Reason:</strong> {request.originalData.transferredToStore.transferReason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Buttons or Status */}
                 {request.status === "pending" ? (
-                  <div className="flex gap-3">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => 
-                        request.type === "community" 
-                          ? handleAcceptCommunity(request.id)
-                          : handleAcceptRegular(request.id)
-                      }
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <Check size={16} />
-                      Accept
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => 
-                        request.type === "community" 
-                          ? handleRejectCommunity(request.id)
-                          : handleRejectRegular(request.id)
-                      }
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      <X size={16} />
-                      Reject
-                    </motion.button>
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => 
+                          request.type === "community" 
+                            ? handleAcceptCommunity(request.id)
+                            : handleAcceptRegular(request.id, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) // 7 days from now
+                        }
+                        className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <Check size={16} />
+                        Accept
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => 
+                          request.type === "community" 
+                            ? handleRejectCommunity(request.id)
+                            : handleRejectRegular(request.id)
+                        }
+                        className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <X size={16} />
+                        Reject
+                      </motion.button>
+                    </div>
+                    {request.type === "regular" && (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setTransferModal({ open: true, order: request })}
+                        className="w-full flex items-center justify-center gap-2 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
+                      >
+                        <Truck size={16} />
+                        Transfer to Another Store
+                      </motion.button>
+                    )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm">
-                    {(request.status === "accepted" || request.status === "approved") ? (
-                      <>
-                        <CheckCircle size={16} className="text-green-600" />
-                        <span className="text-green-600 font-medium">
-                          Request {request.type === "community" ? "Approved" : "Accepted"}
-                        </span>
-                        <span className="text-gray-600 ml-2">
-                          {request.type === "community" ? "Medicine allocated" : "Ready for payment processing"}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle size={16} className="text-red-600" />
-                        <span className="text-red-600 font-medium">Request Rejected</span>
-                      </>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      {(request.status === "approved" || request.status === "accepted") ? (
+                        <>
+                          <CheckCircle size={16} className="text-green-600" />
+                          <span className="text-green-600 font-medium">
+                            Request {request.type === "community" ? "Approved" : "Accepted"}
+                          </span>
+                          <span className="text-gray-600 ml-2">
+                            {request.type === "community" ? "Medicine allocated" : "Ready for processing"}
+                          </span>
+                        </>
+                      ) : request.status === "completed" ? (
+                        <>
+                          <CheckCircle size={16} className="text-purple-600" />
+                          <span className="text-purple-600 font-medium">Order Completed</span>
+                        </>
+                      ) : request.status === "transferred" ? (
+                        <>
+                          <Truck size={16} className="text-orange-600" />
+                          <span className="text-orange-600 font-medium">Transferred</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle size={16} className="text-red-600" />
+                          <span className="text-red-600 font-medium">Request Rejected</span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {(request.status === "approved" || request.status === "accepted") && (
+                      <button
+                        onClick={() => handleCompleteOrder(request.id, request.type)}
+                        className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                      >
+                        Mark as Completed
+                      </button>
                     )}
+                    
+                    <button
+                      onClick={() => window.open(`tel:${request.originalData?.farmerContact}`)}
+                      className="w-full flex items-center justify-center gap-2 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                    >
+                      <Phone size={16} />
+                      Contact Farmer
+                    </button>
                   </div>
                 )}
               </motion.div>
