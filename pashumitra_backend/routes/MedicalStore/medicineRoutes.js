@@ -30,7 +30,7 @@ router.get('/available', async (req, res) => {
   try {
     console.log('👨‍🌾 Fetching available medicines for farmers...')
     const medicines = await Medicine.find({ status: 'In Stock' })
-      .populate('storeId', 'name')
+      .populate('storeId', 'email phone storeName') // Populate with actual User fields
       .populate('medicineId')
     
     console.log(`✅ Found ${medicines.length} available medicines`)
@@ -48,7 +48,7 @@ router.get('/available', async (req, res) => {
       supplier: med.supplier,
       manufacturer: med.manufacturer,
       description: med.description,
-      storeName: med.storeId?.name || 'Unknown Store',
+      storeName: med.storeId?.storeName || 'Medical Store', // Use email or other available field
       storeId: med.storeId?._id
     }))
     

@@ -53,7 +53,14 @@ const statusConfig = {
 };
 
 // Define filterTabs BEFORE the component
-const filterTabs = ["All", "Community", "Regular", "Pending", "Approved", "Completed"];
+const filterTabs = [
+  "All",
+  "Community",
+  "Regular",
+  "Pending",
+  "Approved",
+  "Completed",
+];
 
 export default function FarmerOrders() {
   const [orders, setOrders] = useState([]);
@@ -72,32 +79,70 @@ export default function FarmerOrders() {
   const fetchOrders = async (farmerId) => {
     try {
       setLoading(true);
+      // console.log("🔍 Fetching orders for farmer:", farmerId);
 
       // Fetch community medicine orders
       const communityResponse = await axios.get(
         `http://localhost:5000/api/community-medicine-orders/farmer/${farmerId}`
       );
-      
-      // Fetch regular medicine orders - CORRECTED ENDPOINT
+
+      // Fetch regular medicine orders
       const regularResponse = await axios.get(
         `http://localhost:5000/api/medicine-orders/farmer/${farmerId}`
       );
 
+      // console.log(
+      //   "📦 RAW Community Orders API Response:",
+      //   communityResponse.data
+      // );
+      // console.log("📦 RAW Regular Orders API Response:", regularResponse.data);
+
+      // Process community orders
       const communityOrders = (communityResponse.data.data || []).map(
-        (order) => ({
-          ...order,
-          orderType: "community",
-          id: order._id,
-        })
+        (order) => {
+          // console.log(`📍 RAW Community Order ${order._id}:`, {
+          //   farmerLocation: order.farmerLocation,
+          //   farmerDetails: order.farmerDetails,
+          //   deliveryAddress: order.deliveryAddress,
+          // });
+
+          return {
+            ...order,
+            orderType: "community",
+            id: order._id,
+          };
+        }
       );
 
-      const regularOrders = (regularResponse.data.data || []).map((order) => ({
-        ...order,
-        orderType: "regular",
-        id: order._id,
-      }));
+      // Process regular orders
+      const regularOrders = (regularResponse.data.data || []).map((order) => {
+        // console.log(`📍 RAW Regular Order ${order._id}:`, {
+        //   farmerLocation: order.farmerLocation,
+        //   farmerDetails: order.farmerDetails,
+        //   deliveryAddress: order.deliveryAddress,
+        // });
 
-      setOrders([...communityOrders, ...regularOrders]);
+        return {
+          ...order,
+          orderType: "regular",
+          id: order._id,
+        };
+      });
+
+      const allOrders = [...communityOrders, ...regularOrders];
+
+      // console.log(
+      //   "🎯 FINAL Combined Orders Data:",
+      //   allOrders.map((order) => ({
+      //     id: order._id,
+      //     type: order.orderType,
+      //     farmerLocation: order.farmerLocation,
+      //     hasFarmerDetails: !!order.farmerDetails,
+      //     farmerDetailsAddress: order.farmerDetails?.completeAddress,
+      //   }))
+      // );
+
+      setOrders(allOrders);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
@@ -129,14 +174,14 @@ export default function FarmerOrders() {
     if (!confirm("Are you sure you want to cancel this order?")) return;
 
     try {
-      const endpoint = orderType === "community" 
-        ? `http://localhost:5000/api/community-medicine-orders/${orderId}/cancel`
-        : `http://localhost:5000/api/medicine-orders/${orderId}/cancel`;
+      const endpoint =
+        orderType === "community"
+          ? `http://localhost:5000/api/community-medicine-orders/${orderId}/cancel`
+          : `http://localhost:5000/api/medicine-orders/${orderId}/cancel`;
 
-      const response = await axios.patch(
-        endpoint,
-        { farmerNotes: "Cancelled by farmer" }
-      );
+      const response = await axios.patch(endpoint, {
+        farmerNotes: "Cancelled by farmer",
+      });
 
       if (response.data.success) {
         toast.success("Order cancelled successfully");
@@ -153,7 +198,7 @@ export default function FarmerOrders() {
   // CORRECTED FILTERING LOGIC
   const filteredOrders = orders.filter((order) => {
     if (activeFilter === "All") return true;
-    
+
     switch (activeFilter) {
       case "Community":
         return order.orderType === "community";
@@ -295,12 +340,16 @@ export default function FarmerOrders() {
                             </h3>
                             <p className="text-sm text-gray-600">
                               Order # {order._id.slice(-8).toUpperCase()}
-                              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                                order.orderType === "community" 
-                                  ? "bg-purple-100 text-purple-800" 
-                                  : "bg-blue-100 text-blue-800"
-                              }`}>
-                                {order.orderType === "community" ? "Community" : "Regular"}
+                              <span
+                                className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                                  order.orderType === "community"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                {order.orderType === "community"
+                                  ? "Community"
+                                  : "Regular"}
                               </span>
                             </p>
                           </div>
@@ -370,17 +419,19 @@ export default function FarmerOrders() {
                               </div>
                             )}
                             {/* Show price for regular orders */}
-                            {order.orderType === "regular" && order.totalPrice && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Total Price:</span>
-                                <span className="font-medium text-green-600">
-                                  ₹{order.totalPrice}
-                                </span>
-                              </div>
-                            )}
+                            {order.orderType === "regular" &&
+                              order.totalPrice && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">
+                                    Total Price:
+                                  </span>
+                                  <span className="font-medium text-green-600">
+                                    ₹{order.totalPrice}
+                                  </span>
+                                </div>
+                              )}
                           </div>
                         </div>
-
                         {/* Store & Timing */}
                         <div className="space-y-3">
                           <h4 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -402,16 +453,42 @@ export default function FarmerOrders() {
                                 {order.organizationName || "Community Bank"}
                               </span>
                             </div>
-                            {order.farmerLocation && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">
-                                  Your Location:
-                                </span>
-                                <span className="font-medium">
-                                  {order.farmerLocation}
-                                </span>
+
+                            {/* Enhanced Location Display */}
+                            <div className="flex justify-between items-start">
+                              <span className="text-gray-600">
+                                Your Location:
+                              </span>
+                              <div className="font-medium text-right max-w-xs">
+                                {order.farmerLocation &&
+                                order.farmerLocation !==
+                                  "Location not specified" &&
+                                order.farmerLocation !== "Not specified" ? (
+                                  <div className="flex items-center gap-1">
+                                    <span>{order.farmerLocation}</span>
+                                  </div>
+                                ) : order.farmerDetails?.completeAddress ? (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-4 h-4 text-green-600" />
+                                    <span>
+                                      {order.farmerDetails.completeAddress}
+                                    </span>
+                                  </div>
+                                ) : order.deliveryAddress ? (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-4 h-4 text-blue-600" />
+                                    <span>
+                                      Delivery: {order.deliveryAddress}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-yellow-600 flex items-center gap-1">
+                                    <AlertCircle className="w-4 h-4" />
+                                    Location not specified
+                                  </span>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </div>
 
@@ -460,17 +537,23 @@ export default function FarmerOrders() {
                           </h4>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <span className="text-gray-600">Animal Type:</span>
+                              <span className="text-gray-600">
+                                Animal Type:
+                              </span>
                               <p className="font-medium">{order.animalType}</p>
                             </div>
                             <div>
                               <span className="text-gray-600">Count:</span>
-                              <p className="font-medium">{order.animalCount} animals</p>
+                              <p className="font-medium">
+                                {order.animalCount} animals
+                              </p>
                             </div>
                             {order.animalWeight && (
                               <div>
                                 <span className="text-gray-600">Weight:</span>
-                                <p className="font-medium">{order.animalWeight} kg</p>
+                                <p className="font-medium">
+                                  {order.animalWeight} kg
+                                </p>
                               </div>
                             )}
                             {order.animalAge && (
@@ -483,7 +566,9 @@ export default function FarmerOrders() {
                           {order.symptoms && (
                             <div className="mt-3">
                               <span className="text-gray-600">Symptoms:</span>
-                              <p className="font-medium mt-1">{order.symptoms}</p>
+                              <p className="font-medium mt-1">
+                                {order.symptoms}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -521,7 +606,9 @@ export default function FarmerOrders() {
                       <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-200">
                         {order.status === "pending" && (
                           <button
-                            onClick={() => handleCancelOrder(order._id, order.orderType)}
+                            onClick={() =>
+                              handleCancelOrder(order._id, order.orderType)
+                            }
                             className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium"
                           >
                             Cancel Order

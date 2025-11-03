@@ -1,22 +1,44 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { User, MapPin, Check, X, CheckCircle, XCircle, Package, DollarSign, Clock, Truck, Phone } from "lucide-react"
-import axios from "axios"
-import toast from "react-hot-toast"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  User,
+  MapPin,
+  Check,
+  X,
+  CheckCircle,
+  XCircle,
+  Package,
+  DollarSign,
+  Clock,
+  Truck,
+  Phone,
+} from "lucide-react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-const filterTabs = ["All", "Pending", "Approved", "Rejected", "Completed", "Transferred"]
-const requestTypes = ["All", "Community Bank", "Regular Medicine"]
+const filterTabs = [
+  "All",
+  "Pending",
+  "Approved",
+  "Rejected",
+  "Completed",
+  "Transferred",
+];
+const requestTypes = ["All", "Community Bank", "Regular Medicine"];
 
 export default function MedicineRequests() {
-  const [activeFilter, setActiveFilter] = useState("All")
-  const [activeType, setActiveType] = useState("All")
-  const [communityRequests, setCommunityRequests] = useState([])
-  const [regularRequests, setRegularRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [storeData, setStoreData] = useState(null)
-  const [transferModal, setTransferModal] = useState({ open: false, order: null })
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeType, setActiveType] = useState("All");
+  const [communityRequests, setCommunityRequests] = useState([]);
+  const [regularRequests, setRegularRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [storeData, setStoreData] = useState(null);
+  const [transferModal, setTransferModal] = useState({
+    open: false,
+    order: null,
+  });
 
   useEffect(() => {
     // Get store data from localStorage
@@ -25,302 +47,392 @@ export default function MedicineRequests() {
       setStoreData(user);
       fetchAllRequests(user._id);
     }
-  }, [])
+  }, []);
 
   const fetchAllRequests = async (storeId) => {
     try {
-      setLoading(true)
+      setLoading(true);
       await Promise.all([
         fetchCommunityRequests(storeId),
-        fetchRegularRequests(storeId)
-      ])
+        fetchRegularRequests(storeId),
+      ]);
     } catch (error) {
-      console.error("Error fetching requests:", error)
-      toast.error("Failed to load medicine requests")
+      console.error("Error fetching requests:", error);
+      toast.error("Failed to load medicine requests");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchCommunityRequests = async (storeId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/community-medicine-orders/store/${storeId}`)
-      
-      const formattedRequests = response.data.data.map(order => ({
-        id: order._id,
-        type: "community",
-        name: order.farmerName,
-        organization: order.organizationName || "Community Request",
-        priority: getPriorityLevel(order),
-        status: order.status,
-        medicine: order.medicineName,
-        quantity: `${order.quantityRequested} units`,
-        price: order.isFree ? "FREE" : "Paid",
-        date: new Date(order.requestDate).toLocaleDateString(),
-        distance: order.farmerLocation || "Location not specified",
-        rejectionReason: order.storeNotes || null,
-        originalData: order
-      }))
+      const response = await axios.get(
+        `http://localhost:5000/api/community-medicine-orders/store/${storeId}`
+      );
 
-      setCommunityRequests(formattedRequests)
+      console.log("🔍 Community Orders API Response:", response.data);
+
+      const formattedRequests = response.data.data.map((order) => {
+        console.log("📦 Processing Community Order:", order);
+
+        // Extract contact information - check multiple sources
+        const farmerContact =
+          order.farmerContact ||
+          order.farmerDetails?.phone ||
+          order.farmerId?.phone ||
+          "Contact not available";
+
+        // Extract location - use the completeAddress from farmerDetails or build it
+        let farmerLocation = "Location not specified";
+        if (order.farmerDetails?.completeAddress) {
+          farmerLocation = order.farmerDetails.completeAddress;
+        } else if (order.farmerDetails) {
+          // Build address from individual components
+          farmerLocation = `${order.farmerDetails.address}${
+            order.farmerDetails.village
+              ? `, ${order.farmerDetails.village}`
+              : ""
+          }, ${order.farmerDetails.city}, ${order.farmerDetails.state} - ${
+            order.farmerDetails.pincode
+          }`;
+        } else if (order.farmerLocation) {
+          farmerLocation = order.farmerLocation;
+        }
+
+        // Extract name
+        const farmerName =
+          order.farmerName ||
+          order.farmerDetails?.name ||
+          order.farmerId?.fullName || // Use fullName from Farmer_User
+          "Farmer";
+
+        return {
+          id: order._id,
+          type: "community",
+          name: farmerName,
+          organization: order.organizationName || "Community Request",
+          priority: getPriorityLevel(order),
+          status: order.status,
+          medicine: order.medicineName,
+          quantity: `${order.quantityRequested} units`,
+          price: order.isFree ? "FREE" : "Paid",
+          date: new Date(
+            order.requestDate || order.createdAt
+          ).toLocaleDateString(),
+          distance: farmerLocation,
+          rejectionReason: order.storeNotes || null,
+          originalData: order,
+          farmerContact: farmerContact, // This is critical for the contact button
+          farmerDetails: order.farmerDetails || null,
+        };
+      });
+
+      console.log("✅ Formatted Community Requests:", formattedRequests);
+      setCommunityRequests(formattedRequests);
     } catch (error) {
-      console.error("Error fetching community requests:", error)
-      toast.error("Failed to load community medicine requests")
+      console.error("❌ Error fetching community requests:", error);
+      toast.error("Failed to load community medicine requests");
     }
-  }
+  };
 
   const fetchRegularRequests = async (storeId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/medicine-orders/store/${storeId}`)
-      
-      const formattedRequests = response.data.data.map(order => ({
-        id: order._id,
-        type: "regular",
-        name: order.farmerName,
-        organization: "Regular Order",
-        priority: getPriorityLevel(order),
-        status: order.status,
-        medicine: order.medicineName,
-        quantity: `${order.quantityRequested} units`,
-        price: `₹${order.totalPrice}`,
-        date: new Date(order.requestDate).toLocaleDateString(),
-        distance: order.farmerLocation || "Location not specified",
-        rejectionReason: order.storeNotes || null,
-        originalData: order,
-        animalDetails: {
-          type: order.animalType,
-          count: order.animalCount,
-          weight: order.animalWeight,
-          age: order.animalAge,
-          symptoms: order.symptoms
-        },
-        deliveryOption: order.deliveryOption,
-        deliveryAddress: order.deliveryAddress
-      }))
+      const response = await axios.get(
+        `http://localhost:5000/api/medicine-orders/store/${storeId}`
+      );
 
-      setRegularRequests(formattedRequests)
+      const formattedRequests = response.data.data.map((order) => {
+        // Extract location from farmerDetails or use fallback
+        const farmerLocation =
+          order.farmerDetails?.completeAddress ||
+          order.farmerLocation ||
+          order.farmerDetails?.address ||
+          "Location not specified";
+
+        // Extract contact information
+        const farmerContact =
+          order.farmerContact ||
+          order.farmerDetails?.phone ||
+          "Contact not available";
+
+        return {
+          id: order._id,
+          type: "regular",
+          name: order.farmerName || order.farmerDetails?.name || "Farmer",
+          organization: "Regular Order",
+          priority: getPriorityLevel(order),
+          status: order.status,
+          medicine: order.medicineName,
+          quantity: `${order.quantityRequested} units`,
+          price: `₹${order.totalPrice}`,
+          date: new Date(
+            order.requestDate || order.createdAt
+          ).toLocaleDateString(),
+          distance: farmerLocation,
+          rejectionReason: order.storeNotes || null,
+          originalData: order,
+          animalDetails: {
+            type: order.animalType,
+            count: order.animalCount,
+            weight: order.animalWeight,
+            age: order.animalAge,
+            symptoms: order.symptoms,
+          },
+          deliveryOption: order.deliveryOption,
+          deliveryAddress: order.deliveryAddress,
+          farmerContact: farmerContact,
+        };
+      });
+
+      setRegularRequests(formattedRequests);
     } catch (error) {
-      console.error("Error fetching regular requests:", error)
-      toast.error("Failed to load regular medicine requests")
+      console.error("Error fetching regular requests:", error);
+      toast.error("Failed to load regular medicine requests");
     }
-  }
+  };
 
+
+  
   const getPriorityLevel = (order) => {
     // High priority for large quantities or urgent delivery
-    if (order.quantityRequested > 50) return "high"
-    if (order.deliveryOption === "delivery") return "medium"
-    return "low"
-  }
+    if (order.quantityRequested > 50) return "high";
+    if (order.deliveryOption === "delivery") return "medium";
+    return "low";
+  };
 
   const handleAcceptCommunity = async (requestId) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/api/community-medicine-orders/${requestId}/approve`, {
-        storeNotes: "Order approved successfully"
-      })
+      const response = await axios.patch(
+        `http://localhost:5000/api/community-medicine-orders/${requestId}/approve`,
+        {
+          storeNotes: "Order approved successfully",
+        }
+      );
 
       if (response.data.success) {
-        toast.success("Community medicine request approved!")
+        toast.success("Community medicine request approved!");
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error approving community request:", error)
-      toast.error(error.response?.data?.message || "Failed to approve request")
+      console.error("Error approving community request:", error);
+      toast.error(error.response?.data?.message || "Failed to approve request");
     }
-  }
+  };
 
   const handleRejectCommunity = async (requestId) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/api/community-medicine-orders/${requestId}/reject`, {
-        storeNotes: "Request rejected by store"
-      })
+      const response = await axios.patch(
+        `http://localhost:5000/api/community-medicine-orders/${requestId}/reject`,
+        {
+          storeNotes: "Request rejected by store",
+        }
+      );
 
       if (response.data.success) {
-        toast.success("Community medicine request rejected!")
+        toast.success("Community medicine request rejected!");
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error rejecting community request:", error)
-      toast.error("Failed to reject request")
+      console.error("Error rejecting community request:", error);
+      toast.error("Failed to reject request");
     }
-  }
+  };
 
   const handleAcceptRegular = async (requestId, expectedDeliveryDate) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/approve`, {
-        storeNotes: "Order approved successfully",
-        expectedDeliveryDate
-      })
+      const response = await axios.patch(
+        `http://localhost:5000/api/medicine-orders/${requestId}/approve`,
+        {
+          storeNotes: "Order approved successfully",
+          expectedDeliveryDate,
+        }
+      );
 
       if (response.data.success) {
-        toast.success("Regular medicine request approved!")
+        toast.success("Regular medicine request approved!");
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error approving regular request:", error)
-      toast.error(error.response?.data?.message || "Failed to approve request")
+      console.error("Error approving regular request:", error);
+      toast.error(error.response?.data?.message || "Failed to approve request");
     }
-  }
+  };
 
   const handleRejectRegular = async (requestId) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/reject`, {
-        storeNotes: "Request rejected by store"
-      })
+      const response = await axios.patch(
+        `http://localhost:5000/api/medicine-orders/${requestId}/reject`,
+        {
+          storeNotes: "Request rejected by store",
+        }
+      );
 
       if (response.data.success) {
-        toast.success("Regular medicine request rejected!")
+        toast.success("Regular medicine request rejected!");
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error rejecting regular request:", error)
-      toast.error("Failed to reject request")
+      console.error("Error rejecting regular request:", error);
+      toast.error("Failed to reject request");
     }
-  }
+  };
 
-  const handleTransferOrder = async (requestId, targetStoreName, transferReason) => {
+  const handleTransferOrder = async (
+    requestId,
+    targetStoreName,
+    transferReason
+  ) => {
     try {
       // In a real app, you would have a store selection mechanism
       // For now, using a placeholder store ID
-      const targetStoreId = "65a1b2c3d4e5f67890123456" // This should come from store selection
+      const targetStoreId = "65a1b2c3d4e5f67890123456"; // This should come from store selection
 
-      const response = await axios.patch(`http://localhost:5000/api/medicine-orders/${requestId}/transfer`, {
-        targetStoreId,
-        targetStoreName,
-        transferReason
-      })
+      const response = await axios.patch(
+        `http://localhost:5000/api/medicine-orders/${requestId}/transfer`,
+        {
+          targetStoreId,
+          targetStoreName,
+          transferReason,
+        }
+      );
 
       if (response.data.success) {
-        toast.success("Order transferred successfully!")
-        setTransferModal({ open: false, order: null })
+        toast.success("Order transferred successfully!");
+        setTransferModal({ open: false, order: null });
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error transferring order:", error)
-      toast.error("Failed to transfer order")
+      console.error("Error transferring order:", error);
+      toast.error("Failed to transfer order");
     }
-  }
+  };
 
   const handleCompleteOrder = async (requestId, orderType) => {
     try {
-      const endpoint = orderType === "community" 
-        ? `http://localhost:5000/api/community-medicine-orders/${requestId}/complete`
-        : `http://localhost:5000/api/medicine-orders/${requestId}/complete`
+      const endpoint =
+        orderType === "community"
+          ? `http://localhost:5000/api/community-medicine-orders/${requestId}/complete`
+          : `http://localhost:5000/api/medicine-orders/${requestId}/complete`;
 
       const response = await axios.patch(endpoint, {
-        storeNotes: "Order completed successfully"
-      })
+        storeNotes: "Order completed successfully",
+      });
 
       if (response.data.success) {
-        toast.success("Order marked as completed!")
+        toast.success("Order marked as completed!");
         if (storeData) {
-          fetchAllRequests(storeData._id)
+          fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error completing order:", error)
-      toast.error("Failed to complete order")
+      console.error("Error completing order:", error);
+      toast.error("Failed to complete order");
     }
-  }
+  };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
-        return "text-red-600 bg-red-50 border-red-200"
+        return "text-red-600 bg-red-50 border-red-200";
       case "medium":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200"
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
       case "low":
-        return "text-green-600 bg-green-50 border-green-200"
+        return "text-green-600 bg-green-50 border-green-200";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200"
+        return "text-gray-600 bg-gray-50 border-gray-200";
     }
-  }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "text-blue-600 bg-blue-50 border-blue-200"
+        return "text-blue-600 bg-blue-50 border-blue-200";
       case "approved":
       case "accepted":
-        return "text-green-600 bg-green-50 border-green-200"
+        return "text-green-600 bg-green-50 border-green-200";
       case "rejected":
-        return "text-red-600 bg-red-50 border-red-200"
+        return "text-red-600 bg-red-50 border-red-200";
       case "completed":
-        return "text-purple-600 bg-purple-50 border-purple-200"
+        return "text-purple-600 bg-purple-50 border-purple-200";
       case "transferred":
-        return "text-orange-600 bg-orange-50 border-orange-200"
+        return "text-orange-600 bg-orange-50 border-orange-200";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200"
+        return "text-gray-600 bg-gray-50 border-gray-200";
     }
-  }
+  };
 
   const getTypeColor = (type) => {
     switch (type) {
       case "community":
-        return "text-purple-600 bg-purple-50 border-purple-200"
+        return "text-purple-600 bg-purple-50 border-purple-200";
       case "regular":
-        return "text-blue-600 bg-blue-50 border-blue-200"
+        return "text-blue-600 bg-blue-50 border-blue-200";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200"
+        return "text-gray-600 bg-gray-50 border-gray-200";
     }
-  }
+  };
 
   const getTypeIcon = (type) => {
     switch (type) {
       case "community":
-        return <Package size={14} className="text-purple-600" />
+        return <Package size={14} className="text-purple-600" />;
       case "regular":
-        return <DollarSign size={14} className="text-blue-600" />
+        return <DollarSign size={14} className="text-blue-600" />;
       default:
-        return <Package size={14} className="text-gray-600" />
+        return <Package size={14} className="text-gray-600" />;
     }
-  }
+  };
 
   // Combine both types of requests
-  const allRequests = [...communityRequests, ...regularRequests]
+  const allRequests = [...communityRequests, ...regularRequests];
 
   const filteredRequests = allRequests.filter((request) => {
     // Filter by status
-    const statusMatch = activeFilter === "All" || 
+    const statusMatch =
+      activeFilter === "All" ||
       (activeFilter === "Pending" && request.status === "pending") ||
       (activeFilter === "Approved" && request.status === "approved") ||
       (activeFilter === "Rejected" && request.status === "rejected") ||
       (activeFilter === "Completed" && request.status === "completed") ||
-      (activeFilter === "Transferred" && request.status === "transferred")
-    
+      (activeFilter === "Transferred" && request.status === "transferred");
+
     // Filter by type
-    const typeMatch = activeType === "All" || 
+    const typeMatch =
+      activeType === "All" ||
       (activeType === "Community Bank" && request.type === "community") ||
-      (activeType === "Regular Medicine" && request.type === "regular")
-    
-    return statusMatch && typeMatch
-  })
+      (activeType === "Regular Medicine" && request.type === "regular");
+
+    return statusMatch && typeMatch;
+  });
 
   const TransferModal = () => {
-    const [targetStore, setTargetStore] = useState("")
-    const [reason, setReason] = useState("")
+    const [targetStore, setTargetStore] = useState("");
+    const [reason, setReason] = useState("");
 
     const handleSubmit = () => {
       if (!targetStore || !reason) {
-        toast.error("Please fill in all fields")
-        return
+        toast.error("Please fill in all fields");
+        return;
       }
-      handleTransferOrder(transferModal.order.id, targetStore, reason)
-    }
+      handleTransferOrder(transferModal.order.id, targetStore, reason);
+    };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Transfer Order</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Transfer Order
+          </h3>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -363,13 +475,13 @@ export default function MedicineRequests() {
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       {transferModal.open && <TransferModal />}
-      
+
       <div className="mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
@@ -432,24 +544,26 @@ export default function MedicineRequests() {
         {/* Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-            <div className="text-2xl font-bold text-gray-900">{allRequests.length}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {allRequests.length}
+            </div>
             <div className="text-sm text-gray-600">Total Requests</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
             <div className="text-2xl font-bold text-yellow-600">
-              {allRequests.filter(r => r.status === 'pending').length}
+              {allRequests.filter((r) => r.status === "pending").length}
             </div>
             <div className="text-sm text-gray-600">Pending</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {allRequests.filter(r => r.type === 'regular').length}
+              {allRequests.filter((r) => r.type === "regular").length}
             </div>
             <div className="text-sm text-gray-600">Regular Orders</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {allRequests.filter(r => r.type === 'community').length}
+              {allRequests.filter((r) => r.type === "community").length}
             </div>
             <div className="text-sm text-gray-600">Community Orders</div>
           </div>
@@ -480,25 +594,35 @@ export default function MedicineRequests() {
                       <User size={20} className="text-gray-600" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{request.name}</h3>
-                      <p className="text-sm text-gray-600">{request.organization}</p>
+                      <h3 className="font-medium text-gray-900">
+                        {request.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {request.organization}
+                      </p>
                       <p className="text-xs text-gray-500">{request.date}</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full border flex items-center gap-1 ${getTypeColor(request.type)}`}
+                      className={`px-2 py-1 text-xs font-medium rounded-full border flex items-center gap-1 ${getTypeColor(
+                        request.type
+                      )}`}
                     >
                       {getTypeIcon(request.type)}
                       {request.type === "community" ? "Community" : "Regular"}
                     </span>
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(request.priority)}`}
+                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(
+                        request.priority
+                      )}`}
                     >
                       {request.priority} priority
                     </span>
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(request.status)}`}
+                      className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                        request.status
+                      )}`}
                     >
                       {request.status}
                     </span>
@@ -507,8 +631,12 @@ export default function MedicineRequests() {
 
                 {/* Medicine Details */}
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">Medicine Requested:</p>
-                  <p className="font-medium text-gray-900 mb-3">{request.medicine}</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Medicine Requested:
+                  </p>
+                  <p className="font-medium text-gray-900 mb-3">
+                    {request.medicine}
+                  </p>
 
                   <div className="flex justify-between text-sm text-gray-600 mb-3">
                     <div>
@@ -519,7 +647,13 @@ export default function MedicineRequests() {
                     <div className="text-right">
                       <span className="font-medium">Price:</span>
                       <br />
-                      <span className={request.price === "FREE" ? "text-green-600 font-bold" : "text-gray-900"}>
+                      <span
+                        className={
+                          request.price === "FREE"
+                            ? "text-green-600 font-bold"
+                            : "text-gray-900"
+                        }
+                      >
                         {request.price}
                       </span>
                     </div>
@@ -528,13 +662,34 @@ export default function MedicineRequests() {
                   {/* Animal Details for Regular Orders */}
                   {request.type === "regular" && request.animalDetails && (
                     <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-600 font-medium mb-1">Animal Details:</p>
+                      <p className="text-sm text-blue-600 font-medium mb-1">
+                        Animal Details:
+                      </p>
                       <div className="text-xs text-blue-700 space-y-1">
-                        <div><strong>Type:</strong> {request.animalDetails.type}</div>
-                        <div><strong>Count:</strong> {request.animalDetails.count} animals</div>
-                        {request.animalDetails.weight && <div><strong>Weight:</strong> {request.animalDetails.weight} kg</div>}
-                        {request.animalDetails.age && <div><strong>Age:</strong> {request.animalDetails.age}</div>}
-                        {request.animalDetails.symptoms && <div><strong>Symptoms:</strong> {request.animalDetails.symptoms}</div>}
+                        <div>
+                          <strong>Type:</strong> {request.animalDetails.type}
+                        </div>
+                        <div>
+                          <strong>Count:</strong> {request.animalDetails.count}{" "}
+                          animals
+                        </div>
+                        {request.animalDetails.weight && (
+                          <div>
+                            <strong>Weight:</strong>{" "}
+                            {request.animalDetails.weight} kg
+                          </div>
+                        )}
+                        {request.animalDetails.age && (
+                          <div>
+                            <strong>Age:</strong> {request.animalDetails.age}
+                          </div>
+                        )}
+                        {request.animalDetails.symptoms && (
+                          <div>
+                            <strong>Symptoms:</strong>{" "}
+                            {request.animalDetails.symptoms}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -543,29 +698,59 @@ export default function MedicineRequests() {
                   {request.type === "regular" && request.deliveryOption && (
                     <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-xs text-green-700">
-                        <strong>Delivery:</strong> {request.deliveryOption === "delivery" ? "Home Delivery" : "Store Pickup"}
-                        {request.deliveryAddress && ` - ${request.deliveryAddress}`}
+                        <strong>Delivery:</strong>{" "}
+                        {request.deliveryOption === "delivery"
+                          ? "Home Delivery"
+                          : "Store Pickup"}
+                        {request.deliveryAddress &&
+                          ` - ${request.deliveryAddress}`}
                       </p>
                     </div>
                   )}
-
                   <div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
                     <MapPin size={14} />
-                    {request.distance}
+                    <div>
+                      <span>{request.distance}</span>
+                      {/* Show detailed address for both community and regular orders */}
+                      {request.originalData?.farmerDetails && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {request.originalData.farmerDetails.village &&
+                            `${request.originalData.farmerDetails.village}, `}
+                          {request.originalData.farmerDetails.city}{" "}
+                          {request.originalData.farmerDetails.state}{" "}
+                          {request.originalData.farmerDetails.pincode}
+                        </div>
+                      )}
+                      {/* Fallback for orders without farmerDetails */}
+                      {!request.originalData?.farmerDetails &&
+                        request.originalData?.farmerLocation && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {request.originalData.farmerLocation}
+                          </div>
+                        )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Additional Info for Community Requests */}
                 {request.type === "community" && request.originalData && (
                   <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                    <p className="text-sm text-purple-600 font-medium mb-1">Community Medicine Details:</p>
+                    <p className="text-sm text-purple-600 font-medium mb-1">
+                      Community Medicine Details:
+                    </p>
                     <p className="text-xs text-purple-700">
-                      {request.originalData.isFree ? "🎁 Free Medicine" : "💰 Paid Service"} • 
-                      Requested on: {new Date(request.originalData.requestDate).toLocaleDateString()}
+                      {request.originalData.isFree
+                        ? "🎁 Free Medicine"
+                        : "💰 Paid Service"}{" "}
+                      • Requested on:{" "}
+                      {new Date(
+                        request.originalData.requestDate
+                      ).toLocaleDateString()}
                     </p>
                     {request.originalData.farmerNotes && (
                       <p className="text-xs text-purple-600 mt-1">
-                        <strong>Farmer Notes:</strong> {request.originalData.farmerNotes}
+                        <strong>Farmer Notes:</strong>{" "}
+                        {request.originalData.farmerNotes}
                       </p>
                     )}
                   </div>
@@ -574,23 +759,37 @@ export default function MedicineRequests() {
                 {/* Rejection Reason */}
                 {request.status === "rejected" && request.rejectionReason && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600 font-medium mb-1">Rejection Reason:</p>
-                    <p className="text-sm text-red-700">{request.rejectionReason}</p>
+                    <p className="text-sm text-red-600 font-medium mb-1">
+                      Rejection Reason:
+                    </p>
+                    <p className="text-sm text-red-700">
+                      {request.rejectionReason}
+                    </p>
                   </div>
                 )}
 
                 {/* Transfer Details */}
-                {request.status === "transferred" && request.originalData?.transferredToStore && (
-                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-600 font-medium mb-1">Transferred to:</p>
-                    <p className="text-sm text-orange-700">{request.originalData.transferredToStore.storeName}</p>
-                    {request.originalData.transferredToStore.transferReason && (
-                      <p className="text-xs text-orange-600 mt-1">
-                        <strong>Reason:</strong> {request.originalData.transferredToStore.transferReason}
+                {request.status === "transferred" &&
+                  request.originalData?.transferredToStore && (
+                    <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <p className="text-sm text-orange-600 font-medium mb-1">
+                        Transferred to:
                       </p>
-                    )}
-                  </div>
-                )}
+                      <p className="text-sm text-orange-700">
+                        {request.originalData.transferredToStore.storeName}
+                      </p>
+                      {request.originalData.transferredToStore
+                        .transferReason && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          <strong>Reason:</strong>{" "}
+                          {
+                            request.originalData.transferredToStore
+                              .transferReason
+                          }
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                 {/* Action Buttons or Status */}
                 {request.status === "pending" ? (
@@ -599,10 +798,14 @@ export default function MedicineRequests() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => 
-                          request.type === "community" 
-                            ? handleAcceptCommunity(request.id)
-                            : handleAcceptRegular(request.id, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) // 7 days from now
+                        onClick={
+                          () =>
+                            request.type === "community"
+                              ? handleAcceptCommunity(request.id)
+                              : handleAcceptRegular(
+                                  request.id,
+                                  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                ) // 7 days from now
                         }
                         className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
                       >
@@ -612,8 +815,8 @@ export default function MedicineRequests() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => 
-                          request.type === "community" 
+                        onClick={() =>
+                          request.type === "community"
                             ? handleRejectCommunity(request.id)
                             : handleRejectRegular(request.id)
                         }
@@ -627,7 +830,9 @@ export default function MedicineRequests() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setTransferModal({ open: true, order: request })}
+                        onClick={() =>
+                          setTransferModal({ open: true, order: request })
+                        }
                         className="w-full flex items-center justify-center gap-2 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
                       >
                         <Truck size={16} />
@@ -638,45 +843,69 @@ export default function MedicineRequests() {
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
-                      {(request.status === "approved" || request.status === "accepted") ? (
+                      {request.status === "approved" ||
+                      request.status === "accepted" ? (
                         <>
                           <CheckCircle size={16} className="text-green-600" />
                           <span className="text-green-600 font-medium">
-                            Request {request.type === "community" ? "Approved" : "Accepted"}
+                            Request{" "}
+                            {request.type === "community"
+                              ? "Approved"
+                              : "Accepted"}
                           </span>
                           <span className="text-gray-600 ml-2">
-                            {request.type === "community" ? "Medicine allocated" : "Ready for processing"}
+                            {request.type === "community"
+                              ? "Medicine allocated"
+                              : "Ready for processing"}
                           </span>
                         </>
                       ) : request.status === "completed" ? (
                         <>
                           <CheckCircle size={16} className="text-purple-600" />
-                          <span className="text-purple-600 font-medium">Order Completed</span>
+                          <span className="text-purple-600 font-medium">
+                            Order Completed
+                          </span>
                         </>
                       ) : request.status === "transferred" ? (
                         <>
                           <Truck size={16} className="text-orange-600" />
-                          <span className="text-orange-600 font-medium">Transferred</span>
+                          <span className="text-orange-600 font-medium">
+                            Transferred
+                          </span>
                         </>
                       ) : (
                         <>
                           <XCircle size={16} className="text-red-600" />
-                          <span className="text-red-600 font-medium">Request Rejected</span>
+                          <span className="text-red-600 font-medium">
+                            Request Rejected
+                          </span>
                         </>
                       )}
                     </div>
-                    
-                    {(request.status === "approved" || request.status === "accepted") && (
+
+                    {(request.status === "approved" ||
+                      request.status === "accepted") && (
                       <button
-                        onClick={() => handleCompleteOrder(request.id, request.type)}
+                        onClick={() =>
+                          handleCompleteOrder(request.id, request.type)
+                        }
                         className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                       >
                         Mark as Completed
                       </button>
                     )}
-                    
+
                     <button
-                      onClick={() => window.open(`tel:${request.originalData?.farmerContact}`)}
+                      onClick={() => {
+                        if (
+                          request.farmerContact &&
+                          request.farmerContact !== "Contact not available"
+                        ) {
+                          window.open(`tel:${request.farmerContact}`);
+                        } else {
+                          toast.error("Contact information not available");
+                        }
+                      }}
                       className="w-full flex items-center justify-center gap-2 border border-blue-600 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                     >
                       <Phone size={16} />
@@ -690,17 +919,21 @@ export default function MedicineRequests() {
         )}
 
         {!loading && filteredRequests.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-gray-500">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12 text-gray-500"
+          >
             <Package size={48} className="mx-auto mb-4 text-gray-300" />
             <p className="text-lg font-medium mb-2">No requests found</p>
             <p className="text-gray-600">
-              {activeFilter !== "All" || activeType !== "All" 
-                ? "Try changing your filters to see more requests" 
+              {activeFilter !== "All" || activeType !== "All"
+                ? "Try changing your filters to see more requests"
                 : "No medicine requests available at the moment"}
             </p>
           </motion.div>
         )}
       </div>
     </div>
-  )
+  );
 }

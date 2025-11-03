@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, ChevronDown, Plus, Minus, X, Clock } from "lucide-react"
+import { Search, ChevronDown, Plus, Minus, X, Clock, Eye } from "lucide-react"
 import axios from "axios"
 import toast from "react-hot-toast"
 
@@ -14,6 +14,7 @@ export default function MedicineSearch() {
   const [farmerData, setFarmerData] = useState(null)
   const [selectedMedicine, setSelectedMedicine] = useState(null)
   const [orderModal, setOrderModal] = useState(false)
+  const [detailModal, setDetailModal] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
   
   // Order form state
@@ -41,6 +42,7 @@ export default function MedicineSearch() {
     try {
       const res = await fetch("http://localhost:5000/api/medicines/available")
       const data = await res.json()
+      console.log("Fetched medicines:", data) // Debug log
       setMedicines(data)
     } catch (err) {
       console.error("Error fetching medicines:", err)
@@ -68,8 +70,14 @@ export default function MedicineSearch() {
     setOrderModal(true)
   }
 
-  const closeOrderModal = () => {
+  const openDetailModal = (medicine) => {
+    setSelectedMedicine(medicine)
+    setDetailModal(true)
+  }
+
+  const closeModals = () => {
     setOrderModal(false)
+    setDetailModal(false)
     setSelectedMedicine(null)
   }
 
@@ -115,7 +123,7 @@ export default function MedicineSearch() {
 
       if (response.data.success) {
         toast.success("Medicine order placed successfully! The store will contact you soon.")
-        closeOrderModal()
+        closeModals()
         fetchMedicines() // Refresh medicine list
       }
     } catch (error) {
@@ -163,7 +171,7 @@ export default function MedicineSearch() {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold text-gray-900">Order Medicine</h3>
-                  <button onClick={closeOrderModal} className="text-gray-400 hover:text-gray-600">
+                  <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -177,11 +185,11 @@ export default function MedicineSearch() {
                     <div>Price: ₹{selectedMedicine.price}</div>
                     <div>Available: {selectedMedicine.quantity} units</div>
                     <div>Manufacturer: {selectedMedicine.manufacturer}</div>
-                    <div>Store: {selectedMedicine.storeName}</div>
+                    <div>Store: {selectedMedicine.storeName || "Store Information"}</div>
                   </div>
                 </div>
 
-                {/* Order Form */}
+                {/* Order Form - Same as before */}
                 <div className="space-y-4">
                   {/* Quantity */}
                   <div>
@@ -357,7 +365,7 @@ export default function MedicineSearch() {
               <div className="p-6 border-t border-gray-200 bg-gray-50">
                 <div className="flex gap-3">
                   <button
-                    onClick={closeOrderModal}
+                    onClick={closeModals}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     Cancel
@@ -383,7 +391,128 @@ export default function MedicineSearch() {
         )}
       </AnimatePresence>
 
-      {/* Rest of the component remains the same */}
+      {/* Details Modal */}
+      <AnimatePresence>
+        {detailModal && selectedMedicine && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-gray-900">Medicine Details</h3>
+                  <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900 border-b pb-2">Basic Information</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Name:</span>
+                        <span className="text-gray-900">{selectedMedicine.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Category:</span>
+                        <span className="text-gray-900">{selectedMedicine.category}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Type:</span>
+                        <span className="text-gray-900">{selectedMedicine.type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Price:</span>
+                        <span className="text-green-600 font-semibold">₹{selectedMedicine.price}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stock & Status */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900 border-b pb-2">Stock Information</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Status:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          selectedMedicine.status === "In Stock" 
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {selectedMedicine.status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Available Quantity:</span>
+                        <span className="text-gray-900">{selectedMedicine.quantity} units</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Expiry Date:</span>
+                        <span className="text-gray-900">{selectedMedicine.expiry}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Manufacturer & Supplier */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-gray-900 border-b pb-2">Manufacturing</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Manufacturer:</span>
+                        <span className="text-gray-900">{selectedMedicine.manufacturer}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-600">Supplier:</span>
+                        <span className="text-gray-900">{selectedMedicine.supplier}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Composition & Description */}
+                  <div className="space-y-4 md:col-span-2">
+                    <h4 className="font-semibold text-gray-900 border-b pb-2">Details</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="font-medium text-gray-600 block mb-1">Composition:</span>
+                        <p className="text-gray-900">{selectedMedicine.composition}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600 block mb-1">Description:</span>
+                        <p className="text-gray-900 text-sm">{selectedMedicine.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeModals}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
       <motion.div className="max-w-7xl mx-auto" initial="hidden" animate="visible">
         {/* Header */}
         <motion.div className="text-center mb-8">
@@ -391,7 +520,7 @@ export default function MedicineSearch() {
           <p className="text-gray-600">Available medicines from all medical stores</p>
         </motion.div>
 
-        {/* Search Form - Same as before */}
+        {/* Search Form */}
         <motion.div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-end">
             <div className="flex-1">
@@ -492,7 +621,7 @@ export default function MedicineSearch() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-600">Store:</span>
-                  <span className="text-sm text-gray-900">{medicine.storeName}</span>
+                  <span className="text-sm text-gray-900">{medicine.storeName || "Store Info"}</span>
                 </div>
               </div>
 
@@ -506,8 +635,10 @@ export default function MedicineSearch() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
+                  onClick={() => openDetailModal(medicine)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
                 >
+                  <Eye className="w-4 h-4" />
                   View Details
                 </motion.button>
                 <motion.button
