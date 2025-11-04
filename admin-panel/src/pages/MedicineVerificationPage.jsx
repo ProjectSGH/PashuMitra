@@ -1,24 +1,24 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Calendar, 
-  MapPin, 
-  User, 
-  Package, 
-  Building, 
-  Mail, 
-  Shield, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Calendar,
+  MapPin,
+  User,
+  Package,
+  Building,
+  Mail,
+  Shield,
+  CheckCircle,
+  XCircle,
   Search,
   Filter,
   Eye,
   Trash2,
   AlertTriangle,
-  Clock
+  Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -39,7 +39,7 @@ export default function AdminMedicineVerification() {
     try {
       setLoading(true);
       let url = "http://localhost:5000/api/admin/communitymedicines";
-      
+
       if (filter === "pending") {
         url += "?verified=false";
       } else if (filter === "verified") {
@@ -47,6 +47,14 @@ export default function AdminMedicineVerification() {
       }
 
       const res = await axios.get(url);
+      // console.log("Fetched medicines:", res.data.data);
+
+      // Check store data structure
+      // if (res.data.data && res.data.data.length > 0) {
+      //   console.log("First medicine store data:", res.data.data[0].storeId);
+      //   console.log("Type of storeId:", typeof res.data.data[0].storeId);
+      // }
+
       setMedicines(res.data.data || []);
     } catch (err) {
       console.error("Error fetching medicines:", err);
@@ -59,10 +67,12 @@ export default function AdminMedicineVerification() {
   const handleVerify = async (medicineId) => {
     try {
       setActionLoading(medicineId);
-      await axios.patch(`http://localhost:5000/api/admin/communitymedicines/${medicineId}/verify`);
-      
+      await axios.patch(
+        `http://localhost:5000/api/admin/communitymedicines/${medicineId}/verify`
+      );
+
       // Update local state
-      setMedicines(prev => prev.filter(med => med._id !== medicineId));
+      setMedicines((prev) => prev.filter((med) => med._id !== medicineId));
       toast.success("Medicine verified successfully!");
     } catch (err) {
       console.error("Error verifying medicine:", err);
@@ -73,16 +83,22 @@ export default function AdminMedicineVerification() {
   };
 
   const handleDelete = async (medicineId) => {
-    if (!confirm("Are you sure you want to delete this medicine? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this medicine? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     try {
       setActionLoading(medicineId);
-      await axios.delete(`http://localhost:5000/api/admin/communitymedicines/${medicineId}`);
-      
+      await axios.delete(
+        `http://localhost:5000/api/admin/communitymedicines/${medicineId}`
+      );
+
       // Update local state
-      setMedicines(prev => prev.filter(med => med._id !== medicineId));
+      setMedicines((prev) => prev.filter((med) => med._id !== medicineId));
       toast.success("Medicine deleted successfully!");
     } catch (err) {
       console.error("Error deleting medicine:", err);
@@ -122,20 +138,23 @@ export default function AdminMedicineVerification() {
 
   const getCategoryColor = (category) => {
     const colors = {
-      "antibiotic": "bg-blue-50 text-blue-700 border-blue-200",
-      "supplement": "bg-green-50 text-green-700 border-green-200",
-      "antiparasitic": "bg-purple-50 text-purple-700 border-purple-200",
-      "painkiller": "bg-orange-50 text-orange-700 border-orange-200",
-      "vaccine": "bg-red-50 text-red-700 border-red-200",
-      "default": "bg-gray-50 text-gray-700 border-gray-200"
+      antibiotic: "bg-blue-50 text-blue-700 border-blue-200",
+      supplement: "bg-green-50 text-green-700 border-green-200",
+      antiparasitic: "bg-purple-50 text-purple-700 border-purple-200",
+      painkiller: "bg-orange-50 text-orange-700 border-orange-200",
+      vaccine: "bg-red-50 text-red-700 border-red-200",
+      default: "bg-gray-50 text-gray-700 border-gray-200",
     };
     return colors[category?.toLowerCase()] || colors.default;
   };
 
-  const filteredMedicines = medicines.filter(medicine =>
-    medicine.medicineName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    medicine.organizationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    medicine.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMedicines = medicines.filter(
+    (medicine) =>
+      medicine.medicineName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      medicine.organizationName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      medicine.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -149,9 +168,11 @@ export default function AdminMedicineVerification() {
                 <Clock className="h-8 w-8 text-yellow-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pending Verification</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Pending Verification
+                </p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {medicines.filter(m => !m.verifiedByAdmin).length}
+                  {medicines.filter((m) => !m.verifiedByAdmin).length}
                 </p>
               </div>
             </div>
@@ -165,7 +186,7 @@ export default function AdminMedicineVerification() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Verified</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {medicines.filter(m => m.verifiedByAdmin).length}
+                  {medicines.filter((m) => m.verifiedByAdmin).length}
                 </p>
               </div>
             </div>
@@ -177,8 +198,12 @@ export default function AdminMedicineVerification() {
                 <Package className="h-8 w-8 text-blue-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Medicines</p>
-                <p className="text-2xl font-semibold text-gray-900">{medicines.length}</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Total Medicines
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {medicines.length}
+                </p>
               </div>
             </div>
           </div>
@@ -189,9 +214,11 @@ export default function AdminMedicineVerification() {
                 <Building className="h-8 w-8 text-purple-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Unique Organizations</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Unique Organizations
+                </p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {new Set(medicines.map(m => m.organizationName)).size}
+                  {new Set(medicines.map((m) => m.organizationName)).size}
                 </p>
               </div>
             </div>
@@ -204,7 +231,9 @@ export default function AdminMedicineVerification() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">Filter by:</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Filter by:
+                </span>
               </div>
               <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                 <button
@@ -262,10 +291,12 @@ export default function AdminMedicineVerification() {
           ) : filteredMedicines.length === 0 ? (
             <div className="text-center py-12">
               <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No medicines found</h3>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No medicines found
+              </h3>
               <p className="text-gray-500">
-                {filter === "pending" 
-                  ? "No pending medicines for verification" 
+                {filter === "pending"
+                  ? "No pending medicines for verification"
                   : "No medicines match your search criteria"}
               </p>
             </div>
@@ -312,7 +343,11 @@ export default function AdminMedicineVerification() {
                               {medicine.manufacturer}
                             </div>
                             {medicine.category && (
-                              <span className={`inline-block px-2 py-1 text-xs rounded-md mt-1 ${getCategoryColor(medicine.category)}`}>
+                              <span
+                                className={`inline-block px-2 py-1 text-xs rounded-md mt-1 ${getCategoryColor(
+                                  medicine.category
+                                )}`}
+                              >
                                 {medicine.category}
                               </span>
                             )}
@@ -320,9 +355,27 @@ export default function AdminMedicineVerification() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{medicine.organizationName}</div>
-                        <div className="text-sm text-gray-500">{medicine.contactPerson}</div>
-                        <div className="text-sm text-gray-500">{medicine.contactNumber}</div>
+                        <div className="text-sm text-gray-900">
+                          {medicine.organizationName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {medicine.contactPerson}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {medicine.contactNumber}
+                        </div>
+
+                        {/* Store information */}
+                        {medicine.storeDetails && (
+                          <div className="mt-2 text-xs">
+                            <div className="text-blue-600 font-medium">
+                              {medicine.storeDetails.storeName}
+                            </div>
+                            <div className="text-gray-500">
+                              {medicine.storeDetails.ownerName}
+                            </div>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
@@ -330,7 +383,8 @@ export default function AdminMedicineVerification() {
                         </div>
                         {medicine.expiryDate && (
                           <div className="text-sm text-gray-500">
-                            Expires: {new Date(medicine.expiryDate).toLocaleDateString()}
+                            Expires:{" "}
+                            {new Date(medicine.expiryDate).toLocaleDateString()}
                           </div>
                         )}
                         <div className="text-sm text-gray-500">
@@ -349,7 +403,7 @@ export default function AdminMedicineVerification() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          
+
                           {!medicine.verifiedByAdmin && (
                             <button
                               onClick={() => handleVerify(medicine._id)}
@@ -364,7 +418,7 @@ export default function AdminMedicineVerification() {
                               )}
                             </button>
                           )}
-                          
+
                           <button
                             onClick={() => handleDelete(medicine._id)}
                             disabled={actionLoading === medicine._id}
@@ -392,7 +446,7 @@ export default function AdminMedicineVerification() {
       <AnimatePresence>
         {showModal && selectedMedicine && (
           <div className="fixed inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <motion.div
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -401,7 +455,9 @@ export default function AdminMedicineVerification() {
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Medicine Details</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Medicine Details
+                  </h2>
                   <button
                     onClick={closeModal}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -421,23 +477,41 @@ export default function AdminMedicineVerification() {
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Name</label>
-                          <p className="text-gray-900">{selectedMedicine.medicineName}</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Name
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.medicineName}
+                          </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Manufacturer</label>
-                          <p className="text-gray-900">{selectedMedicine.manufacturer}</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Manufacturer
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.manufacturer}
+                          </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Category</label>
-                          <span className={`inline-block px-2 py-1 text-xs rounded-md ${getCategoryColor(selectedMedicine.category)}`}>
+                          <label className="text-sm font-medium text-gray-500">
+                            Category
+                          </label>
+                          <span
+                            className={`inline-block px-2 py-1 text-xs rounded-md ${getCategoryColor(
+                              selectedMedicine.category
+                            )}`}
+                          >
                             {selectedMedicine.category}
                           </span>
                         </div>
                         {selectedMedicine.composition && (
                           <div>
-                            <label className="text-sm font-medium text-gray-500">Composition</label>
-                            <p className="text-gray-900">{selectedMedicine.composition}</p>
+                            <label className="text-sm font-medium text-gray-500">
+                              Composition
+                            </label>
+                            <p className="text-gray-900">
+                              {selectedMedicine.composition}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -450,23 +524,39 @@ export default function AdminMedicineVerification() {
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Organization</label>
-                          <p className="text-gray-900">{selectedMedicine.organizationName}</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Organization
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.organizationName}
+                          </p>
                         </div>
                         {selectedMedicine.contactPerson && (
                           <div>
-                            <label className="text-sm font-medium text-gray-500">Contact Person</label>
-                            <p className="text-gray-900">{selectedMedicine.contactPerson}</p>
+                            <label className="text-sm font-medium text-gray-500">
+                              Contact Person
+                            </label>
+                            <p className="text-gray-900">
+                              {selectedMedicine.contactPerson}
+                            </p>
                           </div>
                         )}
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Contact Number</label>
-                          <p className="text-gray-900">{selectedMedicine.contactNumber}</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Contact Number
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.contactNumber}
+                          </p>
                         </div>
                         {selectedMedicine.email && (
                           <div>
-                            <label className="text-sm font-medium text-gray-500">Email</label>
-                            <p className="text-gray-900">{selectedMedicine.email}</p>
+                            <label className="text-sm font-medium text-gray-500">
+                              Email
+                            </label>
+                            <p className="text-gray-900">
+                              {selectedMedicine.email}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -482,29 +572,47 @@ export default function AdminMedicineVerification() {
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Quantity</label>
-                          <p className="text-gray-900">{selectedMedicine.quantity} units</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Quantity
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.quantity} units
+                          </p>
                         </div>
                         {selectedMedicine.expiryDate && (
                           <div>
-                            <label className="text-sm font-medium text-gray-500">Expiry Date</label>
+                            <label className="text-sm font-medium text-gray-500">
+                              Expiry Date
+                            </label>
                             <p className="text-gray-900">
-                              {new Date(selectedMedicine.expiryDate).toLocaleDateString()}
+                              {new Date(
+                                selectedMedicine.expiryDate
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                         )}
                         {selectedMedicine.batchNumber && (
                           <div>
-                            <label className="text-sm font-medium text-gray-500">Batch Number</label>
-                            <p className="text-gray-900">{selectedMedicine.batchNumber}</p>
+                            <label className="text-sm font-medium text-gray-500">
+                              Batch Number
+                            </label>
+                            <p className="text-gray-900">
+                              {selectedMedicine.batchNumber}
+                            </p>
                           </div>
                         )}
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Distribution Limit</label>
-                          <p className="text-gray-900">{selectedMedicine.distributionLimit} per farmer</p>
+                          <label className="text-sm font-medium text-gray-500">
+                            Distribution Limit
+                          </label>
+                          <p className="text-gray-900">
+                            {selectedMedicine.distributionLimit} per farmer
+                          </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Pricing</label>
+                          <label className="text-sm font-medium text-gray-500">
+                            Pricing
+                          </label>
                           <p className="text-gray-900">
                             {selectedMedicine.isFree ? "Free" : "Paid Service"}
                           </p>
@@ -519,22 +627,67 @@ export default function AdminMedicineVerification() {
                       </h3>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Status</label>
+                          <label className="text-sm font-medium text-gray-500">
+                            Status
+                          </label>
                           <div className="mt-1">
                             {getStatusBadge(selectedMedicine)}
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Donation Date</label>
+                          <label className="text-sm font-medium text-gray-500">
+                            Donation Date
+                          </label>
                           <p className="text-gray-900">
-                            {new Date(selectedMedicine.createdAt).toLocaleDateString()}
+                            {new Date(
+                              selectedMedicine.createdAt
+                            ).toLocaleDateString()}
                           </p>
                         </div>
-                        {selectedMedicine.storeId && (
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Store</label>
-                            <p className="text-gray-900">{selectedMedicine.storeId.storeName}</p>
-                            <p className="text-sm text-gray-500">{selectedMedicine.storeId.address}</p>
+                        {selectedMedicine.storeDetails ? (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <label className="text-sm font-medium text-gray-500 block mb-2">
+                              Associated Store
+                            </label>
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <p className="text-sm font-medium text-blue-900">
+                                {selectedMedicine.storeDetails.storeName}
+                              </p>
+                              <p className="text-xs text-blue-700">
+                                Owner: {selectedMedicine.storeDetails.ownerName}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {selectedMedicine.storeDetails.address}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {selectedMedicine.storeDetails.city},{" "}
+                                {selectedMedicine.storeDetails.state} -{" "}
+                                {selectedMedicine.storeDetails.pincode}
+                              </p>
+                              {selectedMedicine.storeDetails.specialization && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  Specialization:{" "}
+                                  {selectedMedicine.storeDetails.specialization}
+                                </p>
+                              )}
+                              {selectedMedicine.storeDetails.established && (
+                                <p className="text-xs text-blue-600">
+                                  Established:{" "}
+                                  {new Date(
+                                    selectedMedicine.storeDetails.established
+                                  ).getFullYear()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <label className="text-sm font-medium text-gray-500">
+                              Associated Store
+                            </label>
+                            <p className="text-sm text-gray-500 italic">
+                              Store details not available
+                            </p>
                           </div>
                         )}
                       </div>
@@ -544,9 +697,13 @@ export default function AdminMedicineVerification() {
                   {/* Description */}
                   {selectedMedicine.description && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Additional Notes
+                      </h3>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-gray-700">{selectedMedicine.description}</p>
+                        <p className="text-gray-700">
+                          {selectedMedicine.description}
+                        </p>
                       </div>
                     </div>
                   )}

@@ -1,12 +1,11 @@
 import express from "express";
 import CommunityMedicine from "../../models/MedicalStore/CommunityMedicine.js";
+import Store from "../../models/MedicalStore/StoreModel.js"; // Import Store model
 
 const router = express.Router();
 
 /**
- * 🔍 Get all pending or verified medicines
- * Example:
- *  /api/admin/communitymedicines?verified=false
+ * 🔍 Get all pending or verified medicines with store details
  */
 router.get("/", async (req, res) => {
   try {
@@ -16,14 +15,48 @@ router.get("/", async (req, res) => {
     if (verified === "true") filter.verifiedByAdmin = true;
     else if (verified === "false") filter.verifiedByAdmin = false;
 
+    // First get all medicines
     const medicines = await CommunityMedicine.find(filter)
-      .populate("storeId", "storeName address")
       .sort({ createdAt: -1 });
+
+    // Manually populate store details from Store_User model
+    const medicinesWithStoreDetails = await Promise.all(
+      medicines.map(async (medicine) => {
+        const medicineObj = medicine.toObject();
+        
+        try {
+          // Find the store details using the storeId (which is User _id)
+          const storeDetails = await Store.findOne({ userId: medicine.storeId });
+          
+          if (storeDetails) {
+            medicineObj.storeDetails = {
+              storeName: storeDetails.storeName,
+              ownerName: storeDetails.ownerName,
+              address: storeDetails.address,
+              city: storeDetails.city,
+              state: storeDetails.state,
+              pincode: storeDetails.pincode,
+              specialization: storeDetails.specialization,
+              established: storeDetails.established
+            };
+          } else {
+            medicineObj.storeDetails = null;
+          }
+        } catch (storeError) {
+          console.error("Error fetching store details:", storeError);
+          medicineObj.storeDetails = null;
+        }
+        
+        return medicineObj;
+      })
+    );
+
+    console.log("✅ Medicines with store details:", medicinesWithStoreDetails.length);
 
     res.status(200).json({
       success: true,
-      count: medicines.length,
-      data: medicines,
+      count: medicinesWithStoreDetails.length,
+      data: medicinesWithStoreDetails,
     });
   } catch (error) {
     console.error("❌ Error fetching community medicines (admin):", error);
@@ -52,10 +85,24 @@ router.patch("/:id/verify", async (req, res) => {
       return res.status(404).json({ message: "Medicine not found" });
     }
 
+    // Get store details for the response
+    const storeDetails = await Store.findOne({ userId: updated.storeId });
+    const responseData = updated.toObject();
+    responseData.storeDetails = storeDetails ? {
+      storeName: storeDetails.storeName,
+      ownerName: storeDetails.ownerName,
+      address: storeDetails.address,
+      city: storeDetails.city,
+      state: storeDetails.state,
+      pincode: storeDetails.pincode,
+      specialization: storeDetails.specialization,
+      established: storeDetails.established
+    } : null;
+
     res.json({
       success: true,
       message: "Medicine verified successfully",
-      data: updated,
+      data: responseData,
     });
   } catch (error) {
     console.error("❌ Error verifying medicine (admin):", error);
@@ -68,7 +115,7 @@ router.patch("/:id/verify", async (req, res) => {
 });
 
 /**
- * ❌ Delete a medicine (optional admin control)
+ * ❌ Delete a medicine
  */
 router.delete("/:id", async (req, res) => {
   try {
