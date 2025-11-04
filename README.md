@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <img src="https://github.com/user-attachments/assets/de32d425-9ef9-4407-ad6f-c4362f9d2512" alt="Logo PashuMitra" width="150" height="150">    
+    <img src="https://github.com/user-attachments/assets/56e60ee8-c6ca-493a-8202-e2d1cb4840d8" alt="Logo PashuMitra" width="150" height="150">    
 
    <h1>🐄 PashuMitra — Smart Veterinary Healthcare System</h1>
    <p>
