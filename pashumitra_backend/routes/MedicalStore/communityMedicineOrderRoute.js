@@ -896,4 +896,156 @@ router.get("/stats/:userId", async (req, res) => {
   }
 });
 
+// Get store orders with enhanced filtering
+router.get("/store/:storeId", async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const { status, medicineId } = req.query;
+
+    console.log("🔍 Fetching community orders for store:", storeId);
+
+    const filter = { storeId };
+    if (status) filter.status = status;
+    if (medicineId) filter.medicineId = medicineId;
+
+    // Get orders with population
+    const orders = await CommunityMedicineOrder.find(filter)
+      .populate("medicineId", "medicineName manufacturer composition expiryDate quantity distributionLimit isFree organizationName")
+      .populate("farmerId", "email")
+      .sort({ createdAt: -1 });
+
+    console.log(`✅ Found ${orders.length} community orders for store ${storeId}`);
+
+    // Load Farmer model to get detailed farmer information
+    let FarmerModel;
+    try {
+      const farmerModule = await import("../../models/Farmer/FarmerModel.js");
+      FarmerModel = farmerModule.default;
+      console.log("✅ Farmer_User model loaded successfully for store route");
+    } catch (error) {
+      console.error("❌ Failed to load Farmer_User model:", error);
+      FarmerModel = null;
+    }
+
+    // Add farmer details to each order
+    const ordersWithFarmerDetails = await Promise.all(
+      orders.map(async (order) => {
+        try {
+          const orderObj = order.toObject();
+          
+          if (FarmerModel) {
+            const farmer = await FarmerModel.findOne({ userId: order.farmerId });
+            
+            console.log("👨‍🌾 Farmer details found for store order:", order._id, farmer ? {
+              fullName: farmer.fullName,
+              address: farmer.address,
+              village: farmer.village,
+              city: farmer.city,
+              state: farmer.state,
+              pincode: farmer.pincode,
+              phone: farmer.phone
+            } : 'No farmer found');
+
+            if (farmer) {
+              // Create complete address
+              const completeAddress = `${farmer.address}${farmer.village ? ', ' + farmer.village : ''}, ${farmer.city}, ${farmer.state} - ${farmer.pincode}`;
+              
+              orderObj.farmerDetails = {
+                name: farmer.fullName,
+                address: farmer.address,
+                village: farmer.village,
+                city: farmer.city,
+                state: farmer.state,
+                pincode: farmer.pincode,
+                phone: farmer.phone,
+                completeAddress: completeAddress
+              };
+              
+              // Ensure farmerLocation is set
+              if (!orderObj.farmerLocation || orderObj.farmerLocation === "Location not specified") {
+                orderObj.farmerLocation = completeAddress;
+              }
+              
+              // Set farmer contact if missing
+              if (!orderObj.farmerContact) {
+                orderObj.farmerContact = farmer.phone;
+              }
+            } else {
+              console.log("❌ No farmer found for userId:", order.farmerId);
+              orderObj.farmerDetails = {
+                name: order.farmerName || "Farmer details not found",
+                address: "Not specified",
+                village: "Not specified", 
+                city: "Not specified",
+                state: "Not specified",
+                pincode: "Not specified",
+                phone: "Not specified",
+                completeAddress: "Location not specified"
+              };
+              
+              // Set fallback location and contact
+              if (!orderObj.farmerLocation) {
+                orderObj.farmerLocation = "Location not specified";
+              }
+              if (!orderObj.farmerContact) {
+                orderObj.farmerContact = "Contact not available";
+              }
+            }
+          } else {
+            orderObj.farmerDetails = {
+              name: order.farmerName || "Farmer model not available",
+              address: "Not specified",
+              phone: "Not specified",
+              completeAddress: "Location not specified"
+            };
+            
+            if (!orderObj.farmerLocation) {
+              orderObj.farmerLocation = "Location not specified";
+            }
+            if (!orderObj.farmerContact) {
+              orderObj.farmerContact = "Contact not available";
+            }
+          }
+          
+          console.log("📦 Final store order data:", {
+            id: orderObj._id,
+            farmerName: orderObj.farmerName,
+            farmerLocation: orderObj.farmerLocation,
+            farmerContact: orderObj.farmerContact,
+            hasFarmerDetails: !!orderObj.farmerDetails
+          });
+          
+          return orderObj;
+        } catch (farmerError) {
+          console.error(`❌ Error fetching farmer for store order ${order._id}:`, farmerError);
+          const orderObj = order.toObject();
+          orderObj.farmerDetails = {
+            name: order.farmerName || "Error loading farmer details",
+            address: "Not specified",
+            phone: "Not specified",
+            completeAddress: "Location not specified"
+          };
+          orderObj.farmerLocation = orderObj.farmerLocation || "Location not specified";
+          orderObj.farmerContact = orderObj.farmerContact || "Contact not available";
+          return orderObj;
+        }
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: ordersWithFarmerDetails
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching store orders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching store orders",
+      error: error.message
+    });
+  }
+});
+
 export default router;
