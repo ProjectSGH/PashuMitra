@@ -53,7 +53,7 @@ const communityMedicineOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected", "completed", "cancelled"],
+    enum: ["pending", "approved", "rejected", "completed", "cancelled", "transferred"],
     default: "pending",
   },
   requestDate: {

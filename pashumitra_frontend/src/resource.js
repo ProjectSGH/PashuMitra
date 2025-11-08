@@ -18,6 +18,7 @@ import DoctorWithCow from './assets/Doctor/DoctorWithCow.png';
 import DigitalHealthMonitoring from './assets/Doctor/DigitalHealthMonitoring.jpg';
 import SeasonalVaccination from './assets/Doctor/SeasonalVaccination.png';
 import EarlyMastitisDetection from './assets/Doctor/EarlyMastitisDetection.png';
+import Trasportation from './assets/store/Transportation.png';
 
 const resources = {
     Logo: {
@@ -99,6 +100,10 @@ const resources = {
     ContactHero: {
         src: ContactHero,
         alt: 'ContactHero',
+    },
+    Trasportation: {
+        src: Trasportation,
+        alt: 'Trasportation',
     },
 };
 export default resources;

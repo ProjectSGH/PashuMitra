@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   User,
@@ -14,6 +14,11 @@ import {
   Clock,
   Truck,
   Phone,
+  Search,
+  Filter,
+  Star,
+  Calendar,
+  Clock as ClockIcon,
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -35,10 +40,16 @@ export default function MedicineRequests() {
   const [regularRequests, setRegularRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [transferModal, setTransferModal] = useState({
     open: false,
     order: null,
   });
+  const [availableStores, setAvailableStores] = useState([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+
+  const abortControllerRef = useRef(null);
+  const hasFetchedStoresRef = useRef(false);
 
   useEffect(() => {
     // Get store data from localStorage
@@ -47,6 +58,13 @@ export default function MedicineRequests() {
       setStoreData(user);
       fetchAllRequests(user._id);
     }
+
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const fetchAllRequests = async (storeId) => {
@@ -103,7 +121,7 @@ export default function MedicineRequests() {
         const farmerName =
           order.farmerName ||
           order.farmerDetails?.name ||
-          order.farmerId?.fullName || // Use fullName from Farmer_User
+          order.farmerId?.fullName ||
           "Farmer";
 
         return {
@@ -122,7 +140,7 @@ export default function MedicineRequests() {
           distance: farmerLocation,
           rejectionReason: order.storeNotes || null,
           originalData: order,
-          farmerContact: farmerContact, // This is critical for the contact button
+          farmerContact: farmerContact,
           farmerDetails: order.farmerDetails || null,
         };
       });
@@ -191,8 +209,55 @@ export default function MedicineRequests() {
     }
   };
 
+  // Updated function to fetch stores for transfer
+  const fetchAvailableStores = async () => {
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
-  
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
+    try {
+      setStoresLoading(true);
+      console.log("🔄 Starting to fetch available stores...");
+
+      const response = await axios.get(
+        "http://localhost:5000/api/store-transfer/available-stores",
+        {
+          params: {
+            currentStoreId: storeData._id,
+          },
+          signal: abortControllerRef.current.signal,
+          timeout: 10000,
+        }
+      );
+
+      if (response.data.success) {
+        console.log(
+          "✅ Stores fetched successfully:",
+          response.data.data.length
+        );
+        setAvailableStores(response.data.data || []);
+        hasFetchedStoresRef.current = true;
+      } else {
+        throw new Error(response.data.message || "Failed to fetch stores");
+      }
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log("🔄 Request canceled");
+        return;
+      }
+      console.error("❌ Error fetching stores for transfer:", error);
+      toast.error("Failed to load available stores for transfer");
+      setAvailableStores([]);
+    } finally {
+      setStoresLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
   const getPriorityLevel = (order) => {
     // High priority for large quantities or urgent delivery
     if (order.quantityRequested > 50) return "high";
@@ -287,33 +352,41 @@ export default function MedicineRequests() {
 
   const handleTransferOrder = async (
     requestId,
+    targetStoreId,
     targetStoreName,
     transferReason
   ) => {
     try {
-      // In a real app, you would have a store selection mechanism
-      // For now, using a placeholder store ID
-      const targetStoreId = "65a1b2c3d4e5f67890123456"; // This should come from store selection
+      console.log("🔄 Transferring order:", {
+        requestId,
+        targetStoreId,
+        targetStoreName,
+      });
 
-      const response = await axios.patch(
-        `http://localhost:5000/api/medicine-orders/${requestId}/transfer`,
-        {
-          targetStoreId,
-          targetStoreName,
-          transferReason,
-        }
-      );
+      const endpoint =
+        transferModal.order.type === "community"
+          ? `http://localhost:5000/api/community-medicine-orders/${requestId}/transfer`
+          : `http://localhost:5000/api/medicine-orders/${requestId}/transfer`;
+
+      const response = await axios.patch(endpoint, {
+        targetStoreId,
+        targetStoreName,
+        transferReason,
+      });
 
       if (response.data.success) {
-        toast.success("Order transferred successfully!");
+        toast.success(`Order transferred to ${targetStoreName} successfully!`);
         setTransferModal({ open: false, order: null });
+
+        // Refresh the requests list
         if (storeData) {
           fetchAllRequests(storeData._id);
         }
       }
     } catch (error) {
-      console.error("Error transferring order:", error);
-      toast.error("Failed to transfer order");
+      console.error("❌ Error transferring order:", error);
+      toast.error(error.response?.data?.message || "Failed to transfer order");
+      throw error;
     }
   };
 
@@ -397,11 +470,12 @@ export default function MedicineRequests() {
   const allRequests = [...communityRequests, ...regularRequests];
 
   const filteredRequests = allRequests.filter((request) => {
-    // Filter by status
+    // Filter by status - UPDATED FOR TRANSFERS
     const statusMatch =
       activeFilter === "All" ||
       (activeFilter === "Pending" && request.status === "pending") ||
-      (activeFilter === "Approved" && request.status === "approved") ||
+      (activeFilter === "Approved" &&
+        (request.status === "approved" || request.status === "accepted")) ||
       (activeFilter === "Rejected" && request.status === "rejected") ||
       (activeFilter === "Completed" && request.status === "completed") ||
       (activeFilter === "Transferred" && request.status === "transferred");
@@ -416,62 +490,383 @@ export default function MedicineRequests() {
   });
 
   const TransferModal = () => {
-    const [targetStore, setTargetStore] = useState("");
+    const [selectedStore, setSelectedStore] = useState("");
     const [reason, setReason] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [transferring, setTransferring] = useState(false);
+    const [distanceFilter, setDistanceFilter] = useState("50");
+    const [specialtyFilter, setSpecialtyFilter] = useState("");
 
-    const handleSubmit = () => {
-      if (!targetStore || !reason) {
-        toast.error("Please fill in all fields");
+    // Fixed useEffect - using ref to track if we've already fetched
+    useEffect(() => {
+      if (
+        transferModal.open &&
+        storeData?._id &&
+        !hasFetchedStoresRef.current
+      ) {
+        console.log("🔄 Fetching available stores...");
+        fetchAvailableStores();
+      }
+    }, [transferModal.open, storeData?._id]);
+
+    // Reset state when modal closes
+    useEffect(() => {
+      if (!transferModal.open) {
+        setSelectedStore("");
+        setReason("");
+        setSearchTerm("");
+        setDistanceFilter("50");
+        setSpecialtyFilter("");
+        // Don't reset the ref here - we want to keep track across modal openings
+      }
+    }, [transferModal.open]);
+
+    const filteredStores = availableStores.filter(
+      (store) =>
+        store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        store.specialization
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        store.city?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSubmit = async () => {
+      if (!selectedStore || !reason.trim()) {
+        toast.error("Please select a store and provide transfer reason");
         return;
       }
-      handleTransferOrder(transferModal.order.id, targetStore, reason);
+
+      setTransferring(true);
+      try {
+        const selectedStoreData = availableStores.find(
+          (store) => store.id === selectedStore
+        );
+
+        if (!selectedStoreData) {
+          toast.error("Selected store not found");
+          return;
+        }
+
+        await handleTransferOrder(
+          transferModal.order.id,
+          selectedStoreData.id,
+          selectedStoreData.storeName,
+          reason.trim()
+        );
+      } catch (error) {
+        console.error("Transfer error:", error);
+      } finally {
+        setTransferring(false);
+      }
+    };
+
+    const handleStoreClick = (storeId) => {
+      console.log("🟢 Store clicked, ID:", storeId);
+      setSelectedStore(storeId);
+    };
+
+    const handleRefreshStores = () => {
+      hasFetchedStoresRef.current = false;
+      fetchAvailableStores();
     };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Transfer Order
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Target Store Name
-              </label>
-              <input
-                type="text"
-                value={targetStore}
-                onChange={(e) => setTargetStore(e.target.value)}
-                placeholder="Enter store name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Transfer Reason
-              </label>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Why are you transferring this order?"
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="border-b border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Transfer Medicine Order
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Select a store to transfer this order to
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefreshStores}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={storesLoading}
+                >
+                  {storesLoading ? "Refreshing..." : "Refresh Stores"}
+                </button>
+                <button
+                  onClick={() => setTransferModal({ open: false, order: null })}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => setTransferModal({ open: false, order: null })}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
-            >
-              Transfer Order
-            </button>
+
+          {/* Order Summary */}
+          {transferModal.order && (
+            <div className="bg-blue-50 border-b border-blue-200 p-4">
+              <h4 className="font-medium text-blue-800 mb-2">Order Details</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-blue-700">Medicine:</span>
+                  <p className="text-blue-900">
+                    {transferModal.order.medicine}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-700">Quantity:</span>
+                  <p className="text-blue-900">
+                    {transferModal.order.quantity}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-700">Farmer:</span>
+                  <p className="text-blue-900">{transferModal.order.name}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-blue-700">Type:</span>
+                  <p className="text-blue-900 capitalize">
+                    {transferModal.order.type}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="flex-1 overflow-hidden flex">
+            {/* Store List */}
+            <div className="w-1/2 border-r border-gray-200 flex flex-col">
+              <div className="p-4 border-b border-gray-200 space-y-3">
+                <div className="relative">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={20}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search stores by name, specialty, or city..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <select
+                    value={specialtyFilter}
+                    onChange={(e) => setSpecialtyFilter(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Specialties</option>
+                    <option value="General">General Veterinary Medicine</option>
+                    <option value="Small Animal">Small Animal Medicine</option>
+                    <option value="Large Animal">Large Animal Medicine</option>
+                    <option value="Equine">Equine Medicine</option>
+                  </select>
+
+                  <select
+                    value={distanceFilter}
+                    onChange={(e) => setDistanceFilter(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="50">Any Distance</option>
+                    <option value="10">Within 10 km</option>
+                    <option value="20">Within 20 km</option>
+                    <option value="30">Within 30 km</option>
+                  </select>
+                </div>
+
+                <p className="text-sm text-gray-500">
+                  {filteredStores.length} stores found
+                  {specialtyFilter && ` • Specialty: ${specialtyFilter}`}
+                  {distanceFilter !== "50" && ` • Within ${distanceFilter}km`}
+                </p>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {storesLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">
+                      Loading available stores...
+                    </span>
+                  </div>
+                ) : availableStores.length === 0 ? (
+                  <div className="text-center p-8 text-gray-500">
+                    <Package size={48} className="mx-auto mb-3 text-gray-400" />
+                    <p>No stores available for transfer</p>
+                    <p className="text-sm mt-2">Please try again later</p>
+                    <button
+                      onClick={handleRefreshStores}
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : filteredStores.length === 0 ? (
+                  <div className="text-center p-8 text-gray-500">
+                    <Package size={48} className="mx-auto mb-3 text-gray-400" />
+                    <p>No stores match your search</p>
+                    <p className="text-sm">Try adjusting your search terms</p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-3">
+                    {filteredStores.map((store) => (
+                      <div
+                        key={store.id}
+                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedStore === store.id
+                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleStoreClick(store.id)}
+                        style={{ userSelect: "none", WebkitUserSelect: "none" }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium text-gray-900">
+                                {store.storeName}
+                              </h4>
+                              {selectedStore === store.id && (
+                                <CheckCircle
+                                  size={16}
+                                  className="text-blue-600"
+                                />
+                              )}
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-2">
+                              {store.specialization}
+                            </p>
+
+                            <div className="space-y-1 text-xs text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <MapPin size={12} />
+                                <span>
+                                  {store.city}, {store.state}
+                                </span>
+                                <span className="text-orange-600 font-medium ml-1">
+                                  • {store.distance || "5-45 km"}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <Phone size={12} />
+                                <span>{store.contact}</span>
+                              </div>
+
+                              {/* Store transfer statistics */}
+                              <div className="flex items-center gap-2 mt-2 text-xs">
+                                <span className="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                                  ✅ {store.acceptanceRate}% acceptance
+                                </span>
+                                <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  ⏱️ {store.avgResponseTime}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Transfer Details */}
+            <div className="w-1/2 flex flex-col">
+              <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Transfer Details
+                  </h4>
+
+                  {/* Selected Store Preview */}
+                  {selectedStore ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 text-green-800 mb-2">
+                        <CheckCircle size={16} />
+                        <span className="font-medium">Store Selected</span>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        This order will be transferred to{" "}
+                        <strong>
+                          {
+                            availableStores.find((s) => s.id === selectedStore)
+                              ?.storeName
+                          }
+                        </strong>
+                        . They will receive all order details and can contact
+                        the farmer directly.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 text-yellow-800">
+                        <Clock size={16} />
+                        <span className="font-medium">Select a Store</span>
+                      </div>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Please select a store from the list to proceed with the
+                        transfer.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Transfer Reason */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Reason for Transfer *
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Explain why you are transferring this order (e.g., out of stock, specialized medicine required, location convenience, etc.)"
+                      rows="6"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      This reason will be shared with the farmer and the
+                      receiving store.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gray-200 p-6 bg-gray-50">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() =>
+                      setTransferModal({ open: false, order: null })
+                    }
+                    disabled={transferring}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!selectedStore || !reason.trim() || transferring}
+                    className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                  >
+                    {transferring ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Transferring...
+                      </>
+                    ) : (
+                      <>
+                        <Truck size={18} />
+                        Transfer Order
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -788,6 +1183,14 @@ export default function MedicineRequests() {
                           }
                         </p>
                       )}
+                      {request.originalData.transferredToStore.transferDate && (
+                        <p className="text-xs text-orange-500 mt-1">
+                          <strong>Transferred on:</strong>{" "}
+                          {new Date(
+                            request.originalData.transferredToStore.transferDate
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -830,9 +1233,9 @@ export default function MedicineRequests() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() =>
-                          setTransferModal({ open: true, order: request })
-                        }
+                        onClick={() => {
+                          setTransferModal({ open: true, order: request });
+                        }}
                         className="w-full flex items-center justify-center gap-2 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
                       >
                         <Truck size={16} />

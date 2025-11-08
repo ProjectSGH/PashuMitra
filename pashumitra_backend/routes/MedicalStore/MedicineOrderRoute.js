@@ -187,24 +187,52 @@ router.post("/", async (req, res) => {
     });
   }
 });
-
-// Get orders for store - Updated with dynamic import
+// Get orders for store - INCLUDING ACCEPTED TRANSFERS
 router.get("/store/:storeId", async (req, res) => {
   try {
     const { storeId } = req.params;
     const { status } = req.query;
 
-    // console.log("🔍 Fetching orders for store:", storeId);
+    console.log("🔍 Fetching orders for store (including accepted transfers):", storeId);
 
-    const filter = { storeId };
-    if (status) filter.status = status;
+    // Build filter to include:
+    // 1. Orders where this store is the original store (storeId)
+    // 2. OR Orders that were transferred to this store AND accepted/completed
+    const filter = {
+      $or: [
+        { storeId }, // Original orders
+        { 
+          "transferredToStore.storeId": storeId,
+          status: { $in: ["approved", "completed", "accepted"] } // Accepted transfers
+        }
+      ]
+    };
+    
+    // Apply status filter if provided
+    if (status && status !== "All") {
+      const statusMap = {
+        "Pending": "pending",
+        "Approved": "approved", 
+        "Rejected": "rejected",
+        "Completed": "completed",
+        "Transferred": "transferred"
+      };
+      
+      const statusValue = statusMap[status] || status.toLowerCase();
+      
+      // Apply status filter to both conditions
+      filter.$or = filter.$or.map(condition => ({
+        ...condition,
+        status: statusValue
+      }));
+    }
 
     // Get basic orders first
     const orders = await RegularMedicineOrder.find(filter)
       .populate("medicineId", "name price manufacturer composition")
       .sort({ createdAt: -1 });
 
-    // console.log(`✅ Found ${orders.length} orders`);
+    console.log(`✅ Found ${orders.length} orders (including accepted transfers)`);
 
     // Load Farmer model
     const FarmerModel = await loadFarmerModel();
@@ -214,6 +242,9 @@ router.get("/store/:storeId", async (req, res) => {
       orders.map(async (order) => {
         try {
           const orderObj = order.toObject();
+          
+          // Add order type for frontend identification
+          orderObj.orderType = "regular";
           
           if (FarmerModel) {
             // Fetch farmer details using the dynamic model
@@ -279,7 +310,6 @@ router.get("/store/:storeId", async (req, res) => {
     });
   }
 });
-
 // Get orders for farmer - FIXED VERSION
 router.get("/farmer/:farmerId", async (req, res) => {
   try {
@@ -685,4 +715,443 @@ router.patch("/:orderId/transfer", async (req, res) => {
   }
 });
 
+
+// Enhanced transfer route with better notifications
+router.patch("/:orderId/transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { targetStoreId, targetStoreName, transferReason } = req.body;
+
+    console.log("🔄 Transferring order:", { orderId, targetStoreId, targetStoreName });
+
+    // Validate required fields
+    if (!targetStoreId || !targetStoreName) {
+      return res.status(400).json({
+        success: false,
+        message: "Target store ID and name are required"
+      });
+    }
+
+    // Find the order with all details
+    const order = await RegularMedicineOrder.findById(orderId)
+      .populate("medicineId", "name price manufacturer composition")
+      .populate("storeId", "email");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // Check if order is pending
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending orders can be transferred"
+      });
+    }
+
+    // Update order with transfer details
+    order.status = "transferred";
+    order.transferredToStore = {
+      storeId: targetStoreId,
+      storeName: targetStoreName,
+      transferDate: new Date(),
+      transferReason: transferReason || "Transferred to another store"
+    };
+    order.responseDate = new Date();
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATION TO FARMER
+    try {
+      const farmerNotification = new Notification({
+        userIds: [order.farmerId],
+        title: "Order Transferred to Another Store",
+        message: `Your order for ${order.medicineName} has been transferred to ${targetStoreName}. ${transferReason ? `Reason: ${transferReason}` : 'The new store will contact you soon.'}`,
+        type: "info",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "medicine_transferred",
+          medicineName: order.medicineName,
+          newStoreName: targetStoreName,
+          transferReason: transferReason
+        }
+      });
+      await farmerNotification.save();
+      console.log("🔔 Transfer notification sent to farmer");
+    } catch (notificationError) {
+      console.error("❌ Failed to create farmer notification:", notificationError);
+    }
+
+    // 🔔 NOTIFICATION TO TARGET STORE
+    try {
+      const storeNotification = new Notification({
+        userIds: [targetStoreId],
+        title: "New Transferred Order Received",
+        message: `A medicine order for ${order.quantityRequested} units of ${order.medicineName} has been transferred to your store. Farmer: ${order.farmerName}, Contact: ${order.farmerContact}`,
+        type: "medicine_order",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "transferred_order_received",
+          medicineName: order.medicineName,
+          quantity: order.quantityRequested,
+          farmerName: order.farmerName,
+          farmerContact: order.farmerContact,
+          originalStore: order.storeId?.email || "Another Pharmacy",
+          transferReason: transferReason
+        }
+      });
+      await storeNotification.save();
+      console.log("🔔 Transfer notification sent to target store");
+    } catch (notificationError) {
+      console.error("❌ Failed to create target store notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: `Order successfully transferred to ${targetStoreName}`,
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error transferring order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error transferring order",
+      error: error.message
+    });
+  }
+});
+
+// Add these routes to your existing MedicineOrderRoute.js file
+
+// Get incoming transfers for a store
+router.get("/transfers/incoming/:storeId", async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    
+    console.log("🔍 Fetching incoming transfers for store:", storeId);
+
+    const incomingTransfers = await RegularMedicineOrder.find({
+      "transferredToStore.storeId": storeId,
+      status: "transferred"
+    })
+    .populate("medicineId", "name price manufacturer composition")
+    .populate("storeId", "email") // Original store
+    .sort({ createdAt: -1 });
+
+    // Add farmer details
+    const transfersWithFarmerDetails = await Promise.all(
+      incomingTransfers.map(async (transfer) => {
+        try {
+          const transferObj = transfer.toObject();
+          
+          // Load Farmer model
+          const FarmerModel = await loadFarmerModel();
+          if (FarmerModel) {
+            const farmer = await FarmerModel.findOne({ userId: transfer.farmerId })
+              .populate('userId', 'email phone');
+
+            if (farmer) {
+              transferObj.farmerDetails = {
+                name: farmer.fullName,
+                email: farmer.userId.email,
+                phone: farmer.userId.phone,
+                address: farmer.address,
+                village: farmer.village,
+                city: farmer.city,
+                state: farmer.state,
+                pincode: farmer.pincode,
+                completeAddress: `${farmer.address}${farmer.village ? ', ' + farmer.village : ''}, ${farmer.city}, ${farmer.state} - ${farmer.pincode}`
+              };
+            }
+          }
+          
+          return transferObj;
+        } catch (error) {
+          console.error(`❌ Error fetching farmer for transfer ${transfer._id}:`, error);
+          return transfer.toObject();
+        }
+      })
+    );
+
+    res.json({
+      success: true,
+      count: transfersWithFarmerDetails.length,
+      data: transfersWithFarmerDetails
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching incoming transfers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching incoming transfers",
+      error: error.message
+    });
+  }
+});
+
+// Get outgoing transfers from a store
+router.get("/transfers/outgoing/:storeId", async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    
+    console.log("🔍 Fetching outgoing transfers for store:", storeId);
+
+    const outgoingTransfers = await RegularMedicineOrder.find({
+      storeId: storeId,
+      status: "transferred"
+    })
+    .populate("medicineId", "name price manufacturer composition")
+    .populate("transferredToStore.storeId", "email")
+    .sort({ createdAt: -1 });
+
+    // Add farmer details
+    const transfersWithFarmerDetails = await Promise.all(
+      outgoingTransfers.map(async (transfer) => {
+        try {
+          const transferObj = transfer.toObject();
+          
+          // Load Farmer model
+          const FarmerModel = await loadFarmerModel();
+          if (FarmerModel) {
+            const farmer = await FarmerModel.findOne({ userId: transfer.farmerId })
+              .populate('userId', 'email phone');
+
+            if (farmer) {
+              transferObj.farmerDetails = {
+                name: farmer.fullName,
+                email: farmer.userId.email,
+                phone: farmer.userId.phone,
+                address: farmer.address,
+                village: farmer.village,
+                city: farmer.city,
+                state: farmer.state,
+                pincode: farmer.pincode,
+                completeAddress: `${farmer.address}${farmer.village ? ', ' + farmer.village : ''}, ${farmer.city}, ${farmer.state} - ${farmer.pincode}`
+              };
+            }
+          }
+          
+          return transferObj;
+        } catch (error) {
+          console.error(`❌ Error fetching farmer for transfer ${transfer._id}:`, error);
+          return transfer.toObject();
+        }
+      })
+    );
+
+    res.json({
+      success: true,
+      count: transfersWithFarmerDetails.length,
+      data: transfersWithFarmerDetails
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching outgoing transfers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching outgoing transfers",
+      error: error.message
+    });
+  }
+});
+
+// Fix the accept-transfer route - CORRECTED VERSION
+router.patch("/:orderId/accept-transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { storeNotes } = req.body;
+
+    console.log("✅ Accepting transferred order:", orderId);
+
+    const order = await RegularMedicineOrder.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // FIXED: Get storeId from authenticated user (you'll need to implement proper auth middleware)
+    // For now, we'll get it from request headers or query
+    const currentStoreId = req.headers['store-id'] || req.query.storeId;
+    
+    if (!currentStoreId) {
+      return res.status(401).json({
+        success: false,
+        message: "Store ID is required"
+      });
+    }
+
+    // Check if this store is the target of the transfer
+    if (order.transferredToStore.storeId.toString() !== currentStoreId.toString()) {
+      console.log("🚫 Authorization failed:", {
+        targetStore: order.transferredToStore.storeId.toString(),
+        currentStore: currentStoreId.toString()
+      });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to accept this transfer. This transfer is intended for another store."
+      });
+    }
+
+    // Update order status to accepted (or approved for consistency)
+    order.status = "approved"; // Using "approved" to match your existing status
+    order.storeNotes = storeNotes;
+    order.responseDate = new Date();
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATION TO FARMER
+    try {
+      const notification = new Notification({
+        userIds: [order.farmerId],
+        title: "Transferred Order Accepted",
+        message: `Your transferred order for ${order.medicineName} has been accepted by ${order.transferredToStore.storeName}. They will contact you soon.`,
+        type: "important",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "transfer_accepted",
+          medicineName: order.medicineName,
+          storeName: order.transferredToStore.storeName
+        }
+      });
+      await notification.save();
+      console.log("🔔 Notification sent to farmer");
+    } catch (notificationError) {
+      console.error("❌ Failed to create acceptance notification:", notificationError);
+    }
+
+    // 🔔 NOTIFICATION TO ORIGINAL STORE
+    try {
+      const originalStoreNotification = new Notification({
+        userIds: [order.storeId],
+        title: "Transfer Accepted",
+        message: `Your transfer of ${order.medicineName} order to ${order.transferredToStore.storeName} has been accepted.`,
+        type: "info",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "transfer_accepted_notification",
+          medicineName: order.medicineName,
+          targetStore: order.transferredToStore.storeName
+        }
+      });
+      await originalStoreNotification.save();
+      console.log("🔔 Notification sent to original store");
+    } catch (notificationError) {
+      console.error("❌ Failed to create original store notification:", notificationError);
+    }
+
+    console.log("✅ Transfer accepted successfully");
+    res.json({
+      success: true,
+      message: "Transfer accepted successfully",
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error accepting transfer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error accepting transfer",
+      error: error.message
+    });
+  }
+});
+// Fix the reject-transfer route - CORRECTED VERSION
+router.patch("/:orderId/reject-transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { storeNotes } = req.body;
+
+    console.log("❌ Rejecting transferred order:", orderId);
+
+    const order = await RegularMedicineOrder.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // FIXED: Get storeId from authenticated user
+    const currentStoreId = req.headers['store-id'] || req.query.storeId;
+    
+    if (!currentStoreId) {
+      return res.status(401).json({
+        success: false,
+        message: "Store ID is required"
+      });
+    }
+
+    // Check authorization
+    if (order.transferredToStore.storeId.toString() !== currentStoreId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to reject this transfer"
+      });
+    }
+
+    // Update order status back to pending at original store
+    order.status = "pending";
+    order.transferredToStore = undefined;
+    order.storeNotes = storeNotes || "Transfer rejected by receiving store";
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATION TO FARMER
+    try {
+      const notification = new Notification({
+        userIds: [order.farmerId],
+        title: "Transferred Order Rejected",
+        message: `Your transferred order for ${order.medicineName} was rejected by ${order.transferredToStore?.storeName}. The order has been returned to the original store.`,
+        type: "alert",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "transfer_rejected",
+          medicineName: order.medicineName
+        }
+      });
+      await notification.save();
+    } catch (notificationError) {
+      console.error("❌ Failed to create rejection notification:", notificationError);
+    }
+
+    // 🔔 NOTIFICATION TO ORIGINAL STORE
+    try {
+      const originalStoreNotification = new Notification({
+        userIds: [order.storeId],
+        title: "Transfer Rejected",
+        message: `Your transfer of ${order.medicineName} order to ${order.transferredToStore?.storeName} was rejected. The order is back in your pending list.`,
+        type: "info",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "transfer_returned",
+          medicineName: order.medicineName,
+          targetStore: order.transferredToStore?.storeName
+        }
+      });
+      await originalStoreNotification.save();
+    } catch (notificationError) {
+      console.error("❌ Failed to create original store notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: "Transfer rejected successfully",
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error rejecting transfer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error rejecting transfer",
+      error: error.message
+    });
+  }
+});
 export default router;

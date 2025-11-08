@@ -895,18 +895,52 @@ router.get("/stats/:userId", async (req, res) => {
     });
   }
 });
-
-// Get store orders with enhanced filtering
+// Get store orders with enhanced filtering - INCLUDING ACCEPTED TRANSFERS
 router.get("/store/:storeId", async (req, res) => {
   try {
     const { storeId } = req.params;
     const { status, medicineId } = req.query;
 
-    console.log("🔍 Fetching community orders for store:", storeId);
+    console.log("🔍 Fetching community orders for store (including accepted transfers):", storeId);
 
-    const filter = { storeId };
-    if (status) filter.status = status;
-    if (medicineId) filter.medicineId = medicineId;
+    // Build filter to include:
+    // 1. Orders where this store is the original store (storeId)
+    // 2. OR Orders that were transferred to this store AND accepted/completed
+    const filter = {
+      $or: [
+        { storeId }, // Original orders
+        { 
+          "transferredToStore.storeId": storeId,
+          status: { $in: ["approved", "completed", "accepted"] } // Accepted transfers
+        }
+      ]
+    };
+    
+    // Apply status filter if provided
+    if (status && status !== "All") {
+      const statusMap = {
+        "Pending": "pending",
+        "Approved": "approved", 
+        "Rejected": "rejected",
+        "Completed": "completed",
+        "Transferred": "transferred"
+      };
+      
+      const statusValue = statusMap[status] || status.toLowerCase();
+      
+      // Apply status filter to both conditions
+      filter.$or = filter.$or.map(condition => ({
+        ...condition,
+        status: statusValue
+      }));
+    }
+    
+    if (medicineId) {
+      filter.$or = filter.$or.map(condition => ({
+        ...condition,
+        medicineId
+      }));
+    }
 
     // Get orders with population
     const orders = await CommunityMedicineOrder.find(filter)
@@ -914,7 +948,7 @@ router.get("/store/:storeId", async (req, res) => {
       .populate("farmerId", "email")
       .sort({ createdAt: -1 });
 
-    console.log(`✅ Found ${orders.length} community orders for store ${storeId}`);
+    console.log(`✅ Found ${orders.length} community orders for store ${storeId} (including accepted transfers)`);
 
     // Load Farmer model to get detailed farmer information
     let FarmerModel;
@@ -932,6 +966,9 @@ router.get("/store/:storeId", async (req, res) => {
       orders.map(async (order) => {
         try {
           const orderObj = order.toObject();
+          
+          // Add order type for frontend identification
+          orderObj.orderType = "community";
           
           if (FarmerModel) {
             const farmer = await FarmerModel.findOne({ userId: order.farmerId });
@@ -1012,7 +1049,9 @@ router.get("/store/:storeId", async (req, res) => {
             farmerName: orderObj.farmerName,
             farmerLocation: orderObj.farmerLocation,
             farmerContact: orderObj.farmerContact,
-            hasFarmerDetails: !!orderObj.farmerDetails
+            hasFarmerDetails: !!orderObj.farmerDetails,
+            isTransferred: !!orderObj.transferredToStore,
+            orderType: orderObj.orderType
           });
           
           return orderObj;
@@ -1047,5 +1086,262 @@ router.get("/store/:storeId", async (req, res) => {
     });
   }
 });
+// Transfer community medicine order to another store
+router.patch("/:orderId/transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { targetStoreId, targetStoreName, transferReason } = req.body;
 
+    console.log("🔄 Transferring community order:", { orderId, targetStoreId, targetStoreName });
+
+    // Validate required fields
+    if (!targetStoreId || !targetStoreName) {
+      return res.status(400).json({
+        success: false,
+        message: "Target store ID and name are required"
+      });
+    }
+
+    // Find the order
+    const order = await CommunityMedicineOrder.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // Check if order is pending
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending orders can be transferred"
+      });
+    }
+
+    // Update order with transfer details
+    order.status = "transferred";
+    order.transferredToStore = {
+      storeId: targetStoreId,
+      storeName: targetStoreName,
+      transferDate: new Date(),
+      transferReason: transferReason || "No reason provided"
+    };
+    order.responseDate = new Date();
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATION TO FARMER
+    try {
+      const notification = new Notification({
+        userIds: [order.farmerId],
+        title: "Community Medicine Order Transferred",
+        message: `Your community medicine request for ${order.medicineName} has been transferred to ${targetStoreName}. ${transferReason ? `Reason: ${transferReason}` : 'The new store will process your request.'}`,
+        type: "info",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "community_medicine_transferred",
+          medicineName: order.medicineName,
+          newStoreName: targetStoreName
+        }
+      });
+      await notification.save();
+      console.log("🔔 Community transfer notification sent to farmer");
+    } catch (notificationError) {
+      console.error("❌ Failed to create community transfer notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: "Community medicine order transferred successfully",
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error transferring community order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error transferring community order",
+      error: error.message
+    });
+  }
+});
+// Add these routes to your CommunityMedicineOrderRoute.js file
+
+// Get incoming transfers for community medicine
+router.get("/transfers/incoming/:storeId", async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    
+    console.log("🔍 Fetching incoming community transfers for store:", storeId);
+
+    const incomingTransfers = await CommunityMedicineOrder.find({
+      "transferredToStore.storeId": storeId,
+      status: "transferred"
+    })
+    .populate("medicineId", "medicineName organizationName")
+    .populate("storeId", "email")
+    .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: incomingTransfers.length,
+      data: incomingTransfers
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching incoming community transfers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching incoming transfers",
+      error: error.message
+    });
+  }
+});
+
+// Get outgoing transfers for community medicine
+router.get("/transfers/outgoing/:storeId", async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    
+    console.log("🔍 Fetching outgoing community transfers for store:", storeId);
+
+    const outgoingTransfers = await CommunityMedicineOrder.find({
+      storeId: storeId,
+      status: "transferred"
+    })
+    .populate("medicineId", "medicineName organizationName")
+    .populate("transferredToStore.storeId", "email")
+    .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: outgoingTransfers.length,
+      data: outgoingTransfers
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching outgoing community transfers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching outgoing transfers",
+      error: error.message
+    });
+  }
+});
+
+// Accept a transferred community order
+router.patch("/:orderId/accept-transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { storeNotes } = req.body;
+
+    console.log("✅ Accepting transferred community order:", orderId);
+
+    const order = await CommunityMedicineOrder.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // Update order status to approved (accepted)
+    order.status = "approved";
+    order.storeNotes = storeNotes;
+    order.responseDate = new Date();
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATION TO FARMER
+    try {
+      const notification = new Notification({
+        userIds: [order.farmerId],
+        title: "Community Medicine Transfer Accepted",
+        message: `Your transferred community medicine request for ${order.medicineName} has been accepted by ${order.transferredToStore.storeName}.`,
+        type: "important",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "community_transfer_accepted",
+          medicineName: order.medicineName,
+          storeName: order.transferredToStore.storeName
+        }
+      });
+      await notification.save();
+    } catch (notificationError) {
+      console.error("❌ Failed to create acceptance notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: "Community transfer accepted successfully",
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error accepting community transfer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error accepting transfer",
+      error: error.message
+    });
+  }
+});
+
+// Reject a transferred community order
+router.patch("/:orderId/reject-transfer", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { storeNotes } = req.body;
+
+    console.log("❌ Rejecting transferred community order:", orderId);
+
+    const order = await CommunityMedicineOrder.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // Update order status back to pending
+    order.status = "pending";
+    order.transferredToStore = undefined;
+    order.storeNotes = storeNotes || "Transfer rejected by receiving store";
+
+    const updatedOrder = await order.save();
+
+    // 🔔 NOTIFICATIONS
+    try {
+      const farmerNotification = new Notification({
+        userIds: [order.farmerId],
+        title: "Community Medicine Transfer Rejected",
+        message: `Your transferred community medicine request for ${order.medicineName} was rejected. The request has been returned to the original store.`,
+        type: "alert",
+        metadata: {
+          orderId: updatedOrder._id,
+          type: "community_transfer_rejected",
+          medicineName: order.medicineName
+        }
+      });
+      await farmerNotification.save();
+    } catch (notificationError) {
+      console.error("❌ Failed to create farmer notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: "Community transfer rejected successfully",
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error("❌ Error rejecting community transfer:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error rejecting transfer",
+      error: error.message
+    });
+  }
+});
 export default router;
