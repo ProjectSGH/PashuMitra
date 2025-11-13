@@ -18,6 +18,7 @@ import doctorRoutes from "./pages/Routes/Doctor_Routes";
 import FarmerRoutes from "./pages/Routes/Farmer_Routes";
 import MedicalStoreRoutes from "./pages/Routes/MedicalStore_Routes";
 import LoadingScreen from "./pages/Layouts/Loader"; 
+import ForgotPassword from "./pages/FotgotPassword";
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<LoginForm />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<RoleSelector />} />
           <Route path="/signup/farmer" element={<FarmerSignup />} />
           <Route path="/signup/doctor" element={<DoctorSignup />} />

@@ -7,6 +7,7 @@ const Doctor = require('../models/Doctor/DoctorModel');
 const Store = require('../models/MedicalStore/StoreModel');
 const { loginUser } = require('../controllers/userController');
 const userController = require('../controllers/userController');
+const passwordController = require('../controllers/passwordController');
 
 router.post('/signup/farmer', userController.registerFarmer);
 router.post('/signup/doctor', userController.registerDoctor);
@@ -175,5 +176,9 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Update failed", error: err.message });
   }
 });
+
+// Password reset routes
+router.post('/forgot-password', passwordController.requestPasswordReset);
+router.post('/reset-password', passwordController.verifyAndResetPassword);
 
 module.exports = router;
