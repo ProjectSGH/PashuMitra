@@ -17,64 +17,29 @@ export default function Header() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const userId = localStorage.getItem("userId"); // assuming you store userId in localStorage
-
-  // Fetch notifications & unread count
   // ✅ Fetch notifications & unread count
-const fetchNotifications = async () => {
-  try {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser?._id) return;
-
-    const [countRes, notesRes] = await Promise.all([
-      axios.get(
-        `http://localhost:5000/api/notifications/unreadCount/${storedUser._id}`
-      ),
-      axios.get(`http://localhost:5000/api/notifications/${storedUser._id}`),
-    ]);
-
-    setUnreadCount(countRes.data.count || 0);
-    setNotifications(notesRes.data || []);
-  } catch (err) {
-    console.error("Error fetching notifications:", err);
-  }
-};
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [userId]);
-
-  // ✅ Mark single notification as read
-  // ✅ Mark single notification as read
-  const markNotificationAsRead = async (id) => {
-    try {
-      await axios.put(`http://localhost:5000/api/notifications/${id}/read`);
-      // Update UI immediately without refresh
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // ✅ Mark all notifications as read
-  const markAllNotificationsAsRead = async () => {
+  const fetchNotifications = async () => {
     try {
       const storedUser = JSON.parse(localStorage.getItem("user"));
       if (!storedUser?._id) return;
-      await axios.put(
-        `http://localhost:5000/api/notifications/user/${storedUser._id}/readall`
-      );
 
-      // Update UI immediately
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
+      const [countRes, notesRes] = await Promise.all([
+        axios.get(
+          `http://localhost:5000/api/notifications/unreadCount/${storedUser._id}`
+        ),
+        axios.get(`http://localhost:5000/api/notifications/${storedUser._id}`),
+      ]);
+
+      setUnreadCount(countRes.data.count || 0);
+      setNotifications(notesRes.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching notifications:", err);
     }
   };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const handleLogout = () => {
     setIsLoggingOut(true);
@@ -102,43 +67,44 @@ const fetchNotifications = async () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white shadow-sm border-b border-gray-100"
+      className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50"
     >
-      <div className="max-w-auto mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <motion.div whileHover={{ scale: 1.05 }} className="flex-shrink-0">
             <h1
-              className="font-bold text-blue-600 cursor-pointer flex items-center gap-2"
-              onClick={() => navigate("/")}
+              className="font-bold text-blue-700 cursor-pointer flex items-center gap-2"
+              onClick={() => navigate("/farmer/home")}
             >
               <img
                 src={resources.Logo.src}
-                alt="FarmerCare Logo"
-                className="h-8"
+                alt="PashuMitra Logo"
+                className="h-8 w-8"
               />
-              PashuMitra - Farmer Portal
+              <span className="hidden sm:inline">PashuMitra - Farmer Portal</span>
+              <span className="sm:hidden">Farmer Portal</span>
             </h1>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+          <div className="hidden lg:block">
+            <div className="ml-10 flex items-baseline space-x-1">
               {navItems.map((item, index) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <motion.button
                     key={item.name}
                     onClick={() => navigate(item.href)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                     }`}
                   >
                     {item.name}
@@ -149,28 +115,26 @@ const fetchNotifications = async () => {
           </div>
 
           {/* Right side icons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="relative" ref={dropdownRef}>
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/farmer/notifications")}
-                className="relative"
-              >
-                <Bell className="h-6 w-6 text-gray-600 cursor-pointer" />
-                {unreadCount > 0 && (
-                  <span className="header-bell-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </motion.div>
-            </div>
+          <div className="hidden lg:flex items-center space-x-3">
+            <motion.div
+              whileHover={{ scale: 1.1, y: -1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate("/farmer/notifications")}
+              className="relative cursor-pointer p-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors"
+            >
+              <Bell className="h-6 w-6 text-gray-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </motion.div>
 
             <motion.button
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.1, y: -1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate("/farmer/profile")}
-              className="p-1"
+              className="p-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors"
             >
               <User className="h-6 w-6 text-gray-600 cursor-pointer" />
             </motion.button>
@@ -179,8 +143,8 @@ const fetchNotifications = async () => {
             <AnimatePresence>
               {!isLoggingOut && (
                 <motion.button
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-900 hover:bg-gray-100"
-                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                  whileHover={{ scale: 1.05, y: -1 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
@@ -195,11 +159,11 @@ const fetchNotifications = async () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -214,9 +178,9 @@ const fetchNotifications = async () => {
         <motion.div
           initial={false}
           animate={{ height: isMenuOpen ? "auto" : 0 }}
-          className="md:hidden overflow-hidden"
+          className="lg:hidden overflow-hidden bg-white border-t border-gray-200 shadow-inner"
         >
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-100">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navItems.map((item, index) => {
               const isActive = location.pathname === item.href;
               return (
@@ -232,10 +196,10 @@ const fetchNotifications = async () => {
                     x: isMenuOpen ? 0 : -20,
                   }}
                   transition={{ delay: index * 0.1 }}
-                  className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  className={`block w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-all ${
                     isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                   }`}
                 >
                   {item.name}
@@ -243,7 +207,7 @@ const fetchNotifications = async () => {
               );
             })}
             {/* Icons in mobile view */}
-            <div className="flex items-center space-x-4 px-3 py-2">
+            <div className="flex items-center space-x-4 px-4 py-3 border-t border-gray-200 mt-2">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -251,12 +215,12 @@ const fetchNotifications = async () => {
                   navigate("/farmer/notifications");
                   setIsMenuOpen(false);
                 }}
-                className="relative p-1"
+                className="relative p-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors"
               >
                 <Bell className="h-6 w-6 text-gray-600 cursor-pointer" />
                 {unreadCount > 0 && (
-                  <span className="header-bell-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount}
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </motion.button>
@@ -268,9 +232,17 @@ const fetchNotifications = async () => {
                   navigate("/farmer/profile");
                   setIsMenuOpen(false);
                 }}
-                className="p-1"
+                className="p-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors"
               >
                 <User className="h-6 w-6 text-gray-600 cursor-pointer" />
+              </motion.button>
+
+              <motion.button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
               </motion.button>
             </div>
           </div>

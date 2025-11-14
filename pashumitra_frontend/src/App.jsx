@@ -19,6 +19,7 @@ import FarmerRoutes from "./pages/Routes/Farmer_Routes";
 import MedicalStoreRoutes from "./pages/Routes/MedicalStore_Routes";
 import LoadingScreen from "./pages/Layouts/Loader"; 
 import ForgotPassword from "./pages/FotgotPassword";
+import ErrorPage from "./pages/ErrorPage";
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,7 @@ function App() {
           {doctorRoutes}
           {FarmerRoutes}
           {MedicalStoreRoutes}
+          <Route path="*" element={<ErrorPage />} />
         </Routes>
       </Router>
     </>

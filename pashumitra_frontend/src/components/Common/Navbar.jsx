@@ -97,6 +97,24 @@ const Navbar = () => {
               Home
             </a>
           </div>
+          <div className="flex space-x-4">
+            <a
+              href="/about"
+              className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+            >
+              {/* <Home size={18} className="mr-1" /> */}
+              About
+            </a>
+          </div>
+          <div className="flex space-x-4">
+            <a
+              href="/contact"
+              className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+            >
+              {/* <Home size={18} className="mr-1" /> */}
+              Contact Us
+            </a>
+          </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-5 space-x-2">
               <a
