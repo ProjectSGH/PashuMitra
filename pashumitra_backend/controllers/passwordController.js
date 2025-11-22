@@ -98,7 +98,7 @@ const verifyAndResetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // ✅ FIX: Hash the new password before saving
+    // Hash the new password before saving
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
     // Update password with hashed version

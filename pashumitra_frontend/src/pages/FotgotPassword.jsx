@@ -57,61 +57,62 @@ const ForgotPassword = () => {
   };
 
   const handleCodeSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validation
-    if (newPassword !== confirmPassword) {
-      setMessage("Passwords do not match");
-      return;
+  e.preventDefault();
+  
+  // Validation
+  if (newPassword !== confirmPassword) {
+    setMessage("Passwords do not match");
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    setMessage("Password must be at least 6 characters long");
+    return;
+  }
+
+  if (code.length !== 6) {
+    setMessage("Please enter a valid 6-digit code");
+    return;
+  }
+
+  setLoading(true);
+  setMessage("");
+
+  try {
+    // ✅ CHANGE THIS: Use the new endpoint
+    const res = await fetch("/api/users/reset-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, code, newPassword }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    if (newPassword.length < 6) {
-      setMessage("Password must be at least 6 characters long");
-      return;
-    }
-
-    if (code.length !== 6) {
-      setMessage("Please enter a valid 6-digit code");
-      return;
-    }
-
-    setLoading(true);
-    setMessage("");
-
+    let data;
     try {
-      const res = await fetch("/api/users/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, code, newPassword }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      let data;
-      try {
-        data = await res.json();
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        throw new Error('Invalid response from server');
-      }
-
-      if (res.status === 200) {
-        setStep(3);
-        setMessage("Password updated successfully!");
-      } else {
-        setMessage(data.message || "Failed to reset password");
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      setMessage(err.message || "Server error. Please try again.");
-    } finally {
-      setLoading(false);
+      data = await res.json();
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error('Invalid response from server');
     }
-  };
+
+    if (res.status === 200) {
+      setStep(3);
+      setMessage("Password updated successfully!");
+    } else {
+      setMessage(data.message || "Failed to reset password");
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    setMessage(err.message || "Server error. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const resendCode = async () => {
     setLoading(true);
