@@ -40,86 +40,136 @@ export default function TransferManagement() {
     }
   }, []);
 
-  const fetchTransfers = async (storeId) => {
-    try {
-      setLoading(true);
-      console.log("🔄 Fetching transfer requests...");
+  // In your fetchTransfers function, update the API endpoints:
+const fetchTransfers = async (storeId) => {
+  try {
+    setLoading(true);
+    console.log("🔄 Fetching transfer requests...");
 
-      // Fetch both incoming and outgoing transfers
-      const [incomingResponse, outgoingResponse] = await Promise.all([
-        axios.get(
-          `http://localhost:5000/api/medicine-orders/transfers/incoming/${storeId}`
-        ),
-        axios.get(
-          `http://localhost:5000/api/medicine-orders/transfers/outgoing/${storeId}`
-        ),
-      ]);
+    // Fetch both incoming and outgoing transfers for BOTH regular and community orders
+    const [regularIncoming, regularOutgoing, communityIncoming, communityOutgoing] = await Promise.all([
+      // Regular medicine transfers
+      axios.get(`http://localhost:5000/api/medicine-orders/transfers/incoming/${storeId}`),
+      axios.get(`http://localhost:5000/api/medicine-orders/transfers/outgoing/${storeId}`),
+      
+      // Community medicine transfers  
+      axios.get(`http://localhost:5000/api/community-medicine-orders/transfers/incoming/${storeId}`),
+      axios.get(`http://localhost:5000/api/community-medicine-orders/transfers/outgoing/${storeId}`)
+    ]);
 
-      console.log("📦 Incoming transfers:", incomingResponse.data);
-      console.log("📤 Outgoing transfers:", outgoingResponse.data);
+    console.log("📦 Regular incoming:", regularIncoming.data);
+    console.log("📤 Regular outgoing:", regularOutgoing.data);
+    console.log("🏥 Community incoming:", communityIncoming.data);
+    console.log("🚚 Community outgoing:", communityOutgoing.data);
 
-      // Combine and format transfers
-      const incomingTransfers =
-        incomingResponse.data.data?.map((transfer) => ({
-          id: transfer._id,
-          type: "incoming",
-          from: transfer.originalStore?.storeName || "Unknown Store",
-          fromStoreId: transfer.originalStore?._id,
-          to: null,
-          status: getTransferStatus(transfer),
-          medicine: transfer.medicineName,
-          quantity: `${transfer.quantityRequested} units`,
-          distance: "Calculating...",
-          requestDate: new Date(
-            transfer.transferDate || transfer.createdAt
-          ).toLocaleDateString(),
-          estimatedDelivery: transfer.expectedDeliveryDate
-            ? new Date(transfer.expectedDeliveryDate).toLocaleDateString()
-            : null,
-          farmerDetails: transfer.farmerDetails,
-          farmerContact: transfer.farmerContact,
-          transferReason: transfer.transferReason,
-          originalData: transfer,
-          orderType: transfer.orderType || "regular", // regular or community
-        })) || [];
+    // Process regular medicine transfers
+    const regularIncomingTransfers = regularIncoming.data.data?.map((transfer) => ({
+      id: transfer._id,
+      type: "incoming",
+      from: transfer.storeId?.email || "Unknown Store",
+      fromStoreId: transfer.storeId?._id,
+      to: null,
+      status: getTransferStatus(transfer),
+      medicine: transfer.medicineName,
+      quantity: `${transfer.quantityRequested} units`,
+      distance: "Calculating...",
+      requestDate: new Date(transfer.transferDate || transfer.createdAt).toLocaleDateString(),
+      estimatedDelivery: transfer.expectedDeliveryDate 
+        ? new Date(transfer.expectedDeliveryDate).toLocaleDateString() 
+        : null,
+      farmerDetails: transfer.farmerDetails,
+      farmerContact: transfer.farmerContact,
+      transferReason: transfer.transferredToStore?.transferReason,
+      originalData: transfer,
+      orderType: "regular"
+    })) || [];
 
-      const outgoingTransfers =
-        outgoingResponse.data.data?.map((transfer) => ({
-          id: transfer._id,
-          type: "outgoing",
-          from: null,
-          to: transfer.transferredToStore?.storeName || "Unknown Store",
-          toStoreId: transfer.transferredToStore?._id,
-          status: getTransferStatus(transfer),
-          medicine: transfer.medicineName,
-          quantity: `${transfer.quantityRequested} units`,
-          distance: "Calculating...",
-          requestDate: new Date(
-            transfer.transferDate || transfer.createdAt
-          ).toLocaleDateString(),
-          estimatedDelivery: transfer.expectedDeliveryDate
-            ? new Date(transfer.expectedDeliveryDate).toLocaleDateString()
-            : null,
-          farmerDetails: transfer.farmerDetails,
-          farmerContact: transfer.farmerContact,
-          transferReason: transfer.transferReason,
-          originalData: transfer,
-          orderType: transfer.orderType || "regular",
-        })) || [];
+    const regularOutgoingTransfers = regularOutgoing.data.data?.map((transfer) => ({
+      id: transfer._id,
+      type: "outgoing", 
+      from: null,
+      to: transfer.transferredToStore?.storeName || "Unknown Store",
+      toStoreId: transfer.transferredToStore?.storeId,
+      status: getTransferStatus(transfer),
+      medicine: transfer.medicineName,
+      quantity: `${transfer.quantityRequested} units`,
+      distance: "Calculating...",
+      requestDate: new Date(transfer.transferDate || transfer.createdAt).toLocaleDateString(),
+      estimatedDelivery: transfer.expectedDeliveryDate 
+        ? new Date(transfer.expectedDeliveryDate).toLocaleDateString() 
+        : null,
+      farmerDetails: transfer.farmerDetails,
+      farmerContact: transfer.farmerContact,
+      transferReason: transfer.transferredToStore?.transferReason,
+      originalData: transfer,
+      orderType: "regular"
+    })) || [];
 
-      const allTransfers = [...incomingTransfers, ...outgoingTransfers];
-      console.log("✅ All transfers:", allTransfers);
-      setTransfers(allTransfers);
-    } catch (error) {
-      console.error("❌ Error fetching transfers:", error);
-      toast.error("Failed to load transfer requests");
-      // Fallback to mock data if API fails
-      setTransfers(getMockTransfers());
-    } finally {
-      setLoading(false);
+    // Process community medicine transfers
+    const communityIncomingTransfers = communityIncoming.data.data?.map((transfer) => ({
+      id: transfer._id,
+      type: "incoming",
+      from: transfer.storeId?.email || "Unknown Store", 
+      fromStoreId: transfer.storeId?._id,
+      to: null,
+      status: getTransferStatus(transfer),
+      medicine: transfer.medicineName,
+      quantity: `${transfer.quantityRequested} units`,
+      distance: "Calculating...",
+      requestDate: new Date(transfer.transferDate || transfer.createdAt).toLocaleDateString(),
+      estimatedDelivery: null, // Community orders typically don't have delivery dates
+      farmerDetails: transfer.farmerDetails,
+      farmerContact: transfer.farmerContact,
+      transferReason: transfer.transferredToStore?.transferReason,
+      originalData: transfer,
+      orderType: "community"
+    })) || [];
+
+    const communityOutgoingTransfers = communityOutgoing.data.data?.map((transfer) => ({
+      id: transfer._id,
+      type: "outgoing",
+      from: null,
+      to: transfer.transferredToStore?.storeName || "Unknown Store",
+      toStoreId: transfer.transferredToStore?.storeId,
+      status: getTransferStatus(transfer),
+      medicine: transfer.medicineName,
+      quantity: `${transfer.quantityRequested} units`,
+      distance: "Calculating...",
+      requestDate: new Date(transfer.transferDate || transfer.createdAt).toLocaleDateString(),
+      estimatedDelivery: null,
+      farmerDetails: transfer.farmerDetails,
+      farmerContact: transfer.farmerContact,
+      transferReason: transfer.transferredToStore?.transferReason,
+      originalData: transfer,
+      orderType: "community"
+    })) || [];
+
+    const allTransfers = [
+      ...regularIncomingTransfers,
+      ...regularOutgoingTransfers, 
+      ...communityIncomingTransfers,
+      ...communityOutgoingTransfers
+    ];
+
+    console.log("✅ All combined transfers:", allTransfers);
+    setTransfers(allTransfers);
+
+  } catch (error) {
+    console.error("❌ Error fetching transfers:", error);
+    
+    // More detailed error logging
+    if (error.response) {
+      console.error("Error response:", error.response.data);
+      console.error("Error status:", error.response.status);
     }
-  };
-
+    
+    toast.error("Failed to load transfer requests");
+    // Fallback to mock data if API fails
+    setTransfers(getMockTransfers());
+  } finally {
+    setLoading(false);
+  }
+};
   const getTransferStatus = (transfer) => {
     if (transfer.status === "transferred") return "pending";
     if (transfer.status === "approved" || transfer.status === "accepted")

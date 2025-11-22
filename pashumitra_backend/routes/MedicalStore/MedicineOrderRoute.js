@@ -1154,4 +1154,66 @@ router.patch("/:orderId/reject-transfer", async (req, res) => {
     });
   }
 });
+
+
+// Complete regular medicine order
+router.patch("/:orderId/complete", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { storeNotes } = req.body;
+
+    console.log("✅ Completing order:", orderId);
+
+    const order = await RegularMedicineOrder.findByIdAndUpdate(
+      orderId,
+      {
+        status: "completed",
+        completionDate: new Date(),
+        storeNotes: storeNotes || order.storeNotes
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    // 🔔 NOTIFICATION FOR FARMER
+    try {
+      const notification = new Notification({
+        userIds: [order.farmerId],
+        title: "Medicine Order Completed",
+        message: `Your order for ${order.medicineName} has been marked as completed by the store. Thank you for your order!`,
+        type: "info",
+        metadata: {
+          orderId: order._id,
+          type: "regular_medicine_completed",
+          medicineName: order.medicineName
+        }
+      });
+      await notification.save();
+      console.log("🔔 Completion notification sent to farmer");
+    } catch (notificationError) {
+      console.error("❌ Failed to create completion notification:", notificationError);
+    }
+
+    res.json({
+      success: true,
+      message: "Order marked as completed successfully",
+      data: order
+    });
+
+  } catch (error) {
+    console.error("❌ Error completing order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error completing order",
+      error: error.message
+    });
+  }
+});
+
 export default router;
